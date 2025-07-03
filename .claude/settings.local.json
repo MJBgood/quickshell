@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__context7__get-library-docs",
+      "Bash(grep:*)",
+      "mcp__context7__resolve-library-id",
+      "Bash(timeout:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)"
+    ],
+    "deny": []
+  }
+}

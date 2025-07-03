@@ -1,0 +1,15 @@
+ContextMenuSection 1.0 ContextMenuSection.qml
+DataDisplayItem 1.0 DataDisplayItem.qml
+DataToggleItem 1.0 DataToggleItem.qml
+GlobalHierarchicalMenu 1.0 GlobalHierarchicalMenu.qml
+HierarchicalContextMenu 1.0 HierarchicalContextMenu.qml
+HierarchicalMenu 1.0 HierarchicalMenu.qml
+MenuItem 1.0 MenuItem.qml
+MonitorContextMenu 1.0 MonitorContextMenu.qml
+MonitorDataOverlay 1.0 MonitorDataOverlay.qml
+MonitorMenuItem 1.0 MonitorMenuItem.qml
+PerformanceContextMenu 1.0 PerformanceContextMenu.qml
+SettingsOverlay 1.0 SettingsOverlay.qml
+SimplePerformanceMenu 1.0 SimplePerformanceMenu.qml
+ThemeDropdown 1.0 ThemeDropdown.qml
+UnifiedMenu 1.0 UnifiedMenu.qml

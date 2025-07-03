@@ -1,0 +1,183 @@
+{
+  "name": "Catppuccin",
+  "id": "catppuccin",
+  "description": "Soothing pastel theme for the high-spirited!",
+  "author": "Catppuccin Team",
+  "version": "1.0.0",
+  "source": "https://github.com/catppuccin/catppuccin",
+  "supportsModes": true,
+  "defaultMode": "dark",
+  "preview": {
+    "background": "#1e1e2e",
+    "accent": "#89b4fa",
+    "description": "Soothing pastel theme"
+  },
+  "dark": {
+    "colors": {
+    "background": "#1e1e2e",
+    "surface": "#313244",
+    "surfaceAlt": "#45475a",
+    "overlay": "#6c7086",
+    "primary": "#89b4fa",
+    "primaryAlt": "#74c7ec",
+    "secondary": "#cba6f7",
+    "accent": "#f38ba8",
+    "success": "#a6e3a1",
+    "warning": "#f9e2af",
+    "error": "#f38ba8",
+    "text": "#cdd6f4",
+    "textAlt": "#bac2de",
+    "textDisabled": "#a6adc8",
+    "onPrimary": "#1e1e2e",
+    "onSecondary": "#1e1e2e",
+    "onSurface": "#cdd6f4",
+    "onBackground": "#cdd6f4",
+    "onError": "#1e1e2e",
+    "border": "#585b70",
+    "divider": "#45475a"
+  },
+  "fonts": {
+    "display": {
+      "family": "Inter",
+      "pixelSize": 32,
+      "weight": "Bold"
+    },
+    "heading": {
+      "family": "Inter",
+      "pixelSize": 24,
+      "weight": "DemiBold"
+    },
+    "title": {
+      "family": "Inter",
+      "pixelSize": 18,
+      "weight": "Medium"
+    },
+    "body": {
+      "family": "Inter",
+      "pixelSize": 14,
+      "weight": "Normal"
+    },
+    "caption": {
+      "family": "Inter",
+      "pixelSize": 12,
+      "weight": "Normal"
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "pixelSize": 14,
+      "weight": "Normal"
+    }
+  },
+  "spacing": {
+    "tiny": 2,
+    "small": 4,
+    "medium": 8,
+    "large": 16,
+    "xlarge": 24,
+    "xxlarge": 32,
+    "xxxlarge": 48
+  },
+  "geometry": {
+    "radius": 8,
+    "radiusSmall": 4,
+    "radiusLarge": 12,
+    "borderWidth": 1,
+    "borderWidthFocus": 2,
+    "shadowBlur": 16,
+    "shadowSpread": 0,
+    "shadowColor": "rgba(0, 0, 0, 0.25)"
+  },
+    "animation": {
+      "fast": 150,
+      "normal": 250,
+      "slow": 400,
+      "easing": "OutCubic",
+      "easingSharp": "OutQuart",
+      "easingGentle": "OutSine"
+    }
+  },
+  "light": {
+    "colors": {
+      "background": "#eff1f5",
+      "surface": "#e6e9ef",
+      "surfaceAlt": "#dce0e8",
+      "overlay": "#9ca0b0",
+      "primary": "#1e66f5",
+      "primaryAlt": "#209fb5",
+      "secondary": "#8839ef",
+      "accent": "#d20f39",
+      "success": "#40a02b",
+      "warning": "#df8e1d",
+      "error": "#d20f39",
+      "text": "#4c4f69",
+      "textAlt": "#5c5f77",
+      "textDisabled": "#6c6f85",
+      "onPrimary": "#eff1f5",
+      "onSecondary": "#eff1f5",
+      "onSurface": "#4c4f69",
+      "onBackground": "#4c4f69",
+      "onError": "#eff1f5",
+      "border": "#acb0be",
+      "divider": "#dce0e8"
+    },
+    "fonts": {
+      "display": {
+        "family": "Inter",
+        "pixelSize": 32,
+        "weight": "Bold"
+      },
+      "heading": {
+        "family": "Inter",
+        "pixelSize": 24,
+        "weight": "DemiBold"
+      },
+      "title": {
+        "family": "Inter",
+        "pixelSize": 18,
+        "weight": "Medium"
+      },
+      "body": {
+        "family": "Inter",
+        "pixelSize": 14,
+        "weight": "Normal"
+      },
+      "caption": {
+        "family": "Inter",
+        "pixelSize": 12,
+        "weight": "Normal"
+      },
+      "mono": {
+        "family": "JetBrains Mono",
+        "pixelSize": 14,
+        "weight": "Normal"
+      }
+    },
+    "spacing": {
+      "tiny": 2,
+      "small": 4,
+      "medium": 8,
+      "large": 16,
+      "xlarge": 24,
+      "xxlarge": 32,
+      "xxxlarge": 48
+    },
+    "geometry": {
+      "radius": 8,
+      "radiusSmall": 4,
+      "radiusLarge": 12,
+      "borderWidth": 1,
+      "borderWidthFocus": 2,
+      "shadowBlur": 16,
+      "shadowSpread": 0,
+      "shadowColor": "rgba(0, 0, 0, 0.15)"
+    },
+    "animation": {
+      "fast": 150,
+      "normal": 250,
+      "slow": 400,
+      "easing": "OutCubic",
+      "easingSharp": "OutQuart",
+      "easingGentle": "OutSine"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "theme": {
+    "activeTheme": "catppuccin-mocha",
+    "activeMode": "dark",
+    "followSystemTheme": false,
+    "autoSwitchTimes": {
+      "enabled": false,
+      "lightModeStart": "06:00",
+      "darkModeStart": "18:00"
+    }
+  },
+  "panel": {
+    "height": 32,
+    "position": "top",
+    "autohide": false,
+    "opacity": 0.95
+  },
+  "widgets": {
+    "clock": {
+      "enabled": true,
+      "format": "HH:mm",
+      "showDate": false
+    },
+    "workspaces": {
+      "enabled": true,
+      "showEmpty": true,
+      "showNumbers": true
+    },
+    "systray": {
+      "enabled": true,
+      "spacing": 4
+    }
+  },
+  "shortcuts": {
+    "launcher": "Super+Space",
+    "overview": "Super+Tab",
+    "settings": "Super+Comma"
+  },
+  "system": {
+    "updateInterval": 2000,
+    "showSystemStats": true,
+    "enableNotifications": true
+  },
+  "performance": {
+    "enabled": true,
+    "layout": "horizontal",
+    "displayMode": "minimal",
+    "cpu": {
+      "enabled": true,
+      "precision": 1,
+      "updateInterval": 2000,
+      "showIcon": true,
+      "showLabel": false,
+      "showPercentage": true,
+      "customIcon": "",
+      "showFrequency": true
+    },
+    "ram": {
+      "enabled": true,
+      "precision": 1,
+      "updateInterval": 2000,
+      "showIcon": true,
+      "showLabel": false,
+      "showPercentage": true,
+      "customIcon": "",
+      "showFrequency": false
+    },
+    "storage": {
+      "enabled": true,
+      "precision": 1,
+      "updateInterval": 30000,
+      "showIcon": true,
+      "showLabel": false,
+      "showPercentage": true,
+      "customIcon": "",
+      "showBytes": true
+    }
+  },
+  "developer": {
+    "debugMode": false,
+    "showPerformanceMetrics": true,
+    "verboseLogging": false
+  }
+}

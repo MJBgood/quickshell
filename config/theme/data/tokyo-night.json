@@ -1,0 +1,96 @@
+{
+  "name": "Tokyo Night",
+  "id": "tokyo-night",
+  "description": "Dark blue theme inspired by Tokyo nights",
+  "author": "Tokyo Night Team",
+  "version": "1.0.0",
+  "source": "https://github.com/folke/tokyonight.nvim",
+  "supportsModes": false,
+  "preview": {
+    "background": "#1a1b26",
+    "accent": "#7aa2f7",
+    "description": "Dark blue inspired by Tokyo nights"
+  },
+  "colors": {
+    "background": "#1a1b26",
+    "surface": "#24283b",
+    "surfaceAlt": "#414868",
+    "overlay": "#565f89",
+    "primary": "#7aa2f7",
+    "primaryAlt": "#2ac3de",
+    "secondary": "#bb9af7",
+    "accent": "#f7768e",
+    "success": "#9ece6a",
+    "warning": "#e0af68",
+    "error": "#f7768e",
+    "text": "#c0caf5",
+    "textAlt": "#9aa5ce",
+    "textDisabled": "#565f89",
+    "onPrimary": "#1a1b26",
+    "onSecondary": "#1a1b26",
+    "onSurface": "#c0caf5",
+    "onBackground": "#c0caf5",
+    "onError": "#1a1b26",
+    "border": "#565f89",
+    "divider": "#414868"
+  },
+  "fonts": {
+    "display": {
+      "family": "Inter",
+      "pixelSize": 32,
+      "weight": "Bold"
+    },
+    "heading": {
+      "family": "Inter",
+      "pixelSize": 24,
+      "weight": "DemiBold"
+    },
+    "title": {
+      "family": "Inter",
+      "pixelSize": 18,
+      "weight": "Medium"
+    },
+    "body": {
+      "family": "Inter",
+      "pixelSize": 14,
+      "weight": "Normal"
+    },
+    "caption": {
+      "family": "Inter",
+      "pixelSize": 12,
+      "weight": "Normal"
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "pixelSize": 14,
+      "weight": "Normal"
+    }
+  },
+  "spacing": {
+    "tiny": 2,
+    "small": 4,
+    "medium": 8,
+    "large": 16,
+    "xlarge": 24,
+    "xxlarge": 32,
+    "xxxlarge": 48
+  },
+  "geometry": {
+    "radius": 6,
+    "radiusSmall": 3,
+    "radiusLarge": 10,
+    "borderWidth": 1,
+    "borderWidthFocus": 2,
+    "shadowBlur": 20,
+    "shadowSpread": 0,
+    "shadowColor": "rgba(0, 0, 0, 0.4)"
+  },
+  "animation": {
+    "fast": 120,
+    "normal": 200,
+    "slow": 350,
+    "easing": "OutCubic",
+    "easingSharp": "OutQuart",
+    "easingGentle": "OutSine"
+  }
+}
