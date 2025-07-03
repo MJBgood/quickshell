@@ -4,9 +4,8 @@
 
 **Before any development work:**
 1. Check Context7 MCP server for latest Quickshell documentation
-2. Update local documentation if Context7 has newer information  
-3. Review project's `.docs/` folder for relevant APIs
-4. Ground all solutions in official documentation first
+2. Review project's `.docs/` folder for relevant info
+3. Ground all solutions in official documentation first (1st party -> 2nd party -> 3rd party)
 
 ## 🧠 Core Thinking Patterns
 
@@ -34,7 +33,7 @@
 
 When facing any development choice, prioritize in this order:
 
-1. **Documentation Compliance**: Does this align with Quickshell best practices?
+1. **Documentation Compliance**: Does this align with best practices?
 2. **Resource Efficiency**: Can this be loaded/computed only when needed?
 3. **User Experience**: Does this make the system easier to use and customize?
 4. **Maintainability**: Will this be clear to future developers?
@@ -43,7 +42,7 @@ When facing any development choice, prioritize in this order:
 ## 🚫 Warning Signals
 
 If you find yourself doing any of these, reconsider:
-- Implementing functionality that might already exist in Quickshell
+- Implementing functionality that might already exist extensively
 - Loading resources that aren't immediately visible/needed
 - Creating custom solutions without checking documentation first
 - Making configuration difficult to share or discover
@@ -89,7 +88,7 @@ Rectangle {
     property string componentId: "performance"
     property string parentComponentId: "system"
     property var childComponentIds: ["cpu", "ram", "storage"]
-    property string menuPath: "system.performance"
+    property string menuPath: "system.performance"  // can this use componentId and parentComponentId to dynamically create instead? Maybe this should be a function call (getter) instead.
     
     function menu(startPath) {
         unifiedMenu.show(this, 0, 0, startPath || menuPath)
@@ -111,13 +110,13 @@ Rectangle {
 ## 📋 Quality Gates
 
 Before considering any implementation complete:
-- [ ] Verified against latest Quickshell documentation
-- [ ] Implements lazy loading where applicable  
+- [ ] Verified against latest documentation for dependencies
+- [ ] Implements lazy loading where applicable
 - [ ] Provides graceful fallbacks for missing resources
 - [ ] Follows established project architecture patterns
 - [ ] Minimizes resource usage during startup
-- [ ] **Implements GraphicalComponent interface with parent/child awareness**
-- [ ] **Provides standard menu() method for hierarchical navigation**
+- [ ] Implements GraphicalComponent interface with parent/child awareness
+- [ ] Provides standard menu() method for hierarchical navigation
 
 ---
 
