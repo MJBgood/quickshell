@@ -295,15 +295,6 @@ PopupWindow {
                         onClicked: toggleConfig("autoHideEmpty")
                     }
                     
-                    // Show workspace previews on hover
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Show Previews"
-                        value: getConfigValue("showPreviews", false) ? "Enabled" : "Disabled"
-                        isActive: getConfigValue("showPreviews", false)
-                        onClicked: toggleConfig("showPreviews")
-                    }
-                    
                     // Show application icons
                     ConfigToggleItem {
                         width: parent.width
@@ -479,7 +470,6 @@ PopupWindow {
             "clickToSwitch": true,
             "scrollToSwitch": true,
             "autoHideEmpty": false,
-            "showPreviews": false,
             "showApplicationIcons": true
         }
         

@@ -4,3 +4,6 @@ BrightnessWidget 1.0 BrightnessWidget.qml
 CpuTempWidget 1.0 CpuTempWidget.qml
 GpuTempWidget 1.0 GpuTempWidget.qml
 PowerWidget 1.0 PowerWidget.qml
+WallpaperSelector 1.0 WallpaperSelector.qml
+WallpaperBackground 1.0 WallpaperBackground.qml
+WidgetContainer 1.0 WidgetContainer.qml

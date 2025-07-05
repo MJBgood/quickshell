@@ -6,8 +6,7 @@ Column {
     id: pollingControl
     
     // Required properties
-    required property string monitorType  // "cpu", "ram", or "storage"
-    required property var systemMonitorService
+    property var temperatureService: null
     property var themeService: null
     
     spacing: 8
@@ -17,51 +16,23 @@ Column {
     property real currentRate: getCurrentPollingRate()
     
     function getCurrentPollingRate() {
-        if (!systemMonitorService) return 2.0
-        
-        switch (monitorType) {
-            case "cpu":
-                return systemMonitorService.getCpuPollingRate()
-            case "ram":
-                return systemMonitorService.getRamPollingRate()
-            case "storage":
-                return systemMonitorService.getStoragePollingRate()
-            default:
-                return 2.0
-        }
+        if (!temperatureService) return 10.0
+        return temperatureService.getPollingRate()
     }
     
-    // Update current rate when service intervals change
+    // Update current rate when service interval changes
     Connections {
-        target: systemMonitorService
-        function onCpuUpdateIntervalChanged() {
-            if (monitorType === "cpu") currentRate = getCurrentPollingRate()
-        }
-        function onRamUpdateIntervalChanged() {
-            if (monitorType === "ram") currentRate = getCurrentPollingRate()
-        }
-        function onStorageUpdateIntervalChanged() {
-            if (monitorType === "storage") currentRate = getCurrentPollingRate()
+        target: temperatureService
+        function onUpdateIntervalChanged() {
+            currentRate = getCurrentPollingRate()
         }
     }
     
     function setPollingRate(seconds) {
-        if (!systemMonitorService) return
+        if (!temperatureService) return
         
-        console.log("[PollingRateControl] Setting", monitorType, "polling rate to", seconds, "seconds")
-        
-        switch (monitorType) {
-            case "cpu":
-                systemMonitorService.setCpuPollingRate(seconds)
-                break
-            case "ram":
-                systemMonitorService.setRamPollingRate(seconds)
-                break
-            case "storage":
-                systemMonitorService.setStoragePollingRate(seconds)
-                break
-        }
-        
+        console.log("[TemperaturePollingRateControl] Setting temperature polling rate to", seconds, "seconds")
+        temperatureService.setPollingRate(seconds)
         currentRate = seconds
     }
     
@@ -82,13 +53,13 @@ Column {
         color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
     }
     
-    // Preset rate buttons
+    // Preset rate buttons for temperature monitoring
     Flow {
         width: parent.width
         spacing: 4
         
         Repeater {
-            model: getPresetRates()
+            model: [2, 5, 10, 30, 60]  // Temperature doesn't need sub-second polling
             
             Rectangle {
                 width: 40
@@ -136,18 +107,6 @@ Column {
                     NumberAnimation { duration: 100 }
                 }
             }
-        }
-    }
-    
-    function getPresetRates() {
-        switch (monitorType) {
-            case "cpu":
-            case "ram":
-                return [0.5, 1, 2, 5, 10]  // Fast polling options for CPU/RAM
-            case "storage":
-                return [5, 10, 30, 60, 120]  // Slower options for storage
-            default:
-                return [1, 2, 5, 10]
         }
     }
 }

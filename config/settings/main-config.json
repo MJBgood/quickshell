@@ -27,17 +27,31 @@
       "cpu": {
         "precisionDigits": 1,
         "warningThreshold": 80,
-        "criticalThreshold": 95
+        "criticalThreshold": 95,
+        "pollingRate": 1
       },
       "ram": {
         "precisionDigits": 0,
         "warningThreshold": 70,
-        "criticalThreshold": 85
+        "criticalThreshold": 85,
+        "pollingRate": 1
       },
       "storage": {
         "precisionDigits": 1,
         "warningThreshold": 80,
-        "criticalThreshold": 90
+        "criticalThreshold": 90,
+        "pollingRate": 60
+      },
+      "temperature": {
+        "pollingRate": 10,
+        "cpu": {
+          "warningThreshold": 70,
+          "criticalThreshold": 85
+        },
+        "gpu": {
+          "warningThreshold": 75,
+          "criticalThreshold": 90
+        }
       }
     }
   },
@@ -129,7 +143,10 @@
     "dateFormat": "short"
   },
   "cpu": {
-    "showFrequency": true
+    "showFrequency": true,
+    "monitor": {
+      "enabled": false
+    }
   },
   "workspaces": {
     "showNumbers": true,
@@ -137,7 +154,7 @@
     "showWindowCount": true,
     "showOnlyActive": false,
     "autoHideEmpty": true,
-    "showPreviews": false,
+    "showPreviews": true,
     "cornerRadius": "medium",
     "showApplicationIcons": false,
     "maxApplicationIcons": 3,

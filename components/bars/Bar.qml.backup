@@ -21,7 +21,6 @@ PanelWindow {
     property var sessionOverlay: null
     property var shellRoot: null
     property var wallpaperService: null
-    property var widgetRegistry: null
     
     // GraphicalComponent interface implementation
     property string componentId: "bar"
@@ -1130,7 +1129,6 @@ PanelWindow {
             item.configService = bar.configService
             item.themeService = bar.themeService
             item.wallpaperService = bar.wallpaperService
-            item.widgetRegistry = bar.widgetRegistry
             
             item.closed.connect(function() {
                 barMenuLoader.active = false

@@ -273,8 +273,14 @@ Item {
                 if (value && typeof value === 'object' && key in value) {
                     value = value[key]
                 } else {
+                    console.log(logCategory, `Path '${keyPath}' not found, returning default:`, defaultValue)
                     return defaultValue
                 }
+            }
+            
+            // Debug polling rate requests specifically
+            if (keyPath.includes('pollingRate')) {
+                console.log(logCategory, `getValue('${keyPath}') = ${value} (type: ${typeof value})`)
             }
             
             return value

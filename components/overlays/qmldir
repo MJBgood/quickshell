@@ -25,3 +25,4 @@ ThemeDropdown 1.0 ThemeDropdown.qml
 WorkspacesContextMenu 1.0 WorkspacesContextMenu.qml
 SessionOverlay 1.0 SessionOverlay.qml
 PollingRateControl 1.0 PollingRateControl.qml
+TemperaturePollingRateControl 1.0 TemperaturePollingRateControl.qml

@@ -3,19 +3,22 @@ import Quickshell.Hyprland
 import QtQuick
 import QtQuick.Controls
 import "../base"
+import "../widgets"
 
 PopupWindow {
     id: barMenu
     
     // Window properties
     implicitWidth: 320
-    implicitHeight: Math.min(450, menuContent.contentHeight + 32)
+    implicitHeight: 450  // Fixed height to ensure scrolling works
     visible: false
     color: "transparent"
     
     // Services
     property var configService: null
     property var themeService: null
+    property var wallpaperService: null
+    property var widgetRegistry: null
     
     // Component hierarchy properties
     property string componentId: "bar"
@@ -61,8 +64,6 @@ PopupWindow {
         border.width: 1
         radius: 12
         
-        property real contentHeight: scrollView.contentHeight
-        
         ScrollView {
             id: scrollView
             anchors.fill: parent
@@ -97,37 +98,54 @@ PopupWindow {
                 width: Math.max(parent.width - 16, 280)
                 spacing: 12
                 
-                // Header
-                Item {
+                // Navigation Header (matching other context menus)
+                Row {
                     width: parent.width
                     height: 32
+                    spacing: 8
                     
-                    Text {
-                        id: iconText
-                        text: "🔧"
-                        font.pixelSize: 20
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
+                    // Parent navigation button (even though bar has no parent, keep for consistency)
+                    Rectangle {
+                        width: 28
+                        height: 28
+                        radius: 6
+                        visible: false  // Bar has no parent, but keep structure consistent
+                        color: "transparent"
+                        border.width: 1
+                        border.color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                     }
                     
-                    Column {
-                        anchors.left: iconText.right
-                        anchors.leftMargin: 12
-                        anchors.right: closeButton.left
-                        anchors.rightMargin: 12
-                        anchors.verticalCenter: parent.verticalCenter
+                    // Header content
+                    Item {
+                        width: parent.width - 32 // Account for close button
+                        height: 32
                         
                         Text {
-                            text: "Status Bar Configuration"
-                            font.pixelSize: 14
-                            font.weight: Font.DemiBold
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            id: iconText
+                            text: "🔧"
+                            font.pixelSize: 20
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
                         }
                         
-                        Text {
-                            text: "Layout and Position Settings"
-                            font.pixelSize: 10
-                            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        Column {
+                            anchors.left: iconText.right
+                            anchors.leftMargin: 12
+                            anchors.right: parent.right
+                            anchors.verticalCenter: parent.verticalCenter
+                            
+                            Text {
+                                text: "Status Bar"
+                                font.pixelSize: 14
+                                font.weight: Font.DemiBold
+                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            }
+                            
+                            Text {
+                                text: "Layout and Position Settings"
+                                font.pixelSize: 10
+                                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                            }
                         }
                     }
                     
@@ -138,8 +156,6 @@ PopupWindow {
                         height: 24
                         radius: 12
                         color: closeArea.containsMouse ? "#f38ba8" : "transparent"
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
                         
                         Text {
                             anchors.centerIn: parent
@@ -170,82 +186,7 @@ PopupWindow {
                     color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
-                // Child Components Navigation
-                Column {
-                    width: parent.width
-                    spacing: 6
-                    
-                    Text {
-                        text: "Bar Components:"
-                        font.pixelSize: 12
-                        font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                    }
-                    
-                    // CPU Monitor
-                    ComponentNavigationItem {
-                        width: parent.width
-                        componentId: "cpu"
-                        title: "CPU Monitor"
-                        icon: "💻"
-                        description: "Processor usage monitoring"
-                        enabled: getConfigValue("cpu.enabled", true)
-                        onClicked: navigateToChild("cpu")
-                    }
-                    
-                    // RAM Monitor
-                    ComponentNavigationItem {
-                        width: parent.width
-                        componentId: "ram"
-                        title: "RAM Monitor"
-                        icon: "🧠"
-                        description: "Memory usage monitoring"
-                        enabled: getConfigValue("ram.enabled", true)
-                        onClicked: navigateToChild("ram")
-                    }
-                    
-                    // Storage Monitor
-                    ComponentNavigationItem {
-                        width: parent.width
-                        componentId: "storage"
-                        title: "Storage Monitor"
-                        icon: "💾"
-                        description: "Disk usage monitoring"
-                        enabled: getConfigValue("storage.enabled", true)
-                        onClicked: navigateToChild("storage")
-                    }
-                    
-                    // Clock
-                    ComponentNavigationItem {
-                        width: parent.width
-                        componentId: "clock"
-                        title: "Clock Display"
-                        icon: "🕐"
-                        description: "Time and date display"
-                        enabled: getConfigValue("clock.enabled", true)
-                        onClicked: navigateToChild("clock")
-                    }
-                    
-                    // Workspaces
-                    ComponentNavigationItem {
-                        width: parent.width
-                        componentId: "workspaces"
-                        title: "Workspace Display"
-                        icon: "🖥️"
-                        description: "Workspace indicator and switcher"
-                        enabled: getConfigValue("workspaces.enabled", true)
-                        onClicked: navigateToChild("workspaces")
-                    }
-                }
-                
-                // Separator
-                Rectangle {
-                    width: parent.width
-                    height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
-                }
-                
-                // Bar Layout Configuration
+                // Bar configuration
                 Column {
                     width: parent.width
                     spacing: 8
@@ -265,14 +206,117 @@ PopupWindow {
                         isActive: true
                         onClicked: togglePosition()
                     }
+                }
+                
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // Widget management
+                Column {
+                    width: parent.width
+                    spacing: 8
                     
-                    // Show performance metrics toggle
+                    Row {
+                        width: parent.width
+                        spacing: 8
+                        
+                        Text {
+                            text: "Widgets:"
+                            font.pixelSize: 12
+                            font.weight: Font.DemiBold
+                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Text {
+                            text: getWidgetStats()
+                            font.pixelSize: 10
+                            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                    
+                    // Dynamic widget list grouped by category
+                    Repeater {
+                        model: getWidgetCategories()
+                        
+                        Column {
+                            width: parent.width
+                            spacing: 4
+                            
+                            // Category header
+                            Text {
+                                visible: modelData.widgets.length > 0
+                                text: modelData.icon + " " + modelData.name
+                                font.pixelSize: 10
+                                font.weight: Font.Medium
+                                color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                            }
+                            
+                            // Widgets in this category
+                            Repeater {
+                                model: modelData.widgets
+                                
+                                ConfigToggleItem {
+                                    width: parent.width
+                                    label: modelData.icon + " " + modelData.name
+                                    value: modelData.enabled ? "Enabled" : "Disabled"
+                                    isActive: modelData.enabled
+                                    onClicked: toggleWidget(modelData.id)
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // Wallpaper Configuration
+                Column {
+                    width: parent.width
+                    spacing: 8
+                    
+                    Text {
+                        text: "Wallpaper:"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    }
+                    
+                    // Current wallpaper info
                     ConfigToggleItem {
                         width: parent.width
-                        label: "Performance Monitors"
-                        value: getConfigValue("developer.showPerformanceMetrics", true) ? "Visible" : "Hidden"
-                        isActive: getConfigValue("developer.showPerformanceMetrics", true)
-                        onClicked: toggleConfig("developer.showPerformanceMetrics")
+                        label: "Current"
+                        value: getWallpaperDisplayName()
+                        isActive: getWallpaperService() ? getWallpaperService().wallpapers.length > 0 : false
+                        onClicked: openWallpaperSelector()
+                    }
+                    
+                    // Random wallpaper
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Random Wallpaper"
+                        value: "Click to Apply"
+                        isActive: false
+                        onClicked: setRandomWallpaper()
+                    }
+                    
+                    // Open wallpaper folder
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Open Wallpaper Folder"
+                        value: "📁 Browse"
+                        isActive: true
+                        onClicked: openWallpaperFolder()
                     }
                 }
                 
@@ -295,116 +339,45 @@ PopupWindow {
                         color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
-                    // Enable all monitors
+                    // Enable all widgets
                     ConfigToggleItem {
                         width: parent.width
-                        label: "Enable All Monitors"
+                        label: "Enable All Widgets"
                         value: "Click to Enable"
                         isActive: false
-                        onClicked: enableAllMonitors()
+                        onClicked: enableAllWidgets()
                     }
                     
-                    // Disable all monitors
+                    // Disable all widgets
                     ConfigToggleItem {
                         width: parent.width
-                        label: "Disable All Monitors"
+                        label: "Disable All Widgets"
                         value: "Click to Disable"
                         isActive: false
-                        onClicked: disableAllMonitors()
+                        onClicked: disableAllWidgets()
+                    }
+                    
+                    // Reset to defaults
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Reset Widget Settings"
+                        value: "Click to Reset"
+                        isActive: false
+                        onClicked: resetWidgetSettings()
                     }
                 }
             }
         }
     }
     
-    // ComponentNavigationItem Component
-    component ComponentNavigationItem: Rectangle {
-        property string componentId: ""
-        property string title: ""
-        property string icon: ""
-        property string description: ""
-        property bool enabled: true
-        signal clicked()
-        
-        height: 48
-        radius: 8
-        color: itemMouse.containsMouse ? 
-               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
-               "transparent"
-        border.width: 1
-        border.color: enabled ? 
-                     (themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1") :
-                     (themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70")
-        
-        Row {
-            anchors.left: parent.left
-            anchors.leftMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.right: navIcon.left
-            anchors.rightMargin: 8
-            spacing: 12
-            
-            Text {
-                text: icon
-                font.pixelSize: 18
-                anchors.verticalCenter: parent.verticalCenter
-                opacity: enabled ? 1.0 : 0.5
-            }
-            
-            Column {
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-                
-                Text {
-                    text: title
-                    font.pixelSize: 12
-                    font.weight: Font.Medium
-                    color: enabled ? 
-                           (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4") :
-                           (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
-                }
-                
-                Text {
-                    text: description + (enabled ? "" : " (Disabled)")
-                    font.pixelSize: 9
-                    color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
-                    opacity: enabled ? 0.8 : 0.6
-                }
-            }
-        }
-        
-        Text {
-            id: navIcon
-            anchors.right: parent.right
-            anchors.rightMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
-            text: "⚙️"
-            font.pixelSize: 16
-            color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
-            opacity: enabled ? 1.0 : 0.5
-        }
-        
-        MouseArea {
-            id: itemMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: parent.clicked()
-        }
-        
-        Behavior on color {
-            ColorAnimation { duration: 150 }
-        }
-    }
-    
-    // ConfigToggleItem Component
+    // ConfigToggleItem Component (matching other context menus)
     component ConfigToggleItem: Rectangle {
         property string label: ""
         property string value: ""
         property bool isActive: false
         signal clicked()
         
-        height: 28
+        height: 24
         radius: 4
         color: toggleMouse.containsMouse ? 
                (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
@@ -418,16 +391,16 @@ PopupWindow {
             
             Text {
                 text: label + ":"
-                font.pixelSize: 11
+                font.pixelSize: 10
                 color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 anchors.verticalCenter: parent.verticalCenter
             }
             
             Text {
                 text: value
-                font.pixelSize: 11
+                font.pixelSize: 10
                 font.weight: Font.Medium
-                color: isActive ? "#a6e3a1" : "#89b4fa"
+                color: isActive ? "#a6e3a1" : "#f38ba8"
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -471,24 +444,131 @@ PopupWindow {
         configService.saveConfig()
     }
     
-    function enableAllMonitors() {
-        if (!configService) return
+    function getWidgetStats() {
+        if (!widgetRegistry) return "No registry"
         
-        configService.setValue("cpu.enabled", true)
-        configService.setValue("ram.enabled", true)
-        configService.setValue("storage.enabled", true)
-        configService.setValue("clock.enabled", true)
-        configService.saveConfig()
+        const stats = widgetRegistry.getStats()
+        return `${stats.enabledWidgets}/${stats.totalWidgets} enabled`
     }
     
-    function disableAllMonitors() {
-        if (!configService) return
+    function getWidgetCategories() {
+        if (!widgetRegistry) return []
         
-        configService.setValue("cpu.enabled", false)
-        configService.setValue("ram.enabled", false)
-        configService.setValue("storage.enabled", false)
-        configService.setValue("clock.enabled", false)
-        configService.saveConfig()
+        const categories = widgetRegistry.categories
+        const widgets = widgetRegistry.getAllWidgetsOrdered()
+        
+        // Group widgets by category
+        const categoryData = {}
+        
+        // Initialize categories
+        Object.keys(categories).forEach(categoryId => {
+            categoryData[categoryId] = {
+                id: categoryId,
+                name: categories[categoryId].name,
+                icon: categories[categoryId].icon,
+                order: categories[categoryId].order,
+                widgets: []
+            }
+        })
+        
+        // Add widgets to their categories
+        widgets.forEach(widget => {
+            const categoryId = widget.category || "system"
+            if (categoryData[categoryId]) {
+                categoryData[categoryId].widgets.push(widget)
+            }
+        })
+        
+        // Return sorted categories with widgets
+        return Object.values(categoryData)
+                    .filter(cat => cat.widgets.length > 0)
+                    .sort((a, b) => a.order - b.order)
+    }
+    
+    function toggleWidget(widgetId) {
+        if (!widgetRegistry) return
+        
+        console.log("Toggling widget:", widgetId)
+        widgetRegistry.toggleWidget(widgetId)
+    }
+    
+    function enableAllWidgets() {
+        if (!widgetRegistry) return
+        
+        console.log("Enabling all widgets")
+        const widgets = widgetRegistry.getAllWidgets()
+        widgets.forEach(widget => {
+            widgetRegistry.setWidgetEnabled(widget.id, true)
+        })
+    }
+    
+    function disableAllWidgets() {
+        if (!widgetRegistry) return
+        
+        console.log("Disabling all widgets")
+        const widgets = widgetRegistry.getAllWidgets()
+        widgets.forEach(widget => {
+            widgetRegistry.setWidgetEnabled(widget.id, false)
+        })
+    }
+    
+    function resetWidgetSettings() {
+        if (!widgetRegistry) return
+        
+        console.log("Resetting widget settings to defaults")
+        const widgets = widgetRegistry.getAllWidgets()
+        widgets.forEach(widget => {
+            widgetRegistry.setWidgetEnabled(widget.id, widget.defaultEnabled)
+        })
+    }
+    
+    // Wallpaper helper functions
+    function getWallpaperService() {
+        return wallpaperService
+    }
+    
+    function getWallpaperDisplayName() {
+        const service = getWallpaperService()
+        if (!service) return "Service Not Available"
+        
+        if (service.wallpapers.length === 0) {
+            return "No Wallpapers Found"
+        }
+        
+        if (!service.currentWallpaper) {
+            return "No Wallpaper Set"
+        }
+        
+        const info = service.getWallpaperInfo(service.currentWallpaper)
+        return info ? info.name : "Unknown"
+    }
+    
+    function openWallpaperSelector() {
+        console.log("Opening wallpaper selector...")
+        const service = getWallpaperService()
+        if (service && service.wallpapers.length === 0) {
+            // Show instructional message first, then open selector anyway
+            console.log("No wallpapers found, but showing selector for folder access...")
+        }
+        
+        // Call global function (same as theme dropdown)
+        if (configService && configService.shellRoot) {
+            configService.shellRoot.showWallpaperSelector()
+        }
+    }
+    
+    function setRandomWallpaper() {
+        const service = getWallpaperService()
+        if (service) {
+            service.setRandomWallpaper()
+        }
+    }
+    
+    function openWallpaperFolder() {
+        const service = getWallpaperService()
+        if (service) {
+            service.openWallpaperDirectory()
+        }
     }
     
     function show(anchorWindow, x, y) {
@@ -554,6 +634,27 @@ PopupWindow {
             childComponent.menu(currentAnchor.window, currentAnchor.rect.x, currentAnchor.rect.y)
         } else {
             console.warn(`[BarContextMenu] Child component ${childId} not found or doesn't support menu()`)
+        }
+    }
+    
+    // Wallpaper selector - lazy loaded
+    Loader {
+        id: wallpaperSelectorLoader
+        source: "../widgets/WallpaperSelector.qml"
+        active: false
+        
+        onLoaded: {
+            console.log("WallpaperSelector loaded on demand")
+            item.wallpaperService = wallpaperService
+            item.themeService = themeService
+            
+            // Auto-hide when closed
+            item.closed.connect(function() {
+                wallpaperSelectorLoader.active = false
+            })
+            
+            // Show immediately after loading
+            item.show(anchor.window)
         }
     }
 }

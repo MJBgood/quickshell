@@ -1,33 +1,21 @@
 import Quickshell
+import Quickshell.Hyprland
 import QtQuick
 import QtCore
 
-PopupWindow {
+PanelWindow {
     id: themeDropdown
     
-    // Window properties
-    implicitWidth: 350
-    implicitHeight: Math.min(400, (themeList.count * 60) + 120)
+    // Window properties - cover entire screen
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
+    
     visible: false
     color: "transparent"
-    
-    onVisibleChanged: {
-        console.log(logCategory, "ThemeDropdown visible changed to:", visible)
-    }
-    
-    // Anchor is required for PopupWindow to be visible
-    anchor {
-        window: null  // Will be set when showing
-        rect {
-            x: 0
-            y: 0
-            width: 1
-            height: 1
-        }
-        edges: Edges.None
-        gravity: Edges.None
-        adjustment: PopupAdjustment.None
-    }
     
     // Services passed from parent
     property var themeService: null
@@ -43,16 +31,36 @@ PopupWindow {
         defaultLogLevel: LoggingCategory.Info
     }
     
-    // Background click area - only intercepts clicks outside the dropdown content
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.LeftButton
-        // Lower z-order so the dropdown content receives clicks first
-        z: -1
-        onClicked: hide()
+    onVisibleChanged: {
+        console.log(logCategory, "ThemeDropdown visible changed to:", visible)
     }
     
-    // Main dropdown container
+    // Focus grab for dismissal
+    HyprlandFocusGrab {
+        id: focusGrab
+        windows: [themeDropdown]
+        active: visible
+        onCleared: hide()
+    }
+    
+    // Background overlay with click-to-dismiss
+    Rectangle {
+        anchors.fill: parent
+        color: "#80000000"  // Semi-transparent black
+        opacity: parent.visible ? 0.8 : 0
+        
+        Behavior on opacity {
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
+        
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
+            onClicked: hide()
+        }
+    }
+    
+    // Main dropdown container - perfectly centered
     Rectangle {
         anchors.centerIn: parent
         width: 320
@@ -61,7 +69,18 @@ PopupWindow {
         border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         border.width: 2
         radius: 12
-        z: 1  // Higher z-order to receive clicks
+        
+        // Scale animation for appearance
+        scale: parent.visible ? 1.0 : 0.8
+        opacity: parent.visible ? 1.0 : 0.0
+        
+        Behavior on scale {
+            NumberAnimation { duration: 200; easing.type: Easing.OutBack }
+        }
+        
+        Behavior on opacity {
+            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        }
         
         // Header
         Rectangle {
@@ -99,20 +118,26 @@ PopupWindow {
                 width: 24
                 height: 24
                 radius: 12
-                color: themeService ? themeService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
+                color: closeMouseArea.containsMouse ? "#f38ba8" : "transparent"
                 
                 Text {
                     anchors.centerIn: parent
                     text: "×"
-                    color: "white"
+                    color: closeMouseArea.containsMouse ? "#1e1e2e" : "#f38ba8"
                     font.pixelSize: 14
                     font.weight: Font.Bold
                 }
                 
                 MouseArea {
+                    id: closeMouseArea
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: hide()
+                }
+                
+                Behavior on color {
+                    ColorAnimation { duration: 150 }
                 }
             }
         }
@@ -278,39 +303,8 @@ PopupWindow {
     }
     
     // Functions
-    function show(anchorWindow) {
+    function show(window) {
         console.log(logCategory, "ThemeDropdown show() called")
-        
-        if (anchorWindow) {
-            // Set the anchor window (required for PopupWindow to be visible)
-            anchor.window = anchorWindow
-            
-            // Simple center positioning
-            if (anchorWindow.screen) {
-                const screen = anchorWindow.screen
-                const screenWidth = screen.width || 1920
-                const screenHeight = screen.height || 1080
-                
-                // Center the popup on screen
-                const centerX = screenWidth / 2 - implicitWidth / 2
-                const centerY = screenHeight / 2 - implicitHeight / 2
-                
-                console.log(logCategory, "Centering popup at:", centerX + "," + centerY)
-                
-                // Set anchor to center position
-                anchor.rect.x = centerX
-                anchor.rect.y = centerY
-                anchor.rect.width = 1
-                anchor.rect.height = 1
-                
-                // Clear positioning constraints
-                anchor.edges = Edges.None
-                anchor.gravity = Edges.None
-                anchor.adjustment = PopupAdjustment.None
-            }
-        } else {
-            console.warn(logCategory, "No anchor window provided")
-        }
         
         // Ensure themes are loaded
         if (themeService && themeService.availableThemes.length === 0) {

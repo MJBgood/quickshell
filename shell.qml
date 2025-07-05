@@ -26,6 +26,16 @@ ShellRoot {
     Loader {
         id: configServiceLoader  
         source: "./services/ConfigService.qml"
+        onLoaded: {
+            console.log("ConfigService loaded successfully")
+            // Connect to SystemMonitorService if it's already loaded
+            Qt.callLater(() => {
+                if (systemMonitorServiceLoader.item) {
+                    console.log("Connecting ConfigService to SystemMonitorService (late)")
+                    systemMonitorServiceLoader.item.configService = item
+                }
+            })
+        }
     }
     
     Loader {
@@ -60,6 +70,15 @@ ShellRoot {
         onLoaded: {
             console.log("SystemMonitorService loaded successfully")
             console.log("SystemMonitorService initialized:", item.initialized)
+            // Connect config service - use callLater to ensure ConfigService is ready
+            Qt.callLater(() => {
+                if (configServiceLoader.item) {
+                    console.log("Connecting ConfigService to SystemMonitorService")
+                    item.configService = configServiceLoader.item
+                } else {
+                    console.warn("ConfigService not ready when SystemMonitorService loaded")
+                }
+            })
         }
         onStatusChanged: {
             if (status === Loader.Error) {
@@ -96,6 +115,40 @@ ShellRoot {
         }
     }
     
+    Loader {
+        id: wallpaperServiceLoader
+        source: "./services/WallpaperService.qml"
+        onLoaded: {
+            console.log("WallpaperService loaded successfully")
+            console.log("WallpaperService initialized:", item.initialized)
+        }
+        onStatusChanged: {
+            if (status === Loader.Error) {
+                console.error("Failed to load WallpaperService:", sourceComponent.errorString)
+            }
+        }
+    }
+    
+    Loader {
+        id: widgetRegistryLoader
+        source: "./services/WidgetRegistry.qml"
+        onLoaded: {
+            console.log("WidgetRegistry loaded successfully")
+            console.log("WidgetRegistry initialized:", item.initialized)
+            // Connect config service to widget registry
+            Qt.callLater(() => {
+                if (configServiceLoader.item) {
+                    item.configService = configServiceLoader.item
+                }
+            })
+        }
+        onStatusChanged: {
+            if (status === Loader.Error) {
+                console.error("Failed to load WidgetRegistry:", sourceComponent.errorString)
+            }
+        }
+    }
+    
     // Convenience aliases
     property alias themeService: themeServiceLoader.item
     property alias configService: configServiceLoader.item
@@ -105,6 +158,8 @@ ShellRoot {
     property alias systemMonitorService: systemMonitorServiceLoader.item
     property alias windowTracker: windowTrackerLoader.item
     property alias iconResolver: iconResolverLoader.item
+    property alias wallpaperService: wallpaperServiceLoader.item
+    property alias widgetRegistry: widgetRegistryLoader.item
     
     // Global function to show settings overlay
     function showSettings(anchorWindow, anchorRect) {
@@ -123,6 +178,9 @@ ShellRoot {
         }
     }
     
+    // Wallpaper service handles wallpapers via Hyprland native functionality
+    // No custom background windows needed
+    
     // Main UI components - Single bar for primary screen
     Loader {
         id: mainBarLoader
@@ -135,6 +193,8 @@ ShellRoot {
                 systemMonitorServiceLoader.item &&
                 windowTrackerLoader.item &&
                 iconResolverLoader.item &&
+                wallpaperServiceLoader.item &&
+                widgetRegistryLoader.item &&
                 themeServiceLoader.item.currentThemeData !== null
         
         onLoaded: {
@@ -149,6 +209,8 @@ ShellRoot {
             item.iconResolver = iconResolverLoader.item
             item.sessionOverlay = sessionWindow.sessionOverlay  // Pass session overlay
             item.shellRoot = root  // Pass reference to shell for global functions
+            item.wallpaperService = wallpaperServiceLoader.item
+            item.widgetRegistry = widgetRegistryLoader.item
             
             console.log("Services passed to main bar")
         }
@@ -282,6 +344,34 @@ ShellRoot {
         }
     }
     
+    // Wallpaper Selector - Global overlay (same pattern as theme dropdown)
+    Loader {
+        id: globalWallpaperSelectorLoader
+        source: "./components/widgets/WallpaperSelector.qml"
+        active: false
+        
+        onLoaded: {
+            console.log(logCategory, "Global WallpaperSelector loaded")
+            item.wallpaperService = wallpaperServiceLoader.item
+            item.themeService = themeServiceLoader.item
+            
+            // Auto-hide when closed
+            item.closed.connect(function() {
+                console.log(logCategory, "Global WallpaperSelector closed")
+                globalWallpaperSelectorLoader.active = false
+            })
+            
+            // Show immediately after loading
+            item.show(mainBarLoader.item)
+        }
+        
+        onStatusChanged: {
+            if (status === Loader.Error) {
+                console.error(logCategory, "Failed to load global WallpaperSelector:", sourceComponent.errorString)
+            }
+        }
+    }
+
     // Global function to show theme dropdown
     function showThemeDropdown() {
         console.log(logCategory, "showThemeDropdown() called")
@@ -292,6 +382,18 @@ ShellRoot {
         }
         
         globalThemeDropdownLoader.active = true
+    }
+
+    // Global function to show wallpaper selector
+    function showWallpaperSelector() {
+        console.log(logCategory, "showWallpaperSelector() called")
+        
+        // Ensure wallpapers are loaded before showing selector
+        if (wallpaperServiceLoader.item) {
+            wallpaperServiceLoader.item.discoverWallpapers()
+        }
+        
+        globalWallpaperSelectorLoader.active = true
     }
     
     Component.onCompleted: {

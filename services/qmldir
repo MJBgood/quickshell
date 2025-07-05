@@ -10,3 +10,5 @@ singleton RamService RamService.qml
 singleton StorageService StorageService.qml
 singleton TemperatureService TemperatureService.qml
 singleton PowerManagementService PowerManagementService.qml
+singleton WallpaperService WallpaperService.qml
+singleton WidgetRegistry WidgetRegistry.qml

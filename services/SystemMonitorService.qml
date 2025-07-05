@@ -5,6 +5,16 @@ import Quickshell.Io
 Item {
     id: systemMonitorService
     
+    // Configuration service reference
+    property var configService: null
+    
+    onConfigServiceChanged: {
+        if (configService) {
+            console.log(logCategory, "ConfigService connected, loading polling rates")
+            updateIntervalsFromConfig()
+        }
+    }
+    
     // Logging category for this service
     LoggingCategory {
         id: logCategory
@@ -16,10 +26,49 @@ Item {
     property bool initialized: false
     property bool monitoring: false
     
-    // Update intervals (in milliseconds)
-    property int cpuUpdateInterval: 2000    // 2 seconds
-    property int ramUpdateInterval: 2000    // 2 seconds  
-    property int storageUpdateInterval: 30000 // 30 seconds (less frequent)
+    // Update intervals (in milliseconds) - reactive to config changes
+    property int cpuUpdateInterval: 2000
+    property int ramUpdateInterval: 2000
+    property int storageUpdateInterval: 30000
+    
+    // React to config changes
+    Connections {
+        target: configService
+        function onConfigChanged() {
+            updateIntervalsFromConfig()
+        }
+    }
+    
+    function updateIntervalsFromConfig() {
+        if (!configService) {
+            console.log(logCategory, "No configService available for loading intervals")
+            return
+        }
+        
+        const newCpuInterval = configService.getValue("ui.monitors.cpu.pollingRate", 2.0) * 1000
+        const newRamInterval = configService.getValue("ui.monitors.ram.pollingRate", 2.0) * 1000
+        const newStorageInterval = configService.getValue("ui.monitors.storage.pollingRate", 30.0) * 1000
+        
+        console.log(logCategory, "Loading from config - CPU:", newCpuInterval/1000+"s", "RAM:", newRamInterval/1000+"s", "Storage:", newStorageInterval/1000+"s")
+        
+        if (cpuUpdateInterval !== newCpuInterval) {
+            console.log(logCategory, "Updating CPU interval from", cpuUpdateInterval/1000+"s", "to", newCpuInterval/1000+"s")
+            cpuUpdateInterval = newCpuInterval
+            cpuTimer.interval = newCpuInterval
+        }
+        
+        if (ramUpdateInterval !== newRamInterval) {
+            console.log(logCategory, "Updating RAM interval from", ramUpdateInterval/1000+"s", "to", newRamInterval/1000+"s")
+            ramUpdateInterval = newRamInterval
+            ramTimer.interval = newRamInterval
+        }
+        
+        if (storageUpdateInterval !== newStorageInterval) {
+            console.log(logCategory, "Updating Storage interval from", storageUpdateInterval/1000+"s", "to", newStorageInterval/1000+"s")
+            storageUpdateInterval = newStorageInterval
+            storageTimer.interval = newStorageInterval
+        }
+    }
     
     // Current system stats
     property real cpuUsage: 0.0
@@ -289,12 +338,18 @@ Item {
         }
     }
     
-    // Polling rate control functions
+    // Polling rate control functions with config persistence
     function setCpuPollingRate(seconds) {
         const newInterval = seconds * 1000  // Convert to milliseconds
         console.log(logCategory, "Setting CPU polling rate to", seconds, "seconds")
         cpuUpdateInterval = newInterval
         cpuTimer.interval = newInterval
+        
+        // Save to config
+        if (configService && configService.setValue("ui.monitors.cpu.pollingRate", seconds)) {
+            configService.saveConfig()
+            console.log(logCategory, "CPU polling rate saved to config")
+        }
     }
     
     function setRamPollingRate(seconds) {
@@ -302,6 +357,12 @@ Item {
         console.log(logCategory, "Setting RAM polling rate to", seconds, "seconds")
         ramUpdateInterval = newInterval
         ramTimer.interval = newInterval
+        
+        // Save to config
+        if (configService && configService.setValue("ui.monitors.ram.pollingRate", seconds)) {
+            configService.saveConfig()
+            console.log(logCategory, "RAM polling rate saved to config")
+        }
     }
     
     function setStoragePollingRate(seconds) {
@@ -309,6 +370,12 @@ Item {
         console.log(logCategory, "Setting Storage polling rate to", seconds, "seconds")
         storageUpdateInterval = newInterval
         storageTimer.interval = newInterval
+        
+        // Save to config
+        if (configService && configService.setValue("ui.monitors.storage.pollingRate", seconds)) {
+            configService.saveConfig()
+            console.log(logCategory, "Storage polling rate saved to config")
+        }
     }
     
     function getCpuPollingRate() {
@@ -326,6 +393,14 @@ Item {
     Component.onCompleted: {
         console.log(logCategory, "Initialized")
         initialized = true
+        
+        // Load intervals from config once configService is available
+        Qt.callLater(() => {
+            if (configService) {
+                updateIntervalsFromConfig()
+                console.log(logCategory, "Loaded polling rates from config")
+            }
+        })
         
         // Start monitoring by default
         startMonitoring()

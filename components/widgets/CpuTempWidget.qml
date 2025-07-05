@@ -104,5 +104,11 @@ Rectangle {
         onExited: parent.parent && (parent.parent.opacity = 1.0)
     }
     
-    Component.onCompleted: console.log("[CpuTempWidget] Initialized with TemperatureService")
+    Component.onCompleted: {
+        console.log("[CpuTempWidget] Initialized with TemperatureService")
+        // Connect config service to TemperatureService if available
+        if (configService && !TemperatureService.configService) {
+            TemperatureService.configService = configService
+        }
+    }
 }

@@ -142,21 +142,19 @@ PopupWindow {
                         width: parent.width
                     }
                     
-                    Text {
-                        text: temperatureService ? `Update interval: ${temperatureService.updateInterval/1000}s` : "Update interval: --s"
-                        font.family: "Inter"
-                        font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
-                    }
-                    
-                    Text {
-                        text: "Configurable via ~/.config/quickshell/config/settings/main-config.json"
-                        font.family: "Inter"
-                        font.pixelSize: 9
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
-                        wrapMode: Text.Wrap
-                        width: parent.width
-                    }
+                }
+                
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                }
+                
+                // Polling Rate Control
+                TemperaturePollingRateControl {
+                    width: parent.width
+                    temperatureService: contextMenu.temperatureService
+                    themeService: contextMenu.themeService
                 }
             }
         }

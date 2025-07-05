@@ -9,6 +9,13 @@ Singleton {
     // Configuration service reference
     property var configService: null
     
+    onConfigServiceChanged: {
+        if (configService) {
+            console.log("[TemperatureService] ConfigService connected, loading polling rate")
+            updateIntervalFromConfig()
+        }
+    }
+    
     // Public properties - automatically reactive
     property real cpuTemp: 0.0
     property real gpuTemp: 0.0
@@ -16,9 +23,27 @@ Singleton {
     property string gpuSensor: "Unknown"
     property bool ready: false
     
-    // Update interval (in milliseconds) - configurable
-    property int updateInterval: configService ? 
-        configService.getValue("temperature.updateInterval", 10000) : 10000
+    // Update interval (in milliseconds) - reactive to config changes
+    property int updateInterval: 10000
+    
+    // React to config changes
+    Connections {
+        target: configService
+        function onConfigChanged() {
+            updateIntervalFromConfig()
+        }
+    }
+    
+    function updateIntervalFromConfig() {
+        if (!configService) return
+        
+        const newInterval = configService.getValue("ui.monitors.temperature.pollingRate", 10.0) * 1000
+        if (updateInterval !== newInterval) {
+            updateInterval = newInterval
+            updateTimer.interval = newInterval
+            console.log("[TemperatureService] Updated polling rate from config:", newInterval/1000, "seconds")
+        }
+    }
     
     // Internal process for sensors command
     Process {
@@ -35,6 +60,7 @@ Singleton {
     
     // Timer for periodic updates
     Timer {
+        id: updateTimer
         interval: temperatureService.updateInterval
         running: true
         repeat: true
@@ -135,8 +161,35 @@ Singleton {
         return "critical"
     }
     
+    // Polling rate control functions with config persistence
+    function setPollingRate(seconds) {
+        const newInterval = seconds * 1000  // Convert to milliseconds
+        console.log("[TemperatureService] Setting polling rate to", seconds, "seconds")
+        updateInterval = newInterval
+        updateTimer.interval = newInterval
+        
+        // Save to config
+        if (configService && configService.setValue("ui.monitors.temperature.pollingRate", seconds)) {
+            configService.saveConfig()
+            console.log("[TemperatureService] Temperature polling rate saved to config")
+        }
+    }
+    
+    function getPollingRate() {
+        return updateInterval / 1000  // Convert to seconds
+    }
+    
     Component.onCompleted: {
         console.log("[TemperatureService] Initialized - will update every", updateInterval/1000, "seconds")
+        
+        // Load interval from config once configService is available
+        Qt.callLater(() => {
+            if (configService) {
+                updateIntervalFromConfig()
+                console.log("[TemperatureService] Loaded polling rate from config")
+            }
+        })
+        
         // Initial temperature read
         Qt.callLater(() => { sensorsProcess.running = true })
     }
