@@ -1,6 +1,48 @@
 {
+  "paths": {
+    "themesPath": null,
+    "configPath": null
+  },
+  "ui": {
+    "panels": {
+      "height": 32,
+      "borderRadius": 8,
+      "margin": 10,
+      "spacing": 4
+    },
+    "menus": {
+      "width": 300,
+      "itemHeight": 36,
+      "maxHeight": 400,
+      "borderRadius": 8,
+      "margin": 10
+    },
+    "timing": {
+      "updateInterval": 2000,
+      "hoverDelay": 800,
+      "autoHideDelay": 5000,
+      "animationDuration": 300
+    },
+    "monitors": {
+      "cpu": {
+        "precisionDigits": 1,
+        "warningThreshold": 80,
+        "criticalThreshold": 95
+      },
+      "ram": {
+        "precisionDigits": 0,
+        "warningThreshold": 70,
+        "criticalThreshold": 85
+      },
+      "storage": {
+        "precisionDigits": 1,
+        "warningThreshold": 80,
+        "criticalThreshold": 90
+      }
+    }
+  },
   "theme": {
-    "activeTheme": "catppuccin-mocha",
+    "activeTheme": "catppuccin",
     "activeMode": "dark",
     "followSystemTheme": false,
     "autoSwitchTimes": {
@@ -52,8 +94,8 @@
       "showIcon": true,
       "showLabel": false,
       "showPercentage": true,
-      "customIcon": "",
-      "showFrequency": true
+      "showFrequency": true,
+      "customIcon": ""
     },
     "ram": {
       "enabled": true,
@@ -62,8 +104,9 @@
       "showIcon": true,
       "showLabel": false,
       "showPercentage": true,
-      "customIcon": "",
-      "showFrequency": false
+      "showFrequency": false,
+      "showTotal": true,
+      "customIcon": ""
     },
     "storage": {
       "enabled": true,
@@ -72,13 +115,108 @@
       "showIcon": true,
       "showLabel": false,
       "showPercentage": true,
-      "customIcon": "",
-      "showBytes": true
+      "showBytes": true,
+      "customIcon": ""
     }
   },
   "developer": {
     "debugMode": false,
     "showPerformanceMetrics": true,
     "verboseLogging": false
+  },
+  "clock": {
+    "showDate": true,
+    "dateFormat": "short"
+  },
+  "cpu": {
+    "showFrequency": true
+  },
+  "workspaces": {
+    "showNumbers": true,
+    "showNames": true,
+    "showWindowCount": true,
+    "showOnlyActive": false,
+    "autoHideEmpty": true,
+    "showPreviews": false,
+    "cornerRadius": "medium",
+    "showApplicationIcons": false,
+    "maxApplicationIcons": 3,
+    "iconSize": "medium",
+    "showIconCounts": true
+  },
+  "storage": {
+    "showBytes": true
+  },
+  "audio": {
+    "enabled": true,
+    "showIcon": true,
+    "showPercentage": true,
+    "showSlider": false,
+    "precision": 0
+  },
+  "brightness": {
+    "enabled": true,
+    "showIcon": true,
+    "showPercentage": true,
+    "showSlider": false,
+    "precision": 0
+  },
+  "cpu_temp": {
+    "enabled": true,
+    "showIcon": true,
+    "showValue": true,
+    "showUnit": true,
+    "updateInterval": 10000
+  },
+  "gpu_temp": {
+    "enabled": true,
+    "showIcon": true,
+    "showValue": true,
+    "showUnit": true,
+    "updateInterval": 10000
+  },
+  "battery": {
+    "enabled": true,
+    "showIcon": true,
+    "showPercentage": true,
+    "showTime": false,
+    "precision": 0
+  },
+  "temperature": {
+    "updateInterval": 10000,
+    "cpuSensor": "k10temp",
+    "gpuSensor": "amdgpu",
+    "thresholds": {
+      "cpu": {
+        "warm": 65,
+        "hot": 80,
+        "critical": 90
+      },
+      "gpu": {
+        "warm": 70,
+        "hot": 85,
+        "critical": 95
+      }
+    }
+  },
+  "power": {
+    "enabled": true,
+    "showIcon": true,
+    "showText": true,
+    "confirmActions": true,
+    "lockCommand": "hyprlock",
+    "actions": {
+      "lock": true,
+      "logout": true,
+      "suspend": true,
+      "hibernate": true,
+      "reboot": true,
+      "poweroff": true
+    },
+    "shortcuts": {
+      "lock": "Super+L",
+      "logout": "Super+Shift+Q",
+      "powerMenu": "Super+Shift+P"
+    }
   }
 }

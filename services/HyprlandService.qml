@@ -27,31 +27,30 @@ Item {
     property var activeWindow: Hyprland.focusedWindow
     property int windowCount: 0  // TODO: Calculate from real windows
     
-    // Signals
-    signal workspaceChanged(int workspaceId)
-    signal windowChanged(var window)
-    signal windowCreated(var window)
-    signal windowDestroyed(var window)
-    signal workspaceCreated(int workspaceId)
-    signal workspaceDestroyed(int workspaceId)
+    // Custom signals for service events (using unique names to avoid conflicts)
+    signal hyprlandServiceError(string error)
+    signal workspaceActivated(int workspaceId)
+    signal rawHyprlandEvent(string eventName, string eventData)
     signal connected()
     signal disconnected()
-    signal errorOccurred(string error)
     
-    // Connect to Hyprland singleton events
+    // Connect to Hyprland singleton events using automatic property change signals
     Connections {
         target: Hyprland
         
+        // Use automatic property change signal for focusedWorkspace
         function onFocusedWorkspaceChanged() {
             if (Hyprland.focusedWorkspace) {
                 const newWorkspaceId = Hyprland.focusedWorkspace.id
                 console.log(logCategory, `Workspace changed to ${newWorkspaceId}`)
-                workspaceChanged(newWorkspaceId)
+                workspaceActivated(newWorkspaceId)
             }
         }
         
+        // Use the official rawEvent signal from Quickshell
         function onRawEvent(event) {
-            console.log(logCategory, `Raw event: ${event}`)
+            console.log(logCategory, `Raw event: ${event.name} - ${event.data}`)
+            rawHyprlandEvent(event.name, event.data)
         }
     }
     
@@ -67,7 +66,7 @@ Item {
             
         } catch (error) {
             console.error(`HyprlandService: Failed to switch workspace:`, error)
-            errorOccurred(`Failed to switch workspace: ${error}`)
+            hyprlandServiceError(`Failed to switch workspace: ${error}`)
             return false
         }
     }
@@ -92,7 +91,7 @@ Item {
             
         } catch (error) {
             console.error(`HyprlandService: Failed to focus window:`, error)
-            errorOccurred(`Failed to focus window: ${error}`)
+            hyprlandServiceError(`Failed to focus window: ${error}`)
             return false
         }
     }
@@ -122,7 +121,7 @@ Item {
             
         } catch (error) {
             console.error(`HyprlandService: Failed to close window:`, error)
-            errorOccurred(`Failed to close window: ${error}`)
+            hyprlandServiceError(`Failed to close window: ${error}`)
             return false
         }
     }
@@ -143,7 +142,7 @@ Item {
             
         } catch (error) {
             console.error(`HyprlandService: Failed to move window:`, error)
-            errorOccurred(`Failed to move window: ${error}`)
+            hyprlandServiceError(`Failed to move window: ${error}`)
             return false
         }
     }
@@ -173,7 +172,7 @@ Item {
             
         } catch (error) {
             console.error("HyprlandService: Failed to refresh workspaces:", error)
-            errorOccurred(`Failed to refresh workspaces: ${error}`)
+            hyprlandServiceError(`Failed to refresh workspaces: ${error}`)
         }
     }
     
@@ -188,7 +187,7 @@ Item {
             
         } catch (error) {
             console.error("HyprlandService: Failed to refresh windows:", error)
-            errorOccurred(`Failed to refresh windows: ${error}`)
+            hyprlandServiceError(`Failed to refresh windows: ${error}`)
         }
     }
     
@@ -214,7 +213,7 @@ Item {
         } catch (error) {
             console.error("HyprlandService: Failed to connect to Hyprland:", error)
             isConnected = false
-            errorOccurred(`Failed to connect to Hyprland: ${error}`)
+            hyprlandServiceError(`Failed to connect to Hyprland: ${error}`)
         }
     }
     
@@ -225,7 +224,7 @@ Item {
         windows = []
         activeWindow = null
         windowCount = 0
-        this.disconnected()
+        disconnected()
     }
     
     // Initialization

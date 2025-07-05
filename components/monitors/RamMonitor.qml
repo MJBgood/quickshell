@@ -1,4 +1,5 @@
 import QtQuick
+import "../../services"
 import "../overlays"
 import "../base"
 
@@ -7,15 +8,35 @@ Rectangle {
     
     // GraphicalComponent interface implementation
     property string componentId: "ram"
-    property string parentComponentId: "performance"
+    property string parentComponentId: "bar"
     property var childComponentIds: []
-    property string menuPath: "performance.ram"
+    property string menuPath: "ram"
+    property string contextMenuPath: "../overlays/RamContextMenu.qml"
     
     // Services
     property var systemMonitorService: null
     property var configService: null
     property var themeService: null
     property var anchorWindow: null
+    
+    // Dedicated context menu loader - lazy loaded
+    property alias contextMenuLoader: contextMenuLoader
+    
+    Loader {
+        id: contextMenuLoader
+        source: contextMenuPath
+        active: false
+        
+        onLoaded: {
+            item.configService = ramMonitor.configService
+            item.themeService = ramMonitor.themeService
+            item.systemMonitorService = ramMonitor.systemMonitorService
+            
+            item.closed.connect(function() {
+                contextMenuLoader.active = false
+            })
+        }
+    }
     
     // Display configuration
     property bool showIcon: true
@@ -27,11 +48,11 @@ Rectangle {
     property string displayMode: "compact" // "compact", "detailed", "minimal"
     property int precisionDigits: 0  // Decimal precision for RAM percentage
     
-    // Current RAM data
-    property real ramUsed: 0.0
-    property real ramTotal: 0.0
-    property real ramUsagePercent: 0.0
-    property string ramDisplay: "0 GB"
+    // Current RAM data - delegate to service
+    property real ramUsed: RamService.usedBytes
+    property real ramTotal: RamService.totalBytes
+    property real ramUsagePercent: RamService.usagePercentage
+    property string ramDisplay: RamService.usedDisplay + " / " + RamService.totalDisplay
     property string ramFrequencyDisplay: ""
     
     // Visual configuration
@@ -161,103 +182,11 @@ Rectangle {
         }
     }
     
-    // Hover effects - Show interactive data overlay
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: Qt.NoButton
-        
-        Timer {
-            id: hoverTimer
-            interval: 800  // Show overlay after 800ms of hover
-            repeat: false
-            onTriggered: showDataOverlay()
-        }
-        
-        onEntered: {
-            ramMonitor.opacity = 0.8
-            hoverTimer.start()
-            if (dataOverlayLoader.item && dataOverlayLoader.item.visible) {
-                // Cancel auto-hide if overlay is already visible
-                dataOverlayLoader.item.cancelAutoHide()
-                console.log("RAM monitor entered, cancelling overlay auto-hide")
-            }
-        }
-        
-        onExited: {
-            ramMonitor.opacity = 1.0
-            hoverTimer.stop()
-            // Start auto-hide when leaving the monitor (only if overlay is visible)
-            if (dataOverlayLoader.item && dataOverlayLoader.item.visible) {
-                dataOverlayLoader.item.startAutoHide()
-                console.log("RAM monitor exited, starting overlay auto-hide")
-            }
-        }
-    }
     
-    function showDataOverlay() {
-        dataOverlayLoader.active = true
-        if (dataOverlayLoader.item) {
-            const windowToUse = anchorWindow || ramMonitor
-            const globalPos = ramMonitor.mapToItem(null, ramMonitor.width / 2, ramMonitor.height)
-            dataOverlayLoader.item.show(windowToUse, globalPos.x, globalPos.y)
-        }
-    }
-    
-    // Hover tooltip (for compact mode)
-    Rectangle {
-        id: hoverText
-        visible: false
-        anchors.bottom: parent.top
-        anchors.bottomMargin: 8
-        anchors.horizontalCenter: parent.horizontalCenter
-        z: 1000
-        
-        width: hoverContent.implicitWidth + 8
-        height: hoverContent.implicitHeight + 4
-        radius: 4
-        
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.width: 1
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
-        
-        Text {
-            id: hoverContent
-            anchors.centerIn: parent
-            text: `RAM: ${ramUsed.toFixed(1)}/${ramTotal.toFixed(1)} GB (${ramUsagePercent.toFixed(1)}%)`
-            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-            font.family: "Inter"
-            font.pixelSize: 8
-        }
-    }
-    
-    // Smooth opacity transitions
-    Behavior on opacity {
-        NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-    }
-    
-    // Connect to system monitor service
-    Connections {
-        target: systemMonitorService
-        function onRamUpdated(used, total, percentage) {
-            ramUsed = used
-            ramTotal = total
-            ramUsagePercent = percentage
-            ramDisplay = used.toFixed(1) + "/" + total.toFixed(1) + " GB"
-        }
-        
-        // Note: RAM frequency updates don't exist in current system monitor service
-        // Will need to be implemented later when the service supports it
-    }
-    
-    // Update display on service change
+    // Bind RAM service to system monitor
     onSystemMonitorServiceChanged: {
         if (systemMonitorService) {
-            const stats = systemMonitorService.getCurrentStats()
-            ramUsed = stats.ram.used
-            ramTotal = stats.ram.total
-            ramUsagePercent = stats.ram.percent
-            ramDisplay = stats.ram.display
+            RamService.bindToSystemMonitor(systemMonitorService)
         }
     }
     
@@ -283,8 +212,28 @@ Rectangle {
     function get_child(id) {
         return null
     }
+    
+    function showContextMenu(x, y) {
+        console.log(`[${componentId}] Opening dedicated context menu`)
+        
+        contextMenuLoader.active = true
+        if (contextMenuLoader.item) {
+            // Update live data before showing
+            updateContextMenuData()
+            
+            const windowToUse = anchorWindow || ramMonitor
+            const globalPos = ramMonitor.mapToItem(null, x || 0, y || 0)
+            contextMenuLoader.item.show(windowToUse, globalPos.x, globalPos.y)
+        }
+    }
+    
+    function updateContextMenuData() {
+        if (contextMenuLoader.item && typeof contextMenuLoader.item.updateData === 'function') {
+            contextMenuLoader.item.updateData(ramUsed, ramTotal, ramUsagePercent, ramFrequencyDisplay)
+        }
+    }
 
-    // Right-click to show hierarchical menu
+    // Right-click to show dedicated context menu
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton
@@ -295,52 +244,20 @@ Rectangle {
                 // Stop event propagation
                 mouse.accepted = true
                 
-                // Show hierarchical menu instead of data overlay
-                ramMonitor.menu(anchorWindow, mouse.x, mouse.y)
+                // Show dedicated context menu
+                showContextMenu(mouse.x, mouse.y)
             }
         }
     }
     
-    // Interactive Data Overlay - Lazy loaded
-    Loader {
-        id: dataOverlayLoader
-        source: "../overlays/MonitorDataOverlay.qml"
-        active: false
-        
-        onLoaded: {
-            item.configService = ramMonitor.configService
-            item.themeService = ramMonitor.themeService
-            item.systemMonitorService = ramMonitor.systemMonitorService
-            item.monitorType = "ram"
-            item.monitorName = "RAM"
-            item.monitorIcon = "🧠"
-            
-            // Auto-hide when closed
-            item.closed.connect(function() {
-                dataOverlayLoader.active = false
-            })
-            
-            // Keep data updated
-            updateOverlayData()
-        }
-    }
     
-    // Update overlay data
-    function updateOverlayData() {
-        if (dataOverlayLoader.item) {
-            dataOverlayLoader.item.currentUsage = ramUsed
-            dataOverlayLoader.item.totalAvailable = ramTotal
-            dataOverlayLoader.item.usagePercent = ramUsagePercent
-            dataOverlayLoader.item.currentFrequency = ramFrequencyDisplay
-            dataOverlayLoader.item.updateDisplayValue()
-        }
+    // Update context menu when service data changes
+    Connections {
+        target: RamService
+        function onUsagePercentageChanged() { updateContextMenuData() }
+        function onUsedBytesChanged() { updateContextMenuData() }
+        function onTotalBytesChanged() { updateContextMenuData() }
     }
-    
-    // Update overlay when data changes
-    onRamUsedChanged: updateOverlayData()
-    onRamTotalChanged: updateOverlayData()
-    onRamUsagePercentChanged: updateOverlayData()
-    onRamFrequencyDisplayChanged: updateOverlayData()
     
     // Component registration
     function registerComponent() {
@@ -352,16 +269,11 @@ Rectangle {
         // Register with ComponentRegistry
         registerComponent()
         
-        // Initialize with current data if available
+        // Initialize service binding if available
         if (systemMonitorService) {
-            const stats = systemMonitorService.getCurrentStats()
-            ramUsed = stats.ram.used
-            ramTotal = stats.ram.total
-            ramUsagePercent = stats.ram.percent
-            ramDisplay = stats.ram.display
+            RamService.bindToSystemMonitor(systemMonitorService)
         }
         
-        // Set a placeholder frequency for now (until system service provides it)
-        ramFrequencyDisplay = "DDR4-3200" // Example placeholder
+        console.log("[RamMonitor] Initialized with RamService singleton")
     }
 }

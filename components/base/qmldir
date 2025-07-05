@@ -1,2 +1,1 @@
 singleton ComponentRegistry 1.0 ComponentRegistry.qml
-singleton ConfigPersistence 1.0 ConfigPersistence.qml

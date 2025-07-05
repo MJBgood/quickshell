@@ -1,4 +1,5 @@
 import QtQuick
+import "../../services"
 import "../overlays"
 import "../base"
 
@@ -7,15 +8,35 @@ Rectangle {
     
     // GraphicalComponent interface implementation
     property string componentId: "storage"
-    property string parentComponentId: "performance"
+    property string parentComponentId: "bar"
     property var childComponentIds: []
-    property string menuPath: "performance.storage"
+    property string menuPath: "storage"
+    property string contextMenuPath: "../overlays/StorageContextMenu.qml"
     
     // Services
     property var systemMonitorService: null
     property var configService: null
     property var themeService: null
     property var anchorWindow: null
+    
+    // Dedicated context menu loader - lazy loaded
+    property alias contextMenuLoader: contextMenuLoader
+    
+    Loader {
+        id: contextMenuLoader
+        source: contextMenuPath
+        active: false
+        
+        onLoaded: {
+            item.configService = storageMonitor.configService
+            item.themeService = storageMonitor.themeService
+            item.systemMonitorService = storageMonitor.systemMonitorService
+            
+            item.closed.connect(function() {
+                contextMenuLoader.active = false
+            })
+        }
+    }
     
     // Display configuration
     property bool showIcon: true
@@ -27,11 +48,11 @@ Rectangle {
     property string displayMode: "compact" // "compact", "detailed", "minimal"
     property int precisionDigits: 0  // Decimal precision for storage percentage
     
-    // Current storage data
-    property real storageUsed: 0.0
-    property real storageTotal: 0.0
-    property real storageUsagePercent: 0.0
-    property string storageDisplay: "0 GB"
+    // Current storage data - delegate to service
+    property real storageUsed: StorageService.usedBytes
+    property real storageTotal: StorageService.totalBytes
+    property real storageUsagePercent: StorageService.usagePercentage
+    property string storageDisplay: StorageService.usedDisplay + " / " + StorageService.totalDisplay
     
     // Visual configuration
     implicitWidth: contentRow.implicitWidth + 12
@@ -162,42 +183,15 @@ Rectangle {
         hoverEnabled: true
         acceptedButtons: Qt.NoButton
         
-        Timer {
-            id: hoverTimer
-            interval: 800  // Show overlay after 800ms of hover
-            repeat: false
-            onTriggered: showDataOverlay()
-        }
-        
         onEntered: {
             storageMonitor.opacity = 0.8
-            hoverTimer.start()
-            if (dataOverlayLoader.item && dataOverlayLoader.item.visible) {
-                // Cancel auto-hide if overlay is already visible
-                dataOverlayLoader.item.cancelAutoHide()
-                console.log("Storage monitor entered, cancelling overlay auto-hide")
-            }
         }
         
         onExited: {
             storageMonitor.opacity = 1.0
-            hoverTimer.stop()
-            // Start auto-hide when leaving the monitor (only if overlay is visible)
-            if (dataOverlayLoader.item && dataOverlayLoader.item.visible) {
-                dataOverlayLoader.item.startAutoHide()
-                console.log("Storage monitor exited, starting overlay auto-hide")
-            }
         }
     }
     
-    function showDataOverlay() {
-        dataOverlayLoader.active = true
-        if (dataOverlayLoader.item) {
-            const windowToUse = anchorWindow || storageMonitor
-            const globalPos = storageMonitor.mapToItem(null, storageMonitor.width / 2, storageMonitor.height)
-            dataOverlayLoader.item.show(windowToUse, globalPos.x, globalPos.y)
-        }
-    }
     
     // Hover tooltip (for compact mode)
     Rectangle {
@@ -231,25 +225,10 @@ Rectangle {
         NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
     }
     
-    // Connect to system monitor service
-    Connections {
-        target: systemMonitorService
-        function onStorageUpdated(used, total, percentage) {
-            storageUsed = used
-            storageTotal = total
-            storageUsagePercent = percentage
-            storageDisplay = used.toFixed(1) + "/" + total.toFixed(1) + " GB"
-        }
-    }
-    
-    // Update display on service change
+    // Bind Storage service to system monitor
     onSystemMonitorServiceChanged: {
         if (systemMonitorService) {
-            const stats = systemMonitorService.getCurrentStats()
-            storageUsed = stats.storage.used
-            storageTotal = stats.storage.total
-            storageUsagePercent = stats.storage.percent
-            storageDisplay = stats.storage.display
+            StorageService.bindToSystemMonitor(systemMonitorService)
         }
     }
     
@@ -275,8 +254,28 @@ Rectangle {
     function get_child(id) {
         return null
     }
+    
+    function showContextMenu(x, y) {
+        console.log(`[${componentId}] Opening dedicated context menu`)
+        
+        contextMenuLoader.active = true
+        if (contextMenuLoader.item) {
+            // Update live data before showing
+            updateContextMenuData()
+            
+            const windowToUse = anchorWindow || storageMonitor
+            const globalPos = storageMonitor.mapToItem(null, x || 0, y || 0)
+            contextMenuLoader.item.show(windowToUse, globalPos.x, globalPos.y)
+        }
+    }
+    
+    function updateContextMenuData() {
+        if (contextMenuLoader.item && typeof contextMenuLoader.item.updateData === 'function') {
+            contextMenuLoader.item.updateData(storageUsed, storageTotal, storageUsagePercent)
+        }
+    }
 
-    // Right-click to show hierarchical menu
+    // Right-click to show dedicated context menu
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton
@@ -287,50 +286,19 @@ Rectangle {
                 // Stop event propagation
                 mouse.accepted = true
                 
-                // Show hierarchical menu instead of data overlay
-                storageMonitor.menu(anchorWindow, mouse.x, mouse.y)
+                // Show dedicated context menu
+                showContextMenu(mouse.x, mouse.y)
             }
         }
     }
     
-    // Interactive Data Overlay - Lazy loaded
-    Loader {
-        id: dataOverlayLoader
-        source: "../overlays/MonitorDataOverlay.qml"
-        active: false
-        
-        onLoaded: {
-            item.configService = storageMonitor.configService
-            item.themeService = storageMonitor.themeService
-            item.systemMonitorService = storageMonitor.systemMonitorService
-            item.monitorType = "storage"
-            item.monitorName = "Storage"
-            item.monitorIcon = "💾"
-            
-            // Auto-hide when closed
-            item.closed.connect(function() {
-                dataOverlayLoader.active = false
-            })
-            
-            // Keep data updated
-            updateOverlayData()
-        }
+    // Update context menu when service data changes
+    Connections {
+        target: StorageService
+        function onUsagePercentageChanged() { updateContextMenuData() }
+        function onUsedBytesChanged() { updateContextMenuData() }
+        function onTotalBytesChanged() { updateContextMenuData() }
     }
-    
-    // Update overlay data
-    function updateOverlayData() {
-        if (dataOverlayLoader.item) {
-            dataOverlayLoader.item.currentUsage = storageUsed
-            dataOverlayLoader.item.totalAvailable = storageTotal
-            dataOverlayLoader.item.usagePercent = storageUsagePercent
-            dataOverlayLoader.item.updateDisplayValue()
-        }
-    }
-    
-    // Update overlay when data changes
-    onStorageUsedChanged: updateOverlayData()
-    onStorageTotalChanged: updateOverlayData()
-    onStorageUsagePercentChanged: updateOverlayData()
     
     // Component registration
     function registerComponent() {
@@ -342,13 +310,11 @@ Rectangle {
         // Register with ComponentRegistry
         registerComponent()
         
-        // Initialize with current data if available
+        // Initialize service binding if available
         if (systemMonitorService) {
-            const stats = systemMonitorService.getCurrentStats()
-            storageUsed = stats.storage.used
-            storageTotal = stats.storage.total
-            storageUsagePercent = stats.storage.percent
-            storageDisplay = stats.storage.display
+            StorageService.bindToSystemMonitor(systemMonitorService)
         }
+        
+        console.log("[StorageMonitor] Initialized with StorageService singleton")
     }
 }

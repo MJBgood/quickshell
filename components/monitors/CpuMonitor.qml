@@ -1,4 +1,5 @@
 import QtQuick
+import "../../services"
 import "../overlays"
 import "../base"
 
@@ -7,15 +8,35 @@ Rectangle {
     
     // GraphicalComponent interface implementation
     property string componentId: "cpu"
-    property string parentComponentId: "performance"
+    property string parentComponentId: "bar"
     property var childComponentIds: []
-    property string menuPath: "performance.cpu"
+    property string menuPath: "cpu"
+    property string contextMenuPath: "../overlays/CpuContextMenu.qml"
     
     // Services
     property var systemMonitorService: null
     property var configService: null
     property var themeService: null
     property var anchorWindow: null
+    
+    // Dedicated context menu loader - lazy loaded
+    property alias contextMenuLoader: contextMenuLoader
+    
+    Loader {
+        id: contextMenuLoader
+        source: contextMenuPath
+        active: false
+        
+        onLoaded: {
+            item.configService = cpuMonitor.configService
+            item.themeService = cpuMonitor.themeService
+            item.systemMonitorService = cpuMonitor.systemMonitorService
+            
+            item.closed.connect(function() {
+                contextMenuLoader.active = false
+            })
+        }
+    }
     
     // Display configuration
     property bool showIcon: true
@@ -26,11 +47,11 @@ Rectangle {
     property string displayMode: "compact" // "compact", "detailed", "minimal"
     property int precisionDigits: 0  // Decimal precision for CPU percentage
     
-    // Current CPU data
-    property real cpuUsage: 0.0
-    property string cpuDisplay: "0%"
-    property string cpuFrequencyDisplay: ""
-    property var cpuCores: []
+    // Current CPU data - delegate to service
+    property real cpuUsage: CpuService.usage
+    property string cpuDisplay: CpuService.usage.toFixed(precisionDigits) + "%"
+    property string cpuFrequencyDisplay: CpuService.frequencyDisplay
+    property var cpuCores: CpuService.cores
     
     // Visual configuration
     implicitWidth: contentRow.implicitWidth + 12
@@ -156,107 +177,21 @@ Rectangle {
         }
     }
     
-    // Hover effects - Show interactive data overlay
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        acceptedButtons: Qt.NoButton
-        
-        Timer {
-            id: hoverTimer
-            interval: 800  // Show overlay after 800ms of hover
-            repeat: false
-            onTriggered: showDataOverlay()
-        }
-        
-        onEntered: {
-            cpuMonitor.opacity = 0.8
-            hoverTimer.start()
-            if (dataOverlayLoader.item && dataOverlayLoader.item.visible) {
-                // Cancel auto-hide if overlay is already visible
-                dataOverlayLoader.item.cancelAutoHide()
-                console.log("CPU monitor entered, cancelling overlay auto-hide")
-            }
-        }
-        
-        onExited: {
-            cpuMonitor.opacity = 1.0
-            hoverTimer.stop()
-            // Start auto-hide when leaving the monitor (only if overlay is visible)
-            if (dataOverlayLoader.item && dataOverlayLoader.item.visible) {
-                dataOverlayLoader.item.startAutoHide()
-                console.log("CPU monitor exited, starting overlay auto-hide")
-            }
-        }
-    }
     
-    function showDataOverlay() {
-        dataOverlayLoader.active = true
-        if (dataOverlayLoader.item) {
-            const windowToUse = anchorWindow || cpuMonitor
-            const globalPos = cpuMonitor.mapToItem(null, cpuMonitor.width / 2, cpuMonitor.height)
-            dataOverlayLoader.item.show(windowToUse, globalPos.x, globalPos.y)
-        }
-    }
-    
-    // Hover tooltip (for compact mode)
-    Rectangle {
-        id: hoverText
-        visible: false
-        anchors.bottom: parent.top
-        anchors.bottomMargin: 8
-        anchors.horizontalCenter: parent.horizontalCenter
-        z: 1000
-        
-        width: hoverContent.implicitWidth + 8
-        height: hoverContent.implicitHeight + 4
-        radius: 4
-        
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.width: 1
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
-        
-        Text {
-            id: hoverContent
-            anchors.centerIn: parent
-            text: `CPU Usage: ${cpuUsage.toFixed(1)}%`
-            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-            font.family: "Inter"
-            font.pixelSize: 8
-        }
-    }
     
     // Smooth opacity transitions
     Behavior on opacity {
         NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
     }
     
-    // Connect to system monitor service
-    Connections {
-        target: systemMonitorService
-        enabled: systemMonitorService !== null
-        
-        function onCpuUpdated(percentage) {
-            cpuUsage = percentage
-            cpuDisplay = Math.round(percentage) + "%"
-        }
-        
-        function onCpuFrequencyUpdated(frequency, display) {
-            cpuFrequencyDisplay = display
-        }
-    }
-    
-    // Update display on service change
+    // Bind CPU service to system monitor
     onSystemMonitorServiceChanged: {
         if (systemMonitorService) {
-            const stats = systemMonitorService.getCurrentStats()
-            cpuUsage = stats.cpu.usage
-            cpuDisplay = stats.cpu.display
-            cpuFrequencyDisplay = stats.cpu.frequencyDisplay
+            CpuService.bindToSystemMonitor(systemMonitorService)
         }
     }
     
-    // Right-click to show data overlay
+    // Right-click to show dedicated context menu
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton
@@ -267,41 +202,12 @@ Rectangle {
                 // Stop event propagation
                 mouse.accepted = true
                 
-                dataOverlayLoader.active = true
-                if (dataOverlayLoader.item) {
-                    // Use anchorWindow if available, otherwise fallback to cpuMonitor
-                    const windowToUse = anchorWindow || cpuMonitor
-                    
-                    // Convert local mouse coordinates to global coordinates
-                    const globalPos = cpuMonitor.mapToItem(null, mouse.x, mouse.y)
-                    console.log("CPU monitor right-click at local:", mouse.x, mouse.y, "global:", globalPos.x, globalPos.y)
-                    
-                    dataOverlayLoader.item.show(windowToUse, globalPos.x, globalPos.y)
-                }
+                // Show dedicated context menu
+                showContextMenu(mouse.x, mouse.y)
             }
         }
     }
     
-    // Interactive Data Overlay - Lazy loaded
-    Loader {
-        id: dataOverlayLoader
-        source: "../overlays/MonitorDataOverlay.qml"
-        active: false
-        
-        onLoaded: {
-            item.configService = cpuMonitor.configService
-            item.themeService = cpuMonitor.themeService
-            item.systemMonitorService = cpuMonitor.systemMonitorService
-            item.monitorType = "cpu"
-            item.monitorName = "CPU"
-            item.monitorIcon = "🖥️"
-            
-            // Auto-hide when closed
-            item.closed.connect(function() {
-                dataOverlayLoader.active = false
-            })
-        }
-    }
     
     // GraphicalComponent interface methods
     function menu(anchorWindow, x, y, startPath) {
@@ -311,6 +217,26 @@ Rectangle {
         const parent = get_parent()
         if (parent && typeof parent.menu === 'function') {
             parent.menu(anchorWindow, x, y, startPath || menuPath)
+        }
+    }
+    
+    function showContextMenu(x, y) {
+        console.log(`[${componentId}] Opening dedicated context menu`)
+        
+        contextMenuLoader.active = true
+        if (contextMenuLoader.item) {
+            // Update live data before showing
+            updateContextMenuData()
+            
+            const windowToUse = anchorWindow || cpuMonitor
+            const globalPos = cpuMonitor.mapToItem(null, x || 0, y || 0)
+            contextMenuLoader.item.show(windowToUse, globalPos.x, globalPos.y)
+        }
+    }
+    
+    function updateContextMenuData() {
+        if (contextMenuLoader.item && typeof contextMenuLoader.item.updateData === 'function') {
+            contextMenuLoader.item.updateData(CpuService.usage, CpuService.frequencyDisplay)
         }
     }
     
@@ -344,31 +270,22 @@ Rectangle {
     Component.onCompleted: {
         registerComponent()
         
-        // Initialize with current data if available
+        // Initialize service binding if available
         if (systemMonitorService) {
-            const stats = systemMonitorService.getCurrentStats()
-            cpuUsage = stats.cpu.usage
-            cpuDisplay = stats.cpu.display
-            cpuFrequencyDisplay = stats.cpu.frequencyDisplay
-            cpuCores = stats.cpu.cores
+            CpuService.bindToSystemMonitor(systemMonitorService)
         }
+        
+        console.log("[CpuMonitor] Initialized with CpuService singleton")
     }
     
     Component.onDestruction: {
         unregisterComponent()
     }
     
-    // Update overlay data
-    function updateOverlayData() {
-        if (dataOverlayLoader.item) {
-            dataOverlayLoader.item.currentUsage = cpuUsage
-            dataOverlayLoader.item.usagePercent = cpuUsage
-            dataOverlayLoader.item.currentFrequency = cpuFrequencyDisplay
-            dataOverlayLoader.item.updateDisplayValue()
-        }
+    // Update context menu when service data changes
+    Connections {
+        target: CpuService
+        function onUsageChanged() { updateContextMenuData() }
+        function onFrequencyDisplayChanged() { updateContextMenuData() }
     }
-    
-    // Update overlay when data changes
-    onCpuUsageChanged: updateOverlayData()
-    onCpuFrequencyDisplayChanged: updateOverlayData()
 }

@@ -16,14 +16,15 @@ Item {
     // Configuration state
     property bool initialized: false
     property var config: ({})
-    // Configuration file path - configurable with fallbacks  
+    // Configuration file path - following Quickshell best practices
     readonly property string configPath: {
-        // Priority: 1) Environment variable 2) Default relative to dataDir
+        // Priority: 1) Environment variable 2) Config directory (recommended)
         const envPath = Quickshell.env("QUICKSHELL_CONFIG_PATH")
         if (envPath) return envPath
         
-        // Default: ~/.local/share/quickshell/by-shell/<shell-id>/config/settings/main-config.json
-        return Quickshell.dataDir + "/config/settings/main-config.json"
+        // Default: ~/.config/quickshell/config/settings/main-config.json (follows XDG standards)
+        const configDir = Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
+        return configDir + "/quickshell/config/settings/main-config.json"
     }
     
     // Default configuration
@@ -71,7 +72,7 @@ Item {
             }
         },
         "theme": {
-            "activeTheme": "tokyo-night",
+            "activeTheme": "catppuccin",
             "activeMode": "dark",
             "followSystemTheme": false,
             "autoSwitchTimes": {
@@ -123,6 +124,7 @@ Item {
                 "showIcon": true,
                 "showLabel": false,
                 "showPercentage": true,
+                "showFrequency": false,
                 "customIcon": ""
             },
             "ram": {
@@ -132,6 +134,8 @@ Item {
                 "showIcon": true,
                 "showLabel": false,
                 "showPercentage": true,
+                "showFrequency": false,
+                "showTotal": true,
                 "customIcon": ""
             },
             "storage": {
@@ -141,6 +145,7 @@ Item {
                 "showIcon": true,
                 "showLabel": false,
                 "showPercentage": true,
+                "showBytes": false,
                 "customIcon": ""
             }
         },
@@ -245,8 +250,9 @@ Item {
             const configJson = JSON.stringify(config, null, 2)
             const escapedJson = configJson.replace(/'/g, "'\"'\"'") // Escape single quotes for shell
             
-            // Use echo to write the config to file
-            configSaver.command = ["sh", "-c", "echo '" + escapedJson + "' > '" + configPath + "'"]
+            // Create directory structure first, then write config
+            const configDir = configPath.substring(0, configPath.lastIndexOf('/'))
+            configSaver.command = ["sh", "-c", "mkdir -p '" + configDir + "' && echo '" + escapedJson + "' > '" + configPath + "'"]
             configSaver.running = true
             
             console.log(logCategory, "Configuration save command executed")
@@ -298,6 +304,9 @@ Item {
             
             // Force config to be reassigned to trigger property change
             config = config
+            
+            // Explicitly emit the configChanged signal
+            configChanged()
             
             console.log(logCategory, `Set '${keyPath}' to:`, value)
             

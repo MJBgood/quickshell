@@ -1,8 +1,10 @@
 import Quickshell
 import Quickshell.Hyprland
 import QtQuick
+import "../monitors"
 import "../widgets"
 import "../base"
+import "../../services"
 
 PanelWindow {
     id: bar
@@ -14,7 +16,16 @@ PanelWindow {
     property var themeService: null
     property var configService: null
     property var systemMonitorService: null
+    property var windowTracker: null
+    property var iconResolver: null
+    property var sessionOverlay: null
     property var shellRoot: null
+    
+    // GraphicalComponent interface implementation
+    property string componentId: "bar"
+    property string parentComponentId: ""
+    property var childComponentIds: ["cpu", "ram", "storage", "clock", "workspaces"]
+    property string menuPath: "bar"
     
     // Panel configuration - position determined by config
     property string position: configService ? configService.getValue("panel.position", "top") : "top"
@@ -84,31 +95,71 @@ PanelWindow {
             }
         }
         
-        // Center section - Workspace indicator (centered)
+        // Center section - Workspace indicator (left-aligned after launcher)
         Rectangle {
             id: centerSection
-            width: Math.max(workspaceRow.implicitWidth + 16, 120) // Dynamic width with minimum
+            width: Math.max(workspaceRow.implicitWidth + 16, 80) // Reduced minimum width
             height: parent.height
             color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
             radius: 4
             
+            // GraphicalComponent interface implementation
+            property string componentId: "workspaces"
+            property string parentComponentId: "bar"
+            property var childComponentIds: []
+            property string menuPath: "workspaces"
+            
             anchors {
-                horizontalCenter: parent.horizontalCenter
+                left: leftSection.right
+                leftMargin: 12
                 verticalCenter: parent.verticalCenter
             }
             
             Row {
                 id: workspaceRow
                 anchors.centerIn: parent
-                spacing: 8
+                
+                // Reactive binding to config - updates automatically
+                spacing: {
+                    if (!configService) return 8
+                    const spacingMode = configService.getValue("workspaces.workspaceSpacing", "normal")
+                    return spacingMode === "tight" ? 4 : spacingMode === "loose" ? 12 : 8
+                }
                 
                 Repeater {
                     model: Hyprland.workspaces
                     
                     Rectangle {
-                        width: 32
-                        height: 20
-                        radius: 4
+                        // Config-dependent properties - direct bindings like performance monitors
+                        property string workspaceSizeMode: configService ? configService.getValue("workspaces.workspaceSize", "medium") : "medium"
+                        property string workspaceRadiusMode: configService ? configService.getValue("workspaces.cornerRadius", "medium") : "medium"
+                        property bool workspaceShowOnlyActive: configService ? configService.getValue("workspaces.showOnlyActive", false) : false
+                        property bool workspaceAutoHideEmpty: configService ? configService.getValue("workspaces.autoHideEmpty", false) : false
+                        
+                        visible: {
+                            if (!modelData) return false
+                            
+                            if (workspaceShowOnlyActive) {
+                                // Only show the currently focused workspace
+                                return modelData.focused
+                            } else if (workspaceAutoHideEmpty) {
+                                // In Hyprland, we should show workspaces that have content or are currently in use
+                                // Since we can't easily detect window count, let's be less aggressive and show:
+                                // 1. The focused workspace (obviously has focus)
+                                // 2. Active workspaces (currently displayed on monitors)  
+                                // 3. For now, show all workspaces since we can't reliably detect "empty"
+                                // TODO: Implement proper window counting via Hyprland IPC
+                                return true  // Temporarily disable auto-hide until we can detect window count
+                            }
+                            return true
+                        }
+                        
+                        // Dynamic width based on content, with minimum based on size mode
+                        property int minWidth: workspaceSizeMode === "small" ? 24 : workspaceSizeMode === "large" ? 40 : 32
+                        width: Math.max(contentRow.implicitWidth + 8, minWidth)
+                        height: workspaceSizeMode === "small" ? 16 : workspaceSizeMode === "large" ? 24 : 20
+                        radius: workspaceRadiusMode === "none" ? 0 : workspaceRadiusMode === "small" ? 2 : workspaceRadiusMode === "large" ? 8 : 4
+                        
                         color: modelData && modelData.focused ? 
                                (themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
                                (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a")
@@ -124,16 +175,202 @@ PanelWindow {
                             ColorAnimation { duration: 200; easing.type: Easing.OutCubic }
                         }
                         
-                        
-                        Text {
-                            anchors.centerIn: parent
-                            text: modelData ? modelData.id : (index + 1)
-                            color: modelData && modelData.focused ? 
-                                   (themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
-                                   (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
-                            font.family: "Inter"
-                            font.pixelSize: 11
-                            font.weight: modelData && modelData.focused ? Font.DemiBold : Font.Medium
+                        // Content based on configuration
+                        Item {
+                            anchors.fill: parent
+                            
+                            // Window count notification badge
+                            Rectangle {
+                                id: windowCountBadge
+                                
+                                property int windowCount: {
+                                    if (!windowTracker) return 0
+                                    const workspaceId = modelData ? modelData.id : (index + 1)
+                                    return windowTracker.getWindowCountForWorkspace(workspaceId)
+                                }
+                                
+                                property bool showWindowCount: configService ? configService.getValue("workspaces.showWindowCount", false) : false
+                                
+                                visible: windowCount > 0 && showWindowCount
+                                
+                                // Position in bottom-right corner for more subtle appearance
+                                anchors {
+                                    bottom: parent.bottom
+                                    right: parent.right
+                                    bottomMargin: -3
+                                    rightMargin: -3
+                                }
+                                
+                                // Smaller, more subtle size
+                                width: Math.max(windowCountText.implicitWidth + 4, 12)
+                                height: 12
+                                radius: 6
+                                
+                                // Subtle badge styling - using theme colors
+                                color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+                                border.width: 1
+                                border.color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+                                
+                                // Subtle shadow/glow effect
+                                opacity: 0.9
+                                
+                                // Window count text
+                                Text {
+                                    id: windowCountText
+                                    anchors.centerIn: parent
+                                    text: windowCountBadge.windowCount.toString()
+                                    color: themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e"
+                                    font.family: "Inter"
+                                    font.pixelSize: 8
+                                    font.weight: Font.Medium
+                                }
+                                
+                                // Smooth appearance/disappearance
+                                Behavior on opacity {
+                                    NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+                                }
+                            }
+                            
+                            Row {
+                                id: contentRow
+                                anchors.centerIn: parent
+                                spacing: 2
+                                
+                                // Workspace number/name
+                                Text {
+                                    id: workspaceText
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    
+                                    // Config-dependent properties for text display - direct bindings
+                                    property bool workspaceShowNumbers: configService ? configService.getValue("workspaces.showNumbers", true) : true
+                                    property bool workspaceShowNames: configService ? configService.getValue("workspaces.showNames", false) : false
+                                    property bool workspaceShowWindowCount: configService ? configService.getValue("workspaces.showWindowCount", false) : false
+                                    property bool workspaceShowApplicationIcons: configService ? configService.getValue("workspaces.showApplicationIcons", true) : true
+                                    
+                                    text: {
+                                        let displayText = ""
+                                        
+                                        if (workspaceShowNames && modelData && modelData.name) {
+                                            displayText = modelData.name
+                                        } else if (workspaceShowNumbers) {
+                                            displayText = modelData ? modelData.id : (index + 1)
+                                        }
+                                        
+                                        // Window count is now displayed as a notification badge instead of in parentheses
+                                        
+                                        return displayText || "?"
+                                    }
+                                    
+                                    color: modelData && modelData.focused ? 
+                                           (themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
+                                           (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
+                                    font.family: "Inter"
+                                    font.pixelSize: parent.parent.parent.workspaceSizeMode === "small" ? 9 : parent.parent.parent.workspaceSizeMode === "large" ? 13 : 11
+                                    font.weight: modelData && modelData.focused ? Font.DemiBold : Font.Medium
+                                }
+                                
+                                // Application icons row
+                                Row {
+                                    id: applicationIconsRow
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 1
+                                    visible: workspaceText.workspaceShowApplicationIcons && iconResolver && windowTracker
+                                    
+                                    // Update when window data changes
+                                    property var iconData: []
+                                    
+                                    Connections {
+                                        target: windowTracker
+                                        function onWindowsUpdated() {
+                                            applicationIconsRow.updateIconData()
+                                        }
+                                    }
+                                    
+                                    Connections {
+                                        target: configService
+                                        function onConfigChanged() {
+                                            applicationIconsRow.updateIconData()
+                                        }
+                                    }
+                                    
+                                    function updateIconData() {
+                                        if (!iconResolver || !windowTracker) return
+                                        
+                                        const workspaceId = modelData ? modelData.id : (index + 1)
+                                        const maxIcons = configService ? configService.getValue("workspaces.maxApplicationIcons", 3) : 3
+                                        iconData = iconResolver.getSortedIconsForWorkspace(workspaceId, windowTracker.windowsByWorkspace, maxIcons)
+                                    }
+                                    
+                                    Component.onCompleted: {
+                                        // Delay initial update to ensure services are ready
+                                        Qt.callLater(updateIconData)
+                                    }
+                                    
+                                    Repeater {
+                                        model: parent.iconData
+                                        
+                                        Item {
+                                            width: parent.parent.parent.parent.workspaceSizeMode === "small" ? 12 : parent.parent.parent.parent.workspaceSizeMode === "large" ? 18 : 14
+                                            height: width
+                                            
+                                            // Show either image or emoji based on icon type
+                                            Image {
+                                                anchors.fill: parent
+                                                source: modelData.isEmoji ? "" : modelData.iconPath
+                                                fillMode: Image.PreserveAspectFit
+                                                visible: !modelData.isEmoji
+                                                smooth: true
+                                                asynchronous: true
+                                                cache: true
+                                                sourceSize.width: width
+                                                sourceSize.height: height
+                                                
+                                                onStatusChanged: {
+                                                    if (status === Image.Error) {
+                                                        console.warn(`[WorkspaceIcons] Failed to load icon: ${modelData.iconPath}`)
+                                                    }
+                                                }
+                                            }
+                                            
+                                            // Emoji fallback
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: modelData.isEmoji ? modelData.iconPath : "◯"
+                                                visible: modelData.isEmoji || (parent.children[0].status === Image.Error)
+                                                font.pixelSize: parent.width * 0.8
+                                                color: themeService ? 
+                                                      themeService.getThemeProperty("colors", "text") || "#cdd6f4" : 
+                                                      "#cdd6f4"
+                                            }
+                                            
+                                            // Count indicator
+                                            Text {
+                                                visible: modelData.count > 1
+                                                anchors.bottom: parent.bottom
+                                                anchors.right: parent.right
+                                                text: modelData.count
+                                                font.pixelSize: parent.width * 0.4
+                                                font.weight: Font.Bold
+                                                color: themeService ? 
+                                                      themeService.getThemeProperty("colors", "accent") || "#89b4fa" : 
+                                                      "#89b4fa"
+                                                
+                                                // Small background for better visibility
+                                                Rectangle {
+                                                    anchors.centerIn: parent
+                                                    width: parent.implicitWidth + 2
+                                                    height: parent.implicitHeight + 1
+                                                    radius: width / 2
+                                                    color: themeService ? 
+                                                          themeService.getThemeProperty("colors", "surface") || "#313244" : 
+                                                          "#313244"
+                                                    z: -1
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         
                         MouseArea {
@@ -141,26 +378,130 @@ PanelWindow {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton
                             
                             onClicked: {
+                                if (!configService) return
+                                
+                                const clickToSwitch = configService.getValue("workspaces.clickToSwitch", true)
+                                if (!clickToSwitch) return
+                                
                                 const workspaceId = modelData ? modelData.id : (index + 1)
-                                // Use Hyprland singleton directly for workspace switching
-                                Hyprland.dispatch("workspace " + workspaceId)
+                                console.log(`[Workspaces] Switching to workspace ${workspaceId}`)
+                                Hyprland.dispatch(`workspace ${workspaceId}`)
+                            }
+                            
+                            onWheel: wheel => {
+                                if (!configService) return
+                                
+                                const scrollToSwitch = configService.getValue("workspaces.scrollToSwitch", true)
+                                if (!scrollToSwitch) return
+                                
+                                // Get current workspace index
+                                const currentId = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
+                                let targetId = currentId
+                                
+                                if (wheel.angleDelta.y > 0) {
+                                    // Scroll up - previous workspace
+                                    targetId = Math.max(1, currentId - 1)
+                                } else {
+                                    // Scroll down - next workspace
+                                    targetId = currentId + 1
+                                }
+                                
+                                console.log(`[Workspaces] Scrolling from workspace ${currentId} to ${targetId}`)
+                                Hyprland.dispatch("workspace", targetId.toString())
                             }
                             
                             onEntered: {
                                 const workspaceId = modelData ? modelData.id : (index + 1)
+                                const showPreviews = configService ? configService.getValue("workspaces.showPreviews", false) : false
+                                
+                                if (showPreviews) {
+                                    // TODO: Implement workspace preview on hover
+                                    console.log(`[Workspaces] Preview for workspace ${workspaceId}`)
+                                }
                             }
                         }
                     }
                 }
             }
+            
+            // Right-click context menu for workspace settings
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                z: 10
+                
+                onClicked: mouse => {
+                    if (mouse.button === Qt.RightButton) {
+                        mouse.accepted = true
+                        centerSection.menu(bar, mouse.x, mouse.y)
+                    }
+                }
+            }
+            
+            // GraphicalComponent interface: menu() function
+            function menu(anchorWindow, x, y, startPath) {
+                console.log(`[${componentId}] Opening workspaces context menu`)
+                
+                // Use dedicated workspaces context menu
+                if (!workspacesMenuLoader.active) {
+                    workspacesMenuLoader.active = true
+                }
+                
+                if (workspacesMenuLoader.item) {
+                    const windowToUse = anchorWindow || bar
+                    const globalPos = centerSection.mapToItem(null, x || 0, y || 0)
+                    workspacesMenuLoader.item.show(windowToUse, globalPos.x, globalPos.y)
+                }
+            }
+            
+            // Dedicated loader for WorkspacesContextMenu
+            Loader {
+                id: workspacesMenuLoader
+                source: "../overlays/WorkspacesContextMenu.qml"
+                active: false
+                
+                onLoaded: {
+                    item.configService = bar.configService
+                    item.themeService = bar.themeService
+                    
+                    item.closed.connect(function() {
+                        workspacesMenuLoader.active = false
+                    })
+                }
+            }
+            
+            // GraphicalComponent interface methods
+            function registerComponent() {
+                if (componentId) {
+                    ComponentRegistry.registerComponent(componentId, centerSection)
+                    console.log(`[${componentId}] Registered component with hierarchy: parent=${parentComponentId}, children=[${childComponentIds.join(', ')}]`)
+                }
+            }
+            
+            function unregisterComponent() {
+                if (componentId) {
+                    ComponentRegistry.unregisterComponent(componentId)
+                    console.log(`[${componentId}] Unregistered component`)
+                }
+            }
+            
+            Component.onCompleted: {
+                registerComponent()
+            }
+            
+            Component.onDestruction: {
+                unregisterComponent()
+            }
         }
         
-        // Performance monitoring section
-        Performance {
-            id: performanceSection
-            visible: configService ? configService.getValue("developer.showPerformanceMetrics", true) : true
+        // Individual monitoring widgets section
+        Row {
+            id: monitoringSection
+            spacing: 6
+            visible: cpuMonitor.visible || ramMonitor.visible || storageMonitor.visible
             
             anchors {
                 right: rightSection.left
@@ -168,26 +509,279 @@ PanelWindow {
                 verticalCenter: parent.verticalCenter
             }
             
-            // Services
-            systemMonitorService: bar.systemMonitorService
-            themeService: bar.themeService
-            configService: bar.configService
-            barWindow: bar  // Pass bar reference for popup anchoring
+            // CPU Monitor
+            Rectangle {
+                id: cpuContainer
+                implicitWidth: cpuMonitor.visible ? cpuMonitor.implicitWidth + 8 : 0
+                implicitHeight: cpuMonitor.visible ? cpuMonitor.implicitHeight + 4 : 0
+                radius: 6
+                color: cpuMonitor.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: cpuMonitor.visible ? 1 : 0
+                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: cpuMonitor.visible
+                
+                CpuMonitor {
+                    id: cpuMonitor
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("cpu.enabled", true) : true
+                    
+                    // Services
+                    systemMonitorService: bar.systemMonitorService
+                    themeService: bar.themeService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    displayMode: "compact"
+                    showIcon: configService ? configService.getValue("cpu.showIcon", true) : true
+                    showText: true
+                    showLabel: configService ? configService.getValue("cpu.showLabel", false) : false
+                    showPercentage: configService ? configService.getValue("cpu.showPercentage", true) : true
+                    showFrequency: configService ? configService.getValue("cpu.showFrequency", false) : false
+                    precisionDigits: configService ? configService.getValue("cpu.precision", 1) : 1
+                }
+            }
             
-            // Configuration for bar integration is now handled by ConfigService
-            // Individual monitor settings are automatically loaded from config
+            // RAM Monitor
+            Rectangle {
+                id: ramContainer
+                implicitWidth: ramMonitor.visible ? ramMonitor.implicitWidth + 8 : 0
+                implicitHeight: ramMonitor.visible ? ramMonitor.implicitHeight + 4 : 0
+                radius: 6
+                color: ramMonitor.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: ramMonitor.visible ? 1 : 0
+                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: ramMonitor.visible
+                
+                RamMonitor {
+                    id: ramMonitor
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("ram.enabled", true) : true
+                    
+                    // Services
+                    systemMonitorService: bar.systemMonitorService
+                    themeService: bar.themeService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    displayMode: "compact"
+                    showIcon: configService ? configService.getValue("ram.showIcon", true) : true
+                    showText: true
+                    showLabel: configService ? configService.getValue("ram.showLabel", false) : false
+                    showPercentage: configService ? configService.getValue("ram.showPercentage", true) : true
+                    showFrequency: configService ? configService.getValue("ram.showFrequency", false) : false
+                    showTotal: configService ? configService.getValue("ram.showTotal", true) : true
+                    precisionDigits: configService ? configService.getValue("ram.precision", 0) : 0
+                }
+            }
+            
+            // Storage Monitor
+            Rectangle {
+                id: storageContainer
+                implicitWidth: storageMonitor.visible ? storageMonitor.implicitWidth + 8 : 0
+                implicitHeight: storageMonitor.visible ? storageMonitor.implicitHeight + 4 : 0
+                radius: 6
+                color: storageMonitor.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: storageMonitor.visible ? 1 : 0
+                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: storageMonitor.visible
+                
+                StorageMonitor {
+                    id: storageMonitor
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("storage.enabled", true) : true
+                    
+                    // Services
+                    systemMonitorService: bar.systemMonitorService
+                    themeService: bar.themeService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    displayMode: "compact"
+                    showIcon: configService ? configService.getValue("storage.showIcon", true) : true
+                    showText: true
+                    showLabel: configService ? configService.getValue("storage.showLabel", false) : false
+                    showPercentage: configService ? configService.getValue("storage.showPercentage", true) : true
+                    showBytes: configService ? configService.getValue("storage.showBytes", false) : false
+                    precisionDigits: configService ? configService.getValue("storage.precision", 0) : 0
+                }
+            }
+        }
+        
+        // Widget section - Audio, Brightness, Temperature, and Battery controls
+        Row {
+            id: widgetSection
+            spacing: 6
+            visible: audioWidget.visible || brightnessWidget.visible || cpuTempWidget.visible || gpuTempWidget.visible || batteryWidget.visible
+            
+            anchors {
+                right: monitoringSection.left
+                rightMargin: visible ? 12 : 0
+                verticalCenter: parent.verticalCenter
+            }
+            
+            // Audio Widget
+            Rectangle {
+                id: audioContainer
+                implicitWidth: audioWidget.visible ? audioWidget.implicitWidth + 8 : 0
+                implicitHeight: audioWidget.visible ? audioWidget.implicitHeight + 4 : 0
+                radius: 6
+                color: audioWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: audioWidget.visible ? 1 : 0
+                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: audioWidget.visible
+                
+                AudioWidget {
+                    id: audioWidget
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("audio.enabled", true) : true
+                    
+                    // Services
+                    themeService: bar.themeService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    showIcon: configService ? configService.getValue("audio.showIcon", true) : true
+                    showPercentage: configService ? configService.getValue("audio.showPercentage", true) : true
+                    showSlider: configService ? configService.getValue("audio.showSlider", false) : false
+                }
+            }
+            
+            // Brightness Widget
+            Rectangle {
+                id: brightnessContainer
+                implicitWidth: brightnessWidget.visible ? brightnessWidget.implicitWidth + 8 : 0
+                implicitHeight: brightnessWidget.visible ? brightnessWidget.implicitHeight + 4 : 0
+                radius: 6
+                color: brightnessWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: brightnessWidget.visible ? 1 : 0
+                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: brightnessWidget.visible
+                
+                BrightnessWidget {
+                    id: brightnessWidget
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("brightness.enabled", true) : true
+                    
+                    // Services
+                    themeService: bar.themeService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    showIcon: configService ? configService.getValue("brightness.showIcon", true) : true
+                    showPercentage: configService ? configService.getValue("brightness.showPercentage", true) : true
+                    showSlider: configService ? configService.getValue("brightness.showSlider", false) : false
+                }
+            }
+            
+            // CPU Temperature Widget
+            Rectangle {
+                id: cpuTempContainer
+                implicitWidth: cpuTempWidget.visible ? cpuTempWidget.implicitWidth + 8 : 0
+                implicitHeight: cpuTempWidget.visible ? cpuTempWidget.implicitHeight + 4 : 0
+                radius: 6
+                color: cpuTempWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: cpuTempWidget.visible ? 1 : 0
+                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: cpuTempWidget.visible
+                
+                CpuTempWidget {
+                    id: cpuTempWidget
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("cpu_temp.enabled", true) : true
+                    
+                    // Services
+                    themeService: bar.themeService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    showIcon: configService ? configService.getValue("cpu_temp.showIcon", true) : true
+                    showValue: configService ? configService.getValue("cpu_temp.showValue", true) : true
+                    showUnit: configService ? configService.getValue("cpu_temp.showUnit", true) : true
+                }
+            }
+            
+            // GPU Temperature Widget
+            Rectangle {
+                id: gpuTempContainer
+                implicitWidth: gpuTempWidget.visible ? gpuTempWidget.implicitWidth + 8 : 0
+                implicitHeight: gpuTempWidget.visible ? gpuTempWidget.implicitHeight + 4 : 0
+                radius: 6
+                color: gpuTempWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: gpuTempWidget.visible ? 1 : 0
+                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: gpuTempWidget.visible
+                
+                GpuTempWidget {
+                    id: gpuTempWidget
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("gpu_temp.enabled", true) : true
+                    
+                    // Services
+                    themeService: bar.themeService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    showIcon: configService ? configService.getValue("gpu_temp.showIcon", true) : true
+                    showValue: configService ? configService.getValue("gpu_temp.showValue", true) : true
+                    showUnit: configService ? configService.getValue("gpu_temp.showUnit", true) : true
+                }
+            }
+            
+            // Battery Widget
+            Rectangle {
+                id: batteryContainer
+                implicitWidth: batteryWidget.visible ? batteryWidget.implicitWidth + 8 : 0
+                implicitHeight: batteryWidget.visible ? batteryWidget.implicitHeight + 4 : 0
+                radius: 6
+                color: batteryWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: batteryWidget.visible ? 1 : 0
+                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: batteryWidget.visible
+                
+                BatteryWidget {
+                    id: batteryWidget
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("battery.enabled", true) : true
+                    
+                    // Services
+                    themeService: bar.themeService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    showIcon: configService ? configService.getValue("battery.showIcon", true) : true
+                    showPercentage: configService ? configService.getValue("battery.showPercentage", true) : true
+                    showTime: configService ? configService.getValue("battery.showTime", false) : false
+                }
+            }
         }
         
         // Right section - Clock (anchored to right)
         Rectangle {
             id: rightSection
-            width: 80
-            height: parent.height
+            implicitWidth: 140 // Fixed width to prevent janky resizing
+            implicitHeight: 28 // Fixed height to fit within bar (32px - 4px margin)
             color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-            radius: 4
+            radius: 6
+            border.width: 1
+            border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+            
+            // GraphicalComponent interface implementation
+            property string componentId: "clock"
+            property string parentComponentId: "bar"
+            property var childComponentIds: []
+            property string menuPath: "clock"
             
             anchors {
-                right: parent.right
+                right: powerSection.left
+                rightMargin: 8
                 verticalCenter: parent.verticalCenter
             }
             
@@ -196,14 +790,185 @@ PanelWindow {
                 precision: SystemClock.Minutes  // Battery optimization - only update every minute
             }
             
-            Text {
-                id: clockText
+            Column {
+                id: clockDisplay
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 1
+                
+                // Helper functions accessible to all children
+                function getClockConfigValue(key, defaultValue) {
+                    if (!configService) return defaultValue
+                    return configService.getValue("clock." + key, defaultValue)
+                }
+                
+                function generateTimeText() {
+                    const format24Hour = getClockConfigValue("format24Hour", true)
+                    const showSeconds = getClockConfigValue("showSeconds", false)
+                    
+                    let timeFormat = format24Hour ? "hh:mm" : "h:mm AP"
+                    if (showSeconds) {
+                        timeFormat = format24Hour ? "hh:mm:ss" : "h:mm:ss AP"
+                        // Update clock precision if seconds are shown
+                        if (clock.precision !== SystemClock.Seconds) {
+                            clock.precision = SystemClock.Seconds
+                        }
+                    } else {
+                        // Use minute precision for battery optimization
+                        if (clock.precision !== SystemClock.Minutes) {
+                            clock.precision = SystemClock.Minutes
+                        }
+                    }
+                    
+                    return Qt.formatDateTime(clock.date, timeFormat)
+                }
+                
+                function generateDateText() {
+                    if (!getClockConfigValue("showDate", false)) return ""
+                    
+                    const dateFormat = getClockConfigValue("dateFormat", "short")
+                    let format = ""
+                    
+                    switch (dateFormat) {
+                        case "short":
+                            format = "yyyy-MM-dd"
+                            break
+                        case "medium":
+                            format = "MMM d, yyyy"
+                            break
+                        case "long":
+                            format = "MMMM d, yyyy"
+                            break
+                        default:
+                            format = "yyyy-MM-dd"
+                    }
+                    
+                    return Qt.formatDateTime(clock.date, format)
+                }
+                
+                Text {
+                    id: clockText
+                    width: Math.min(implicitWidth, rightSection.width - 16)
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: {
+                        const timeText = parent.generateTimeText()
+                        const showDate = parent.getClockConfigValue("showDate", false)
+                        if (showDate) {
+                            const dateText = parent.generateDateText()
+                            return `${timeText} • ${dateText}`
+                        }
+                        return timeText
+                    }
+                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    font.family: "Inter"
+                    font.pixelSize: 11
+                    font.weight: Font.Medium
+                    elide: Text.ElideRight
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+            
+            // Right-click context menu for clock settings
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                z: 10
+                
+                onClicked: mouse => {
+                    if (mouse.button === Qt.RightButton) {
+                        mouse.accepted = true
+                        rightSection.menu(bar, mouse.x, mouse.y)
+                    }
+                }
+            }
+            
+            // GraphicalComponent interface: menu() function
+            function menu(anchorWindow, x, y, startPath) {
+                console.log(`[${componentId}] Opening clock context menu`)
+                
+                // Use dedicated clock context menu
+                if (!clockMenuLoader.active) {
+                    clockMenuLoader.active = true
+                }
+                
+                if (clockMenuLoader.item) {
+                    const windowToUse = anchorWindow || bar
+                    const globalPos = rightSection.mapToItem(null, x || 0, y || 0)
+                    clockMenuLoader.item.show(windowToUse, globalPos.x, globalPos.y)
+                }
+            }
+            
+            // Dedicated loader for ClockContextMenu
+            Loader {
+                id: clockMenuLoader
+                source: "../overlays/ClockContextMenu.qml"
+                active: false
+                
+                onLoaded: {
+                    item.configService = bar.configService
+                    item.themeService = bar.themeService
+                    
+                    item.closed.connect(function() {
+                        clockMenuLoader.active = false
+                    })
+                }
+            }
+            
+            // GraphicalComponent interface methods
+            function registerComponent() {
+                if (componentId) {
+                    ComponentRegistry.registerComponent(componentId, rightSection)
+                    console.log(`[${componentId}] Registered component with hierarchy: parent=${parentComponentId}, children=[${childComponentIds.join(', ')}]`)
+                }
+            }
+            
+            function unregisterComponent() {
+                if (componentId) {
+                    ComponentRegistry.unregisterComponent(componentId)
+                    console.log(`[${componentId}] Unregistered component`)
+                }
+            }
+            
+            Component.onCompleted: {
+                registerComponent()
+            }
+            
+            Component.onDestruction: {
+                unregisterComponent()
+            }
+        }
+        
+        // Power section - Far right power button
+        Rectangle {
+            id: powerSection
+            implicitWidth: powerSectionWidget.visible ? powerSectionWidget.implicitWidth + 8 : 0
+            implicitHeight: powerSectionWidget.visible ? powerSectionWidget.implicitHeight + 4 : 0
+            radius: 6
+            color: powerSectionWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+            border.width: powerSectionWidget.visible ? 1 : 0
+            border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+            visible: powerSectionWidget.visible
+            
+            anchors {
+                right: parent.right
+                verticalCenter: parent.verticalCenter
+            }
+            
+            PowerWidget {
+                id: powerSectionWidget
                 anchors.centerIn: parent
-                text: Qt.formatDateTime(clock.date, "hh:mm")
-                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                font.family: "Inter"
-                font.pixelSize: 12
-                font.weight: Font.Medium
+                visible: configService ? configService.getValue("power.enabled", true) : true
+                
+                // Services
+                themeService: bar.themeService
+                configService: bar.configService
+                sessionOverlay: bar.sessionOverlay
+                anchorWindow: bar
+                
+                // Display configuration - only show icon for far right placement
+                showIcon: true
+                showText: false
             }
         }
     }
@@ -335,7 +1100,7 @@ PanelWindow {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton
         z: -1  // Lower z-order so monitor MouseAreas can override
-        onClicked: function(mouse) {
+        onClicked: mouse => {
             if (mouse.button === Qt.RightButton) {
                 if (shellRoot) {
                     var anchorRect = {
@@ -350,9 +1115,92 @@ PanelWindow {
         }
     }
     
-    // Services connected automatically
+    // GraphicalComponent interface: menu() function
+    function menu(anchorWindow, x, y, startPath) {
+        console.log(`[${componentId}] Opening bar context menu`)
+        
+        // Use dedicated bar context menu
+        if (!barMenuLoader.active) {
+            barMenuLoader.active = true
+        }
+        
+        if (barMenuLoader.item) {
+            const windowToUse = anchorWindow || bar
+            const globalPos = bar.mapToItem(null, x || 0, y || 0)
+            barMenuLoader.item.show(windowToUse, globalPos.x, globalPos.y)
+        }
+    }
+    
+    // Dedicated loader for BarContextMenu
+    Loader {
+        id: barMenuLoader
+        source: "../overlays/BarContextMenu.qml"
+        active: false
+        
+        onLoaded: {
+            item.configService = bar.configService
+            item.themeService = bar.themeService
+            
+            item.closed.connect(function() {
+                barMenuLoader.active = false
+            })
+        }
+    }
+    
+    // GraphicalComponent interface methods
+    function list_children() {
+        return childComponentIds.map(id => ComponentRegistry.getComponent(id)).filter(comp => comp !== null)
+    }
+    
+    function get_parent() {
+        if (!parentComponentId) return null
+        return ComponentRegistry.getComponent(parentComponentId)
+    }
+    
+    function get_child(id) {
+        return ComponentRegistry.getComponent(id)
+    }
+    
+    function navigateToParent() {
+        const parent = get_parent()
+        if (parent && typeof parent.menu === 'function') {
+            console.log(`[${componentId}] Navigating to parent: ${parentComponentId}`)
+            parent.menu()
+        } else {
+            console.log(`[${componentId}] No parent component found or parent doesn't implement menu()`)
+        }
+    }
+    
+    function navigateToChild(childId) {
+        const child = get_child(childId)
+        if (child && typeof child.menu === 'function') {
+            console.log(`[${componentId}] Navigating to child: ${childId}`)
+            child.menu()
+        } else {
+            console.log(`[${componentId}] Child component ${childId} not found or doesn't implement menu()`)
+        }
+    }
+    
+    function registerComponent() {
+        if (componentId) {
+            ComponentRegistry.registerComponent(componentId, bar)
+            console.log(`[${componentId}] Registered component with hierarchy: parent=${parentComponentId}, children=[${childComponentIds.join(', ')}]`)
+        }
+    }
+    
+    function unregisterComponent() {
+        if (componentId) {
+            ComponentRegistry.unregisterComponent(componentId)
+            console.log(`[${componentId}] Unregistered component`)
+        }
+    }
 
     Component.onCompleted: {
+        registerComponent()
         // Bar initialized
+    }
+    
+    Component.onDestruction: {
+        unregisterComponent()
     }
 }

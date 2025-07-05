@@ -2,3 +2,11 @@ ThemeService 1.0 ThemeService.qml
 ConfigService 1.0 ConfigService.qml
 HyprlandService 1.0 HyprlandService.qml
 SystemMonitorService 1.0 SystemMonitorService.qml
+singleton AudioService AudioService.qml
+singleton BatteryService BatteryService.qml
+singleton BrightnessService BrightnessService.qml
+singleton CpuService CpuService.qml
+singleton RamService RamService.qml
+singleton StorageService StorageService.qml
+singleton TemperatureService TemperatureService.qml
+singleton PowerManagementService PowerManagementService.qml

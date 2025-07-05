@@ -7,7 +7,7 @@ Item {
     
     // Theme state
     property bool initialized: false
-    property string activeTheme: "tokyo-night"  // Will be overridden by config
+    property string activeTheme: "catppuccin"  // Will be overridden by config
     property string activeMode: "dark"
     property bool darkMode: true
     property var availableThemes: []
@@ -16,17 +16,18 @@ Item {
     // Services - will be connected from parent
     property var configService: null
     
-    // Theme directory path - configurable with fallbacks
+    // Theme directory path - following Quickshell best practices
     readonly property string themesPath: {
-        // Priority: 1) Environment variable 2) Config override 3) Default relative to dataDir
+        // Priority: 1) Environment variable 2) Config override 3) Config directory (recommended)
         const envPath = Quickshell.env("QUICKSHELL_THEMES_PATH")
         if (envPath) return envPath
         
         const configOverride = configService?.getSetting("paths", "themesPath")
         if (configOverride) return configOverride
         
-        // Default: ~/.local/share/quickshell/by-shell/<shell-id>/config/theme/data
-        return Quickshell.dataDir + "/config/theme/data"
+        // Default: ~/.config/quickshell/themes (follows XDG and Quickshell best practices)
+        const configDir = Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
+        return configDir + "/quickshell/themes"
     }
     
     // Signals
@@ -55,7 +56,7 @@ Item {
             return
         }
         
-        activeTheme = configService.getValue("theme.activeTheme", "tokyo-night")
+        activeTheme = configService.getValue("theme.activeTheme", "catppuccin")
         activeMode = configService.getValue("theme.activeMode", "dark")
         darkMode = activeMode === "dark"
         
@@ -80,7 +81,7 @@ Item {
     }
     
     
-    // Active theme loader process
+    // Active theme loader process  
     Process {
         id: activeThemeLoader
         command: ["cat", themesPath + "/" + activeTheme + ".json"]
@@ -131,6 +132,9 @@ Item {
     // Load only the active theme for startup efficiency
     function loadActiveTheme() {
         console.log("ThemeService: Loading active theme '" + activeTheme + "' in '" + activeMode + "' mode")
+        const themeFilePath = themesPath + "/" + activeTheme + ".json"
+        console.log("ThemeService: Full theme path:", themeFilePath)
+        activeThemeLoader.command = ["cat", themeFilePath]
         activeThemeLoader.running = true
     }
     

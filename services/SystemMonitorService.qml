@@ -289,6 +289,40 @@ Item {
         }
     }
     
+    // Polling rate control functions
+    function setCpuPollingRate(seconds) {
+        const newInterval = seconds * 1000  // Convert to milliseconds
+        console.log(logCategory, "Setting CPU polling rate to", seconds, "seconds")
+        cpuUpdateInterval = newInterval
+        cpuTimer.interval = newInterval
+    }
+    
+    function setRamPollingRate(seconds) {
+        const newInterval = seconds * 1000  // Convert to milliseconds
+        console.log(logCategory, "Setting RAM polling rate to", seconds, "seconds")
+        ramUpdateInterval = newInterval
+        ramTimer.interval = newInterval
+    }
+    
+    function setStoragePollingRate(seconds) {
+        const newInterval = seconds * 1000  // Convert to milliseconds
+        console.log(logCategory, "Setting Storage polling rate to", seconds, "seconds")
+        storageUpdateInterval = newInterval
+        storageTimer.interval = newInterval
+    }
+    
+    function getCpuPollingRate() {
+        return cpuUpdateInterval / 1000  // Convert to seconds
+    }
+    
+    function getRamPollingRate() {
+        return ramUpdateInterval / 1000  // Convert to seconds
+    }
+    
+    function getStoragePollingRate() {
+        return storageUpdateInterval / 1000  // Convert to seconds
+    }
+    
     Component.onCompleted: {
         console.log(logCategory, "Initialized")
         initialized = true

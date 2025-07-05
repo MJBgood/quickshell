@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Hyprland
 import QtQuick
+import QtQuick.Controls
 import "../base"
 
 PopupWindow {
@@ -176,9 +177,12 @@ PopupWindow {
                 height: 32
                 color: "transparent"
                 
+                // Left side: Home button and breadcrumb text
                 Row {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
+                    anchors.right: historyNav.left
+                    anchors.rightMargin: 8
                     spacing: 6
                     
                     // Home button
@@ -208,45 +212,23 @@ PopupWindow {
                         }
                     }
                     
-                    // Back button
-                    Rectangle {
-                        width: 28
-                        height: 28
-                        radius: 6
-                        visible: getCurrentMenu().parent !== null
-                        color: backMouse.containsMouse ? 
-                               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
-                               "transparent"
-                        border.width: 1
-                        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
-                        
-                        Text {
-                            anchors.centerIn: parent
-                            text: "↑"
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                            font.pixelSize: 12
-                        }
-                        
-                        MouseArea {
-                            id: backMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            onClicked: navigateToParent()
-                        }
-                    }
-                    
-                    // Full breadcrumb path
+                    // Full breadcrumb path with text wrapping
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - (currentPath !== "root" ? 34 : 0) // Account for home button width + spacing
                         text: getBreadcrumbText()
-                        font.pixelSize: 14
+                        font.pixelSize: 12
                         font.weight: Font.DemiBold
                         color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
                     }
                 }
                 
-                // History navigation
+                // History navigation (right side)
                 Row {
+                    id: historyNav
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
@@ -355,7 +337,7 @@ PopupWindow {
                 
                 Text {
                     anchors.centerIn: parent
-                    text: "💡 Right-click monitor items (⚙️) for detailed configuration"
+                    text: "💡 Click monitor items to configure individual settings"
                     color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                     font.pixelSize: 9
                     font.italic: true
@@ -412,15 +394,10 @@ PopupWindow {
                         id: childMouse
                         anchors.fill: parent
                         hoverEnabled: true
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        acceptedButtons: Qt.LeftButton
                         onClicked: function(mouse) {
-                            if (mouse.button === Qt.RightButton && isMonitorItem(parent.childId)) {
-                                // Right-click on monitor item - show specialized overlay
-                                showMonitorDataOverlay(parent.childId, mouse.x, mouse.y)
-                            } else {
-                                // Left-click - normal navigation
-                                navigateTo(parent.childId)
-                            }
+                            // Navigate to selected item
+                            navigateTo(parent.childId)
                         }
                     }
                 }
@@ -434,106 +411,413 @@ PopupWindow {
         Column {
             spacing: 3
             
-            Repeater {
-                model: getSettingsForPath(currentPath)
+            // Theme-specific interface
+            Column {
+                visible: currentPath === "interface-theme"
+                width: parent.width
+                spacing: 8
                 
-                delegate: Rectangle {
+                // Theme selector header
+                Item {
                     width: parent.width
-                    height: 28
-                    radius: 6
-                    color: settingMouse.containsMouse ? 
-                           (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
-                           "transparent"
+                    height: 32
                     
-                    property var setting: modelData
+                    Text {
+                        text: "🎨"
+                        font.pixelSize: 18
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    
+                    Column {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 28
+                        anchors.verticalCenter: parent.verticalCenter
+                        
+                        Text {
+                            text: "Theme Selector"
+                            font.pixelSize: 13
+                            font.weight: Font.DemiBold
+                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        }
+                        
+                        Text {
+                            text: "Choose your interface theme"
+                            font.pixelSize: 9
+                            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        }
+                    }
+                }
+                
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // Current theme display
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    radius: 6
+                    color: themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
                     
                     Row {
                         anchors.left: parent.left
                         anchors.leftMargin: 12
                         anchors.verticalCenter: parent.verticalCenter
-                        spacing: 10
+                        spacing: 8
+                        
+                        Rectangle {
+                            width: 8
+                            height: 8
+                            radius: 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                        }
+                        
+                        Column {
+                            spacing: 2
+                            
+                            Text {
+                                text: "Current: " + (themeService ? (themeService.currentThemeData ? themeService.currentThemeData.name : themeService.activeTheme) : "Unknown")
+                                font.pixelSize: 11
+                                font.weight: Font.Medium
+                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            }
+                            
+                            Text {
+                                text: (themeService && themeService.darkMode ? "🌙 Dark" : "☀️ Light") + " Mode"
+                                font.pixelSize: 9
+                                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                            }
+                        }
+                    }
+                    
+                    // Mode toggle button
+                    Rectangle {
+                        anchors.right: parent.right
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 60
+                        height: 24
+                        radius: 12
+                        color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+                        visible: themeService && themeService.currentThemeData && themeService.currentThemeData.supportsModes
                         
                         Text {
-                            text: parent.parent.setting.type === "checkbox" ? 
-                                  (parent.parent.setting.checked ? "✓" : "○") : 
-                                  "↻"
-                            color: parent.parent.setting.type === "checkbox" && parent.parent.setting.checked ? 
-                                   "#a6e3a1" : 
-                                   (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+                            anchors.centerIn: parent
+                            text: themeService && themeService.darkMode ? "🌙" : "☀️"
                             font.pixelSize: 10
-                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (themeService) {
+                                    themeService.toggleDarkMode()
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Open full theme selector button
+                Rectangle {
+                    width: parent.width
+                    height: 32
+                    radius: 6
+                    color: themeSelectorMouse.containsMouse ? 
+                           (themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
+                           (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244")
+                    border.width: 1
+                    border.color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+                    
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 8
+                        
+                        Text {
+                            text: "🎨"
+                            font.pixelSize: 12
                         }
                         
                         Text {
-                            text: parent.parent.setting.text
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                            font.pixelSize: 12
-                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Open Theme Selector"
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                            color: themeSelectorMouse.containsMouse ?
+                                   (themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
+                                   (themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa")
                         }
                     }
                     
                     MouseArea {
-                        id: settingMouse
+                        id: themeSelectorMouse
                         anchors.fill: parent
                         hoverEnabled: true
-                        onClicked: handleSettingClick(parent.setting)
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            // Close this menu and show theme dropdown
+                            hide()
+                            if (sourceComponent && sourceComponent.barWindow && sourceComponent.barWindow.shellRoot) {
+                                sourceComponent.barWindow.shellRoot.showThemeDropdown()
+                            }
+                        }
+                    }
+                    
+                    Behavior on color {
+                        ColorAnimation { duration: 150 }
                     }
                 }
             }
+            
+            // Monitor-specific detailed configuration
+            ScrollView {
+                visible: isMonitorItem(currentPath)
+                width: parent.width
+                height: Math.min(350, contentHeight)
+                clip: true
+                
+                Component.onCompleted: {
+                    ScrollBar.horizontal.policy = ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy = ScrollBar.AsNeeded
+                }
+                
+                ScrollBar.vertical: ScrollBar {
+                    active: true
+                    policy: ScrollBar.AsNeeded
+                    size: 0.3
+                    width: 6
+                    
+                    background: Rectangle {
+                        color: "transparent"
+                        radius: 3
+                    }
+                    
+                    contentItem: Rectangle {
+                        color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                        radius: 3
+                        opacity: 0.6
+                    }
+                }
+                
+                Column {
+                    width: parent.width
+                    spacing: 8
+                    
+                    // Monitor header
+                    Item {
+                        width: parent.width
+                        height: 32
+                        
+                        Text {
+                            id: monitorIconText
+                            text: getMonitorIcon(currentPath)
+                            font.pixelSize: 18
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Column {
+                            anchors.left: monitorIconText.right
+                            anchors.leftMargin: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                            
+                            Text {
+                                text: getMonitorTitle(currentPath) + " Monitor"
+                                font.pixelSize: 13
+                                font.weight: Font.DemiBold
+                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            }
+                            
+                            Text {
+                                text: getMonitorEnabled(currentPath) ? "Enabled" : "Disabled"
+                                font.pixelSize: 9
+                                color: getMonitorEnabled(currentPath) ? "#a6e3a1" : "#f38ba8"
+                            }
+                        }
+                    }
+                    
+                    // Separator
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    }
+                    
+                    // Interactive configuration options
+                    Column {
+                        width: parent.width
+                        spacing: 6
+                        
+                        // Enable/Disable toggle
+                        MonitorToggleItem {
+                            width: parent.width
+                            label: "Monitor"
+                            value: getMonitorEnabled(currentPath) ? "Enabled" : "Disabled"
+                            isActive: getMonitorEnabled(currentPath)
+                            onClicked: toggleMonitorConfig(currentPath, "enabled")
+                        }
+                        
+                        // Icon toggle
+                        MonitorToggleItem {
+                            width: parent.width
+                            label: "Icon"
+                            value: getMonitorConfigValue(currentPath, "showIcon", true) ? getMonitorIcon(currentPath) : "Hidden"
+                            isActive: getMonitorConfigValue(currentPath, "showIcon", true)
+                            onClicked: toggleMonitorConfig(currentPath, "showIcon")
+                        }
+                        
+                        // Label toggle
+                        MonitorToggleItem {
+                            width: parent.width
+                            label: "Label"
+                            value: getMonitorConfigValue(currentPath, "showLabel", false) ? ("\"" + getMonitorTitle(currentPath) + "\"") : "Hidden"
+                            isActive: getMonitorConfigValue(currentPath, "showLabel", false)
+                            onClicked: toggleMonitorConfig(currentPath, "showLabel")
+                        }
+                        
+                        // Percentage toggle
+                        MonitorToggleItem {
+                            width: parent.width
+                            label: "Percentage"
+                            value: getMonitorConfigValue(currentPath, "showPercentage", true) ? "XX.X%" : "Hidden"
+                            isActive: getMonitorConfigValue(currentPath, "showPercentage", true)
+                            onClicked: toggleMonitorConfig(currentPath, "showPercentage")
+                        }
+                        
+                        // Frequency toggle (CPU and RAM only)
+                        MonitorToggleItem {
+                            visible: currentPath === "cpu" || currentPath === "ram"
+                            width: parent.width
+                            label: "Frequency"
+                            value: getMonitorConfigValue(currentPath, "showFrequency", false) ? "X.X GHz" : "Hidden"
+                            isActive: getMonitorConfigValue(currentPath, "showFrequency", false)
+                            onClicked: toggleMonitorConfig(currentPath, "showFrequency")
+                        }
+                        
+                        // Total toggle (RAM only)
+                        MonitorToggleItem {
+                            visible: currentPath === "ram"
+                            width: parent.width
+                            label: "Show Total"
+                            value: getMonitorConfigValue(currentPath, "showTotal", true) ? "X.X/Y.Y GB" : "Hidden"
+                            isActive: getMonitorConfigValue(currentPath, "showTotal", true)
+                            onClicked: toggleMonitorConfig(currentPath, "showTotal")
+                        }
+                        
+                        // Bytes toggle (Storage only)
+                        MonitorToggleItem {
+                            visible: currentPath === "storage"
+                            width: parent.width
+                            label: "Bytes Format"
+                            value: getMonitorConfigValue(currentPath, "showBytes", false) ? "X.X/Y.Y GB" : "Hidden"
+                            isActive: getMonitorConfigValue(currentPath, "showBytes", false)
+                            onClicked: toggleMonitorConfig(currentPath, "showBytes")
+                        }
+                        
+                        // Precision
+                        MonitorToggleItem {
+                            width: parent.width
+                            label: "Precision"
+                            value: getMonitorConfigValue(currentPath, "precision", currentPath === "cpu" ? 1 : 0) + " decimal" + (getMonitorConfigValue(currentPath, "precision", currentPath === "cpu" ? 1 : 0) === 1 ? "" : "s")
+                            isActive: true
+                            onClicked: cycleMonitorPrecision(currentPath)
+                        }
+                    }
+                    
+                    // Separator
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    }
+                    
+                    // Live preview
+                    Column {
+                        width: parent.width
+                        spacing: 4
+                        
+                        Text {
+                            text: "Current Display:"
+                            font.pixelSize: 10
+                            font.weight: Font.DemiBold
+                            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        }
+                        
+                        Rectangle {
+                            width: parent.width
+                            height: previewText.implicitHeight + 8
+                            color: themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+                            radius: 6
+                            
+                            Text {
+                                id: previewText
+                                anchors.centerIn: parent
+                                text: getMonitorDisplayPreview(currentPath)
+                                font.pixelSize: 11
+                                font.family: "monospace"
+                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            }
+                        }
+                    }
+                }
+            }
+            
         }
     }
     
-    // Generate settings based on current path
-    function getSettingsForPath(path) {
-        switch(path) {
-            case "cpu":
-                return [
-                    {type: "checkbox", key: "performance.cpu.enabled", text: "Enabled", checked: configService ? configService.getValue("performance.cpu.enabled", true) : true},
-                    {type: "checkbox", key: "performance.cpu.showIcon", text: "Show Icon", checked: configService ? configService.getValue("performance.cpu.showIcon", true) : true},
-                    {type: "checkbox", key: "performance.cpu.showPercentage", text: "Show Percentage", checked: configService ? configService.getValue("performance.cpu.showPercentage", true) : true},
-                    {type: "cycle", key: "performance.cpu.precision", text: "Precision: " + (configService ? configService.getValue("performance.cpu.precision", 1) : 1), values: [0, 1, 2, 3]}
-                ]
-            case "ram":
-                return [
-                    {type: "checkbox", key: "performance.ram.enabled", text: "Enabled", checked: configService ? configService.getValue("performance.ram.enabled", true) : true},
-                    {type: "checkbox", key: "performance.ram.showIcon", text: "Show Icon", checked: configService ? configService.getValue("performance.ram.showIcon", true) : true},
-                    {type: "checkbox", key: "performance.ram.showPercentage", text: "Show Percentage", checked: configService ? configService.getValue("performance.ram.showPercentage", true) : true},
-                    {type: "cycle", key: "performance.ram.precision", text: "Precision: " + (configService ? configService.getValue("performance.ram.precision", 0) : 0), values: [0, 1, 2, 3]}
-                ]
-            case "storage":
-                return [
-                    {type: "checkbox", key: "performance.storage.enabled", text: "Enabled", checked: configService ? configService.getValue("performance.storage.enabled", true) : true},
-                    {type: "checkbox", key: "performance.storage.showIcon", text: "Show Icon", checked: configService ? configService.getValue("performance.storage.showIcon", true) : true},
-                    {type: "checkbox", key: "performance.storage.showBytes", text: "Show Bytes", checked: configService ? configService.getValue("performance.storage.showBytes", false) : false}
-                ]
-            case "performance-global":
-                return [
-                    {type: "cycle", key: "performance.layout", text: "Layout: " + (configService ? configService.getValue("performance.layout", "horizontal") : "horizontal"), values: ["horizontal", "vertical", "grid"]},
-                    {type: "cycle", key: "performance.displayMode", text: "Mode: " + (configService ? configService.getValue("performance.displayMode", "compact") : "compact"), values: ["compact", "detailed", "minimal"]}
-                ]
-            default:
-                return []
+    // Monitor Toggle Item inline component
+    component MonitorToggleItem: Rectangle {
+        property string label: ""
+        property string value: ""
+        property bool isActive: false
+        signal clicked()
+        
+        height: 24
+        radius: 4
+        color: toggleMouse.containsMouse ? 
+               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
+               "transparent"
+        
+        Row {
+            anchors.left: parent.left
+            anchors.leftMargin: 8
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 8
+            
+            Text {
+                text: label + ":"
+                font.pixelSize: 10
+                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            
+            Text {
+                text: value
+                font.pixelSize: 10
+                font.weight: Font.Medium
+                color: isActive ? "#a6e3a1" : "#f38ba8"
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+        
+        MouseArea {
+            id: toggleMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: parent.clicked()
+        }
+        
+        Behavior on color {
+            ColorAnimation { duration: 150 }
         }
     }
     
-    // Handle setting clicks
-    function handleSettingClick(setting) {
-        if (!configService) return
-        
-        if (setting.type === "checkbox") {
-            configService.setValue(setting.key, !setting.checked)
-            configService.saveConfig()
-        } else if (setting.type === "cycle") {
-            const current = configService.getValue(setting.key, setting.values[0])
-            const currentIndex = setting.values.indexOf(current)
-            const newValue = setting.values[(currentIndex + 1) % setting.values.length]
-            configService.setValue(setting.key, newValue)
-            configService.saveConfig()
-        }
-        
-        // Refresh content
-        contentLoader.sourceComponent = getMenuComponent()
-    }
     
     // Navigation functions
     function getCurrentMenu() {
@@ -614,26 +898,135 @@ PopupWindow {
         closed()
     }
     
-    // Check if an item is a monitor component that can show specialized overlay
+    // Check if an item is a monitor component
     function isMonitorItem(id) {
         return id === "cpu" || id === "ram" || id === "storage"
     }
     
-    // Show specialized monitor data overlay
-    function showMonitorDataOverlay(monitorId, x, y) {
-        console.log(`[HierarchicalMenu] Loading specialized overlay for: ${monitorId}`)
-        
-        const sourceComponent = ComponentRegistry.getComponent(monitorId)
-        if (sourceComponent) {
-            // Close hierarchical menu first
-            hide()
-            
-            // Show the monitor's specialized data overlay
-            if (typeof sourceComponent.showDataOverlay === 'function') {
-                sourceComponent.showDataOverlay()
-            } else {
-                console.warn(`[HierarchicalMenu] Component ${monitorId} does not support data overlay`)
-            }
+    // Monitor helper functions
+    function getMonitorIcon(monitorId) {
+        switch(monitorId) {
+            case "cpu": return "💻"
+            case "ram": return "🧠"
+            case "storage": return "💾"
+            default: return "📊"
         }
     }
+    
+    function getMonitorTitle(monitorId) {
+        switch(monitorId) {
+            case "cpu": return "CPU"
+            case "ram": return "RAM"
+            case "storage": return "Storage"
+            default: return "Monitor"
+        }
+    }
+    
+    function getMonitorEnabled(monitorId) {
+        return getMonitorConfigValue(monitorId, "enabled", true)
+    }
+    
+    function getMonitorConfigValue(monitorId, key, defaultValue) {
+        if (!configService) return defaultValue
+        return configService.getValue(`performance.${monitorId}.${key}`, defaultValue)
+    }
+    
+    function toggleMonitorConfig(monitorId, key) {
+        if (!configService) return
+        
+        const configKey = `performance.${monitorId}.${key}`
+        const currentValue = configService.getValue(configKey, key === "showLabel" ? false : true)
+        const newValue = !currentValue
+        
+        configService.setValue(configKey, newValue)
+        configService.saveConfig()
+        
+        console.log(`[HierarchicalMenu] Updated ${configKey} = ${newValue}`)
+        
+        // Force refresh the menu content to show updated values
+        Qt.callLater(function() {
+            contentLoader.sourceComponent = getMenuComponent()
+        })
+    }
+    
+    function cycleMonitorPrecision(monitorId) {
+        if (!configService) return
+        
+        const configKey = `performance.${monitorId}.precision`
+        const currentPrecision = configService.getValue(configKey, monitorId === "cpu" ? 1 : 0)
+        const newPrecision = (currentPrecision + 1) % 4
+        
+        configService.setValue(configKey, newPrecision)
+        configService.saveConfig()
+        
+        console.log(`[HierarchicalMenu] Updated ${configKey} = ${newPrecision}`)
+        
+        // Force refresh the menu content to show updated values
+        Qt.callLater(function() {
+            contentLoader.sourceComponent = getMenuComponent()
+        })
+    }
+    
+    function getMonitorDisplayPreview(monitorId) {
+        if (!configService) return "Preview unavailable"
+        
+        let parts = []
+        
+        if (getMonitorConfigValue(monitorId, "showIcon", true)) {
+            parts.push(getMonitorIcon(monitorId))
+        }
+        
+        if (getMonitorConfigValue(monitorId, "showLabel", false)) {
+            parts.push(getMonitorTitle(monitorId))
+        }
+        
+        const precision = getMonitorConfigValue(monitorId, "precision", monitorId === "cpu" ? 1 : 0)
+        
+        if (monitorId === "cpu") {
+            let cpuParts = []
+            if (getMonitorConfigValue(monitorId, "showPercentage", true)) {
+                cpuParts.push((42.5).toFixed(precision) + "%")
+            } else {
+                cpuParts.push((42.5).toFixed(precision))
+            }
+            if (getMonitorConfigValue(monitorId, "showFrequency", false)) {
+                cpuParts.push("3.2 GHz")
+            }
+            if (cpuParts.length > 0) {
+                parts.push(cpuParts.join(" | "))
+            }
+        } else if (monitorId === "ram") {
+            let ramParts = []
+            if (getMonitorConfigValue(monitorId, "showPercentage", true)) {
+                ramParts.push((68.3).toFixed(precision) + "%")
+            }
+            if (getMonitorConfigValue(monitorId, "showTotal", true)) {
+                ramParts.push("10.9/16.0 GB")
+            } else if (!getMonitorConfigValue(monitorId, "showPercentage", true)) {
+                ramParts.push("10.9 GB")
+            }
+            if (ramParts.length > 0) {
+                parts.push(ramParts.join(" | "))
+            }
+            if (getMonitorConfigValue(monitorId, "showFrequency", false)) {
+                parts.push("3200 MHz")
+            }
+        } else if (monitorId === "storage") {
+            let storageParts = []
+            if (getMonitorConfigValue(monitorId, "showPercentage", true)) {
+                storageParts.push((85.2).toFixed(precision) + "%")
+            }
+            if (getMonitorConfigValue(monitorId, "showBytes", false)) {
+                storageParts.push("426.1/500.0 GB")
+            } else if (!getMonitorConfigValue(monitorId, "showPercentage", true)) {
+                storageParts.push("426.1 GB")
+            }
+            if (storageParts.length > 0) {
+                parts.push(storageParts.join(" | "))
+            }
+        }
+        
+        return parts.length > 0 ? parts.join(" ") : "No display configured"
+    }
+    
 }
