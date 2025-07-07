@@ -278,7 +278,7 @@ Singleton {
             }
         }
         
-        onExited: {
+        onExited: (exitCode) => {
             console.log(logCategory, "Config loading process completed with exit code:", exitCode)
         }
     }
@@ -851,24 +851,99 @@ Singleton {
     
     // Simple laptop detection for auto-mode
     function autoDetectLaptop() {
-        // Use environment variables and system hints that are typically available
-        // This is a simple heuristic - users can override with system.type config
+        // Use multiple detection methods for better accuracy
+        console.log(logCategory, "Auto-detecting system type...")
         
-        // Check for common laptop environment indicators
-        const powerProfile = Quickshell.env("POWER_PROFILE_DAEMON_PREFERRED_PROFILE")
-        if (powerProfile === "power-saver" || powerProfile === "balanced") {
-            console.log(logCategory, "Laptop detected: power profile indicates mobile device")
-            return true
+        try {
+            // Method 1: Check for laptop-specific environment variables
+            const powerProfile = Quickshell.env("POWER_PROFILE_DAEMON_PREFERRED_PROFILE")
+            if (powerProfile === "power-saver" || powerProfile === "balanced") {
+                console.log(logCategory, "Laptop detected: power profile indicates mobile device")
+                return true
+            }
+            
+            // Method 2: Check for common laptop environment indicators
+            const xdgSessionType = Quickshell.env("XDG_SESSION_TYPE")
+            const currentDesktop = Quickshell.env("XDG_CURRENT_DESKTOP")
+            
+            // Method 3: Try to detect battery presence (most reliable for laptops)
+            const batteryExists = checkBatteryExists()
+            if (batteryExists) {
+                console.log(logCategory, "Laptop detected: battery found")
+                return true
+            }
+            
+            // Method 4: Check screen size and DPI (laptops typically have higher DPI)
+            const primaryScreen = Quickshell.screens[0]
+            if (primaryScreen) {
+                const width = primaryScreen.width
+                const height = primaryScreen.height
+                const dpr = primaryScreen.devicePixelRatio
+                
+                // Laptop-like characteristics: smaller screens with higher DPI
+                const isSmallHighDPI = (width < 1920 || height < 1080) && dpr > 1.25
+                const isTypicalLaptopRes = (width === 1366 && height === 768) || 
+                                         (width === 1920 && height === 1080 && dpr > 1.0) ||
+                                         (width < 1600 && dpr > 1.0)
+                
+                if (isSmallHighDPI || isTypicalLaptopRes) {
+                    console.log(logCategory, `Laptop detected: screen characteristics ${width}x${height} DPR:${dpr.toFixed(2)}`)
+                    return true
+                }
+            }
+            
+            // Method 5: Check ACPI for laptop-specific power management
+            // This would require external commands, skip for now
+            
+            console.log(logCategory, "System type auto-detection: no clear laptop indicators found, defaulting to desktop")
+            return false
+            
+        } catch (error) {
+            console.warn(logCategory, "Error in laptop auto-detection:", error)
+            return false
         }
-        
-        // Check for touchpad (common on laptops)
-        const session = Quickshell.env("XDG_SESSION_TYPE")
-        const desktop = Quickshell.env("XDG_CURRENT_DESKTOP")
-        
-        // For now, default to desktop unless explicitly configured
-        // This is safer for desktop users who don't want battery widgets
-        console.log(logCategory, "System type auto-detection: defaulting to desktop")
-        return false
+    }
+    
+    function checkBatteryExists() {
+        // Simplified battery detection
+        try {
+            // Method 1: Check environment variables for battery
+            const hasBat0 = Quickshell.env("POWER_SUPPLY_BAT0_PRESENT") === "1"
+            const hasBat1 = Quickshell.env("POWER_SUPPLY_BAT1_PRESENT") === "1"
+            
+            if (hasBat0 || hasBat1) {
+                console.log(logCategory, "Battery found via environment variables")
+                return true
+            }
+            
+            // Method 2: Check for common laptop battery environment indicators
+            const upowerConf = Quickshell.env("UPOWER_CONF_FILE_NAME")
+            const powerProfile = Quickshell.env("POWER_PROFILE_DAEMON_PREFERRED_PROFILE")
+            
+            if (upowerConf || powerProfile) {
+                console.log(logCategory, "Power management detected, likely has battery")
+                return true
+            }
+            
+            // Method 3: Check XDG environment for mobile session indicators
+            const sessionDesktop = Quickshell.env("XDG_SESSION_DESKTOP")
+            const sessionType = Quickshell.env("XDG_SESSION_TYPE")
+            
+            // GNOME and KDE often set laptop-specific variables
+            if (sessionDesktop && (sessionDesktop.includes("gnome") || sessionDesktop.includes("kde"))) {
+                const gnomePowerManager = Quickshell.env("GNOME_DESKTOP_SESSION_ID")
+                if (gnomePowerManager) {
+                    console.log(logCategory, "GNOME session detected, checking for power management")
+                    return true
+                }
+            }
+            
+            console.log(logCategory, "No battery detected via environment variables")
+            return false
+        } catch (error) {
+            console.warn(logCategory, "Error checking battery existence:", error)
+            return false
+        }
     }
     
     // Helper function to get battery widget enabled state with auto-detection

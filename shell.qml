@@ -325,7 +325,7 @@ ShellRoot {
         onLoaded: {
             console.log(logCategory, "Global WallpaperSelector loaded")
             item.wallpaperService = wallpaperServiceLoader.item
-            // themeService removed - theme functionality integrated into configService
+            item.configService = ConfigService
             
             // Auto-hide when closed
             item.closed.connect(function() {

@@ -807,7 +807,6 @@ PanelWindow {
                 id: clockWidget
                 anchors.centerIn: parent
                 configService: bar.configService
-                anchorWindow: bar
             }
         }
         
