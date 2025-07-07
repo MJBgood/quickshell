@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Hyprland
 import QtQuick
 import QtCore
+import "../../services"
 
 PanelWindow {
     id: themeDropdown
@@ -18,8 +19,7 @@ PanelWindow {
     color: "transparent"
     
     // Services passed from parent
-    property var themeService: null
-    property var configService: null
+    property var configService: ConfigService
     
     // Signals
     signal closed()
@@ -65,8 +65,8 @@ PanelWindow {
         anchors.centerIn: parent
         width: 320
         height: Math.min(380, (themeList.count * 60) + 100)
-        color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         border.width: 2
         radius: 12
         
@@ -89,7 +89,7 @@ PanelWindow {
             anchors.left: parent.left
             anchors.right: parent.right
             height: 50
-            color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+            color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
             radius: 12
             
             Rectangle {
@@ -107,7 +107,7 @@ PanelWindow {
                 text: "Select Theme"
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
-                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
             }
             
             // Close button
@@ -151,7 +151,7 @@ PanelWindow {
             anchors.bottom: footer.top
             anchors.margins: 8
             
-            model: themeService ? themeService.availableThemes : []
+            model: configService ? (configService.availableThemes || []) : []
             clip: true
             spacing: 4
             
@@ -159,11 +159,11 @@ PanelWindow {
                 width: themeList.width
                 height: 50
                 radius: 6
-                color: modelData.id === (themeService ? themeService.activeTheme : "") ? 
-                       (themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
+                color: modelData.id === (configService ? configService.activeTheme : "") ? 
+                       (configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
                        (mouseArea.containsMouse ? 
-                        (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") :
-                        (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"))
+                        (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") :
+                        (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"))
                 
                 Row {
                     anchors.left: parent.left
@@ -177,9 +177,9 @@ PanelWindow {
                         height: 8
                         radius: 4
                         anchors.verticalCenter: parent.verticalCenter
-                        color: modelData.id === (themeService ? themeService.activeTheme : "") ?
-                               (themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
-                               (themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1")
+                        color: modelData.id === (configService ? configService.activeTheme : "") ?
+                               (configService ? configService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
+                               (configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1")
                     }
                     
                     Column {
@@ -188,18 +188,18 @@ PanelWindow {
                         Text {
                             text: modelData.name || modelData.id
                             font.pixelSize: 13
-                            font.weight: modelData.id === (themeService ? themeService.activeTheme : "") ? Font.DemiBold : Font.Medium
-                            color: modelData.id === (themeService ? themeService.activeTheme : "") ?
-                                   (themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
-                                   (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
+                            font.weight: modelData.id === (configService ? configService.activeTheme : "") ? Font.DemiBold : Font.Medium
+                            color: modelData.id === (configService ? configService.activeTheme : "") ?
+                                   (configService ? configService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
+                                   (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
                         }
                         
                         Text {
                             text: modelData.description || "Theme: " + modelData.id
                             font.pixelSize: 10
-                            color: modelData.id === (themeService ? themeService.activeTheme : "") ?
-                                   (themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
-                                   (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+                            color: modelData.id === (configService ? configService.activeTheme : "") ?
+                                   (configService ? configService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
+                                   (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
                         }
                     }
                 }
@@ -209,10 +209,10 @@ PanelWindow {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.rightMargin: 12
-                    text: modelData.id === (themeService ? themeService.activeTheme : "") ?
-                          (themeService && themeService.darkMode ? "🌙" : "☀️") : ""
+                    text: modelData.id === (configService ? configService.activeTheme : "") ?
+                          (configService && configService.darkMode ? "🌙" : "☀️") : ""
                     font.pixelSize: 12
-                    visible: modelData.id === (themeService ? themeService.activeTheme : "")
+                    visible: modelData.id === (configService ? configService.activeTheme : "")
                 }
                 
                 MouseArea {
@@ -222,9 +222,9 @@ PanelWindow {
                     cursorShape: Qt.PointingHandCursor
                     
                     onClicked: {
-                        if (themeService && modelData.id !== themeService.activeTheme) {
+                        if (configService && modelData.id !== configService.activeTheme) {
                             console.log(logCategory, "Switching to theme:", modelData.id)
-                            themeService.loadTheme(modelData.id)
+                            configService.setTheme(modelData.id, configService.activeMode)
                         }
                     }
                 }
@@ -241,8 +241,8 @@ PanelWindow {
             anchors.bottom: parent.bottom
             anchors.left: parent.left
             anchors.right: parent.right
-            height: themeService && themeService.currentThemeData && themeService.currentThemeData.supportsModes ? 50 : 20
-            color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+            height: configService && configService.currentThemeData && configService.currentThemeData.supportsModes ? 50 : 20
+            color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
             radius: 12
             
             Rectangle {
@@ -259,23 +259,23 @@ PanelWindow {
                 width: 120
                 height: 32
                 radius: 16
-                color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
-                visible: themeService && themeService.currentThemeData && themeService.currentThemeData.supportsModes
+                color: configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+                visible: configService && configService.currentThemeData && configService.currentThemeData.supportsModes
                 
                 Row {
                     anchors.centerIn: parent
                     spacing: 6
                     
                     Text {
-                        text: themeService && themeService.darkMode ? "🌙" : "☀️"
+                        text: configService && configService.darkMode ? "🌙" : "☀️"
                         font.pixelSize: 12
                     }
                     
                     Text {
-                        text: themeService && themeService.darkMode ? "Dark Mode" : "Light Mode"
+                        text: configService && configService.darkMode ? "Dark Mode" : "Light Mode"
                         font.pixelSize: 11
                         font.weight: Font.Medium
-                        color: themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e"
+                        color: configService ? configService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e"
                     }
                 }
                 
@@ -284,8 +284,8 @@ PanelWindow {
                     cursorShape: Qt.PointingHandCursor
                     
                     onClicked: {
-                        if (themeService) {
-                            themeService.toggleDarkMode()
+                        if (configService) {
+                            configService.toggleDarkMode()
                         }
                     }
                 }
@@ -296,8 +296,8 @@ PanelWindow {
                 anchors.centerIn: parent
                 text: "This theme has a fixed color scheme"
                 font.pixelSize: 11
-                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
-                visible: !(themeService && themeService.currentThemeData && themeService.currentThemeData.supportsModes)
+                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                visible: !(configService && configService.currentThemeData && configService.currentThemeData.supportsModes)
             }
         }
     }
@@ -307,8 +307,8 @@ PanelWindow {
         console.log(logCategory, "ThemeDropdown show() called")
         
         // Ensure themes are loaded
-        if (themeService && themeService.availableThemes.length === 0) {
-            themeService.refreshThemes()
+        if (configService && configService.availableThemes.length === 0) {
+            configService.refreshThemes()
         }
         
         visible = true

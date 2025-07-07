@@ -1,6 +1,7 @@
 import Quickshell
 import QtQuick
 import QtCore
+import "../../services"
 import "." as Overlays
 
 PopupWindow {
@@ -13,8 +14,7 @@ PopupWindow {
     color: "transparent"
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     
     // Monitor-specific properties
     property string monitorType: "cpu"  // cpu, ram, or storage
@@ -81,8 +81,8 @@ PopupWindow {
     Rectangle {
         id: menuContent
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         border.width: 1
         radius: 8
         z: 1
@@ -123,7 +123,7 @@ PopupWindow {
                         text: monitorName + " Monitor"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
@@ -133,7 +133,7 @@ PopupWindow {
             Rectangle {
                 width: parent.width
                 height: 1
-                color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
             }
             
             // Enable/Disable
@@ -142,7 +142,7 @@ PopupWindow {
                 text: "Enable " + monitorName
                 checkable: true
                 checked: configEnabled
-                themeService: contextMenu.themeService
+                configService: contextMenu.configService
                 onClicked: toggleConfig("enabled")
             }
             
@@ -152,7 +152,7 @@ PopupWindow {
                 text: "Show Icon"
                 checkable: true
                 checked: configShowIcon
-                themeService: contextMenu.themeService
+                configService: contextMenu.configService
                 onClicked: toggleConfig("showIcon")
             }
             
@@ -162,7 +162,7 @@ PopupWindow {
                 text: "Show Label"
                 checkable: true
                 checked: configShowLabel
-                themeService: contextMenu.themeService
+                configService: contextMenu.configService
                 onClicked: toggleConfig("showLabel")
             }
             
@@ -172,7 +172,7 @@ PopupWindow {
                 text: "Show Percentage"
                 checkable: true
                 checked: configShowPercentage
-                themeService: contextMenu.themeService
+                configService: contextMenu.configService
                 onClicked: toggleConfig("showPercentage")
             }
             
@@ -183,7 +183,7 @@ PopupWindow {
                 text: "Show Frequency"
                 checkable: true
                 checked: configShowFrequency
-                themeService: contextMenu.themeService
+                configService: contextMenu.configService
                 onClicked: toggleConfig("showFrequency")
             }
             
@@ -194,7 +194,7 @@ PopupWindow {
                 text: "Show Bytes"
                 checkable: true
                 checked: configShowBytes
-                themeService: contextMenu.themeService
+                configService: contextMenu.configService
                 onClicked: toggleConfig("showBytes")
             }
             
@@ -202,14 +202,14 @@ PopupWindow {
             Rectangle {
                 width: parent.width
                 height: 1
-                color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
             }
             
             // Precision submenu
             Overlays.MonitorMenuItem {
                 width: parent.width
                 text: "Precision: " + configPrecision + " decimal" + (configPrecision === 1 ? "" : "s")
-                themeService: contextMenu.themeService
+                configService: contextMenu.configService
                 onClicked: cyclePrecision()
             }
         }

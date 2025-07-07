@@ -13,43 +13,42 @@ Rectangle {
     property bool showText: false
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     property var anchorWindow: null
     
     // Session overlay control
     property var sessionOverlay: null
     
     // GraphicalComponent interface
-    property string componentId: "power"
+    property string componentId: "power_widget"
     property string parentComponentId: ""
     property var childComponentIds: []
     property string menuPath: "power"
     
     // Size configuration
-    implicitWidth: showIcon ? (showText ? 90 : 28) : (showText ? 70 : 24)
-    implicitHeight: 22
+    implicitWidth: showIcon ? (showText ? (configService ? configService.scaled(90) : 90) : (configService ? configService.scaled(28) : 28)) : (showText ? (configService ? configService.scaled(70) : 70) : (configService ? configService.scaled(24) : 24))
+    implicitHeight: configService ? configService.scaled(22) : 22
     color: "transparent"
     
     // Context menu (kept for right-click fallback)
     PowerContextMenu {
         id: contextMenu
         powerService: PowerManagementService
-        themeService: powerWidget.themeService
+        configService: powerWidget.configService
         visible: false
     }
     
     // Content layout
     Row {
         anchors.centerIn: parent
-        spacing: 4
+        spacing: configService ? configService.scaledMarginTiny() : 4
         
         Text {
             visible: showIcon
             anchors.verticalCenter: parent.verticalCenter
             text: "⏻"
-            font.pixelSize: 16
-            color: themeService?.getThemeProperty("colors", "text") || "#cdd6f4"
+            font.pixelSize: configService ? configService.scaledIconMedium() : 20
+            color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
         }
         
         Text {
@@ -57,9 +56,9 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: "Power"
             font.family: "Inter"
-            font.pixelSize: 10
+            font.pixelSize: configService ? configService.scaledFontSmall() : 9
             font.weight: Font.Medium
-            color: themeService?.getThemeProperty("colors", "text") || "#cdd6f4"
+            color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
         }
     }
     
@@ -95,9 +94,41 @@ Rectangle {
         contextMenu.show(windowToUse, x || 0, y || 0)
     }
     
+    function getParent() {
+        return null // No parent component
+    }
+    
+    function getChildren() {
+        return [] // No child components
+    }
+    
+    function navigateToParent() {
+        // No parent to navigate to
+        console.log(`[${componentId}] No parent component to navigate to`)
+    }
+    
+    function navigateToChild(childId) {
+        // No children to navigate to
+        console.log(`[${componentId}] No child components to navigate to`)
+    }
+    
     Component.onCompleted: {
         console.log("[PowerWidget] Initialized with PowerManagementService")
         console.log("[PowerWidget] Visible:", visible, "Width:", implicitWidth, "Height:", implicitHeight)
         console.log("[PowerWidget] ShowIcon:", showIcon, "ShowText:", showText)
+        
+        // Register with WidgetRegistry
+        WidgetRegistry.registerWidget({
+            id: "power-widget",
+            name: "Power Widget",
+            description: "Session management and power controls",
+            category: "power",
+            icon: "⏻",
+            component: "PowerWidget",
+            contextMenu: "PowerContextMenu",
+            configKeys: ["power.enabled", "power.showIcon", "power.showText"],
+            size: { width: implicitWidth, height: implicitHeight },
+            position: 20
+        })
     }
 }

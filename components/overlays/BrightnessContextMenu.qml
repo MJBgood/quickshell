@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Hyprland
 import QtQuick
 import QtQuick.Controls
+import "../../services"
 
 PopupWindow {
     id: brightnessContextMenu
@@ -14,7 +15,7 @@ PopupWindow {
     
     // Properties
     property var brightnessService: null
-    property var themeService: null
+    property var configService: ConfigService
     
     // Anchor configuration
     anchor {
@@ -47,8 +48,8 @@ PopupWindow {
     Rectangle {
         id: menuContent
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         border.width: 1
         radius: 12
         
@@ -76,7 +77,7 @@ PopupWindow {
                     font.family: "Inter"
                     font.pixelSize: 14
                     font.weight: Font.Bold
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 }
                 
                 // Current brightness info
@@ -84,7 +85,7 @@ PopupWindow {
                     text: brightnessService ? `Current: ${Math.round(brightnessService.brightness * 100)}%` : "Current: Unknown"
                     font.family: "Inter"
                     font.pixelSize: 11
-                    color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#a6adc8" : "#a6adc8"
+                    color: configService ? configService.getThemeProperty("colors", "textAlt") || "#a6adc8" : "#a6adc8"
                 }
                 
                 // Brightness control
@@ -96,7 +97,7 @@ PopupWindow {
                         text: "Level:"
                         font.family: "Inter"
                         font.pixelSize: 12
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     Slider {
@@ -124,7 +125,7 @@ PopupWindow {
                         text: "Quick Settings:"
                         font.family: "Inter"
                         font.pixelSize: 11
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#a6adc8" : "#a6adc8"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#a6adc8" : "#a6adc8"
                     }
                     
                     Row {

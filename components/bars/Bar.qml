@@ -13,8 +13,7 @@ PanelWindow {
     property var modelData
     
     // Access to services (passed from parent)
-    property var themeService: null
-    property var configService: null
+    property var configService: ConfigService
     property var systemMonitorService: null
     property var windowTracker: null
     property var iconResolver: null
@@ -42,21 +41,36 @@ PanelWindow {
         right: true
     }
     
-    implicitHeight: 32
-    color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+    // Use global scaling service with proper fallback
+    implicitHeight: {
+        if (configService && typeof configService.scaled === 'function') {
+            const scaledHeight = configService.scaled(32)
+            return scaledHeight > 0 ? scaledHeight : 32
+        }
+        return 32
+    }
+    color: "transparent"
     
     // Content - Using absolute positioning for reliable layout
     Item {
         anchors.fill: parent
-        anchors.margins: 8
+        anchors.margins: {
+            const baseMargin = configService ? configService.scaledMarginNormal() : 8
+            const parentHeight = parent.height || 0
+            // Only apply margins if parent has sufficient height
+            return parentHeight > baseMargin * 2 ? baseMargin : Math.max(0, parentHeight / 4)
+        }
         
         // Left section - App launcher icon (clickable)
         Rectangle {
             id: leftSection
-            width: 32
-            height: parent.height
-            color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-            radius: 4
+            // Dynamic sizing based on content like other widgets
+            implicitWidth: gearIcon.implicitWidth + (configService ? configService.marginNormal() : 8)
+            implicitHeight: gearIcon.implicitHeight + (configService ? configService.scaledMarginSmall() : 4)
+            color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+            radius: configService ? configService.borderRadius : 8
+            border.width: 1
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
             
             anchors {
                 left: parent.left
@@ -65,10 +79,11 @@ PanelWindow {
             
             // App launcher icon
             Text {
+                id: gearIcon
                 anchors.centerIn: parent
                 text: "⚙"  // Settings gear icon as placeholder
-                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                font.pixelSize: 16
+                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                font.pixelSize: configService ? configService.scaledFontLarge() : 14
             }
             
             MouseArea {
@@ -100,10 +115,13 @@ PanelWindow {
         // Center section - Workspace indicator (left-aligned after launcher)
         Rectangle {
             id: centerSection
-            width: Math.max(workspaceRow.implicitWidth + 16, 80) // Reduced minimum width
-            height: parent.height
-            color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-            radius: 4
+            // Dynamic sizing based on workspace content like other widgets
+            implicitWidth: workspaceRow.implicitWidth + (configService ? configService.marginNormal() : 8)
+            implicitHeight: workspaceRow.implicitHeight + (configService ? configService.scaledMarginSmall() : 4)
+            color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+            radius: configService ? configService.borderRadius : 8
+            border.width: 1
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
             
             // GraphicalComponent interface implementation
             property string componentId: "workspaces"
@@ -113,7 +131,7 @@ PanelWindow {
             
             anchors {
                 left: leftSection.right
-                leftMargin: 12
+                leftMargin: configService ? configService.scaledMarginLarge() : 12
                 verticalCenter: parent.verticalCenter
             }
             
@@ -123,9 +141,11 @@ PanelWindow {
                 
                 // Reactive binding to config - updates automatically
                 spacing: {
-                    if (!configService) return 8
+                    if (!configService) return 4
                     const spacingMode = configService.getValue("workspaces.workspaceSpacing", "normal")
-                    return spacingMode === "tight" ? 4 : spacingMode === "loose" ? 12 : 8
+                    return spacingMode === "tight" ? (configService ? configService.marginTiny() : 2) : 
+                           spacingMode === "loose" ? (configService ? configService.scaledMarginNormal() : 8) : 
+                           (configService ? configService.scaledMarginSmall() : 4)
                 }
                 
                 Repeater {
@@ -156,15 +176,18 @@ PanelWindow {
                             return true
                         }
                         
-                        // Dynamic width based on content, with minimum based on size mode
-                        property int minWidth: workspaceSizeMode === "small" ? 24 : workspaceSizeMode === "large" ? 40 : 32
-                        width: Math.max(contentRow.implicitWidth + 8, minWidth)
-                        height: workspaceSizeMode === "small" ? 16 : workspaceSizeMode === "large" ? 24 : 20
-                        radius: workspaceRadiusMode === "none" ? 0 : workspaceRadiusMode === "small" ? 2 : workspaceRadiusMode === "large" ? 8 : 4
+                        // Dynamic width based on content, with minimum based on size mode (scaled)
+                        property var workspaceSize: configService ? configService.workspaceSize(workspaceSizeMode) : {width: 32, height: 24}
+                        width: Math.max(contentRow.implicitWidth + (configService ? configService.widgetSpacing() : 4), workspaceSize.width)
+                        height: workspaceSize.height
+                        radius: workspaceRadiusMode === "none" ? 0 : 
+                                workspaceRadiusMode === "small" ? (configService ? configService.scaled(2) : 2) : 
+                                workspaceRadiusMode === "large" ? (configService ? configService.scaled(8) : 8) : 
+                                (configService ? configService.borderRadius : 8)
                         
                         color: modelData && modelData.focused ? 
-                               (themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
-                               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a")
+                               (configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
+                               (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a")
                         
                         // Hover effect with smooth transition
                         opacity: workspaceMouseArea.containsMouse ? 0.8 : 1.0
@@ -199,19 +222,19 @@ PanelWindow {
                                 anchors {
                                     bottom: parent.bottom
                                     right: parent.right
-                                    bottomMargin: -3
-                                    rightMargin: -3
+                                    bottomMargin: configService ? configService.scaled(-3) : -3
+                                    rightMargin: configService ? configService.scaled(-3) : -3
                                 }
                                 
-                                // Smaller, more subtle size
-                                width: Math.max(windowCountText.implicitWidth + 4, 12)
-                                height: 12
-                                radius: 6
+                                // Smaller badge - should never exceed workspace size
+                                width: Math.max(windowCountText.implicitWidth + (configService ? configService.badgePadding() : 4), configService ? configService.badgeSize() : 14)
+                                height: configService ? configService.badgeSize() : 14
+                                radius: configService ? configService.badgeRadius() : 7
                                 
                                 // Subtle badge styling - using theme colors
-                                color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+                                color: configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
                                 border.width: 1
-                                border.color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+                                border.color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
                                 
                                 // Subtle shadow/glow effect
                                 opacity: 0.9
@@ -221,9 +244,9 @@ PanelWindow {
                                     id: windowCountText
                                     anchors.centerIn: parent
                                     text: windowCountBadge.windowCount.toString()
-                                    color: themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e"
+                                    color: configService ? configService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e"
                                     font.family: "Inter"
-                                    font.pixelSize: 8
+                                    font.pixelSize: configService ? configService.fontTiny() : 8
                                     font.weight: Font.Medium
                                 }
                                 
@@ -236,7 +259,7 @@ PanelWindow {
                             Row {
                                 id: contentRow
                                 anchors.centerIn: parent
-                                spacing: 2
+                                spacing: configService ? configService.marginTiny() : 2
                                 
                                 // Workspace number/name
                                 Text {
@@ -264,10 +287,12 @@ PanelWindow {
                                     }
                                     
                                     color: modelData && modelData.focused ? 
-                                           (themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
-                                           (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
+                                           (configService ? configService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
+                                           (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
                                     font.family: "Inter"
-                                    font.pixelSize: parent.parent.parent.workspaceSizeMode === "small" ? 9 : parent.parent.parent.workspaceSizeMode === "large" ? 13 : 11
+                                    font.pixelSize: parent.parent.parent.workspaceSizeMode === "small" ? (configService ? configService.fontSmall() : 9) : 
+                                                    parent.parent.parent.workspaceSizeMode === "large" ? (configService ? configService.scaledFontLarge() : 14) : 
+                                                    (configService ? configService.fontNormal() : 10)
                                     font.weight: modelData && modelData.focused ? Font.DemiBold : Font.Medium
                                 }
                                 
@@ -275,7 +300,7 @@ PanelWindow {
                                 Row {
                                     id: applicationIconsRow
                                     anchors.verticalCenter: parent.verticalCenter
-                                    spacing: 1
+                                    spacing: configService ? configService.marginTiny() : 2
                                     visible: workspaceText.workspaceShowApplicationIcons && iconResolver && windowTracker
                                     
                                     // Update when window data changes
@@ -312,7 +337,9 @@ PanelWindow {
                                         model: parent.iconData
                                         
                                         Item {
-                                            width: parent.parent.parent.parent.workspaceSizeMode === "small" ? 12 : parent.parent.parent.parent.workspaceSizeMode === "large" ? 18 : 14
+                                            width: parent.parent.parent.parent.workspaceSizeMode === "small" ? (configService ? configService.scaled(12) : 12) : 
+                                                   parent.parent.parent.parent.workspaceSizeMode === "large" ? (configService ? configService.scaled(18) : 18) : 
+                                                   (configService ? configService.scaled(14) : 14)
                                             height: width
                                             
                                             // Show either image or emoji based on icon type
@@ -340,8 +367,8 @@ PanelWindow {
                                                 text: modelData.isEmoji ? modelData.iconPath : "◯"
                                                 visible: modelData.isEmoji || (parent.children[0].status === Image.Error)
                                                 font.pixelSize: parent.width * 0.8
-                                                color: themeService ? 
-                                                      themeService.getThemeProperty("colors", "text") || "#cdd6f4" : 
+                                                color: configService ? 
+                                                      configService.getThemeProperty("colors", "text") || "#cdd6f4" : 
                                                       "#cdd6f4"
                                             }
                                             
@@ -353,18 +380,18 @@ PanelWindow {
                                                 text: modelData.count
                                                 font.pixelSize: parent.width * 0.4
                                                 font.weight: Font.Bold
-                                                color: themeService ? 
-                                                      themeService.getThemeProperty("colors", "accent") || "#89b4fa" : 
+                                                color: configService ? 
+                                                      configService.getThemeProperty("colors", "accent") || "#89b4fa" : 
                                                       "#89b4fa"
                                                 
                                                 // Small background for better visibility
                                                 Rectangle {
                                                     anchors.centerIn: parent
-                                                    width: parent.implicitWidth + 2
-                                                    height: parent.implicitHeight + 1
+                                                    width: parent.implicitWidth + (configService ? configService.marginTiny() : 2)
+                                                    height: parent.implicitHeight + (configService ? configService.scaled(1) : 1)
                                                     radius: width / 2
-                                                    color: themeService ? 
-                                                          themeService.getThemeProperty("colors", "surface") || "#313244" : 
+                                                    color: configService ? 
+                                                          configService.getThemeProperty("colors", "surface") || "#313244" : 
                                                           "#313244"
                                                     z: -1
                                                 }
@@ -461,7 +488,7 @@ PanelWindow {
                 
                 onLoaded: {
                     item.configService = bar.configService
-                    item.themeService = bar.themeService
+                    // themeService removed - now integrated into configService
                     
                     item.closed.connect(function() {
                         workspacesMenuLoader.active = false
@@ -496,24 +523,24 @@ PanelWindow {
         // Individual monitoring widgets section
         Row {
             id: monitoringSection
-            spacing: 6
+            spacing: configService ? configService.scaledMarginSmall() : 4
             visible: cpuMonitor.visible || ramMonitor.visible || storageMonitor.visible
             
             anchors {
                 right: rightSection.left
-                rightMargin: visible ? 12 : 0
+                rightMargin: visible ? configService ? configService.scaledMarginSmall() : 4 : 0
                 verticalCenter: parent.verticalCenter
             }
             
             // CPU Monitor
             Rectangle {
                 id: cpuContainer
-                implicitWidth: cpuMonitor.visible ? cpuMonitor.implicitWidth + 8 : 0
-                implicitHeight: cpuMonitor.visible ? cpuMonitor.implicitHeight + 4 : 0
-                radius: 6
-                color: cpuMonitor.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                implicitWidth: cpuMonitor.visible ? cpuMonitor.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+                implicitHeight: cpuMonitor.visible ? cpuMonitor.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: cpuMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: cpuMonitor.visible ? 1 : 0
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 visible: cpuMonitor.visible
                 
                 CpuMonitor {
@@ -523,7 +550,7 @@ PanelWindow {
                     
                     // Services
                     systemMonitorService: bar.systemMonitorService
-                    themeService: bar.themeService
+                    // themeService removed - now integrated into configService
                     configService: bar.configService
                     anchorWindow: bar
                     
@@ -541,12 +568,12 @@ PanelWindow {
             // RAM Monitor
             Rectangle {
                 id: ramContainer
-                implicitWidth: ramMonitor.visible ? ramMonitor.implicitWidth + 8 : 0
-                implicitHeight: ramMonitor.visible ? ramMonitor.implicitHeight + 4 : 0
-                radius: 6
-                color: ramMonitor.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                implicitWidth: ramMonitor.visible ? ramMonitor.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+                implicitHeight: ramMonitor.visible ? ramMonitor.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: ramMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: ramMonitor.visible ? 1 : 0
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 visible: ramMonitor.visible
                 
                 RamMonitor {
@@ -556,7 +583,7 @@ PanelWindow {
                     
                     // Services
                     systemMonitorService: bar.systemMonitorService
-                    themeService: bar.themeService
+                    // themeService removed - now integrated into configService
                     configService: bar.configService
                     anchorWindow: bar
                     
@@ -575,12 +602,12 @@ PanelWindow {
             // Storage Monitor
             Rectangle {
                 id: storageContainer
-                implicitWidth: storageMonitor.visible ? storageMonitor.implicitWidth + 8 : 0
-                implicitHeight: storageMonitor.visible ? storageMonitor.implicitHeight + 4 : 0
-                radius: 6
-                color: storageMonitor.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                implicitWidth: storageMonitor.visible ? storageMonitor.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+                implicitHeight: storageMonitor.visible ? storageMonitor.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: storageMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: storageMonitor.visible ? 1 : 0
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 visible: storageMonitor.visible
                 
                 StorageMonitor {
@@ -590,7 +617,7 @@ PanelWindow {
                     
                     // Services
                     systemMonitorService: bar.systemMonitorService
-                    themeService: bar.themeService
+                    // themeService removed - now integrated into configService
                     configService: bar.configService
                     anchorWindow: bar
                     
@@ -609,24 +636,24 @@ PanelWindow {
         // Widget section - Audio, Brightness, Temperature, and Battery controls
         Row {
             id: widgetSection
-            spacing: 6
+            spacing: configService ? configService.scaledMarginSmall() : 4
             visible: audioWidget.visible || brightnessWidget.visible || cpuTempWidget.visible || gpuTempWidget.visible || batteryWidget.visible
             
             anchors {
                 right: monitoringSection.left
-                rightMargin: visible ? 12 : 0
+                rightMargin: visible ? configService ? configService.scaledMarginSmall() : 4 : 0
                 verticalCenter: parent.verticalCenter
             }
             
             // Audio Widget
             Rectangle {
                 id: audioContainer
-                implicitWidth: audioWidget.visible ? audioWidget.implicitWidth + 8 : 0
-                implicitHeight: audioWidget.visible ? audioWidget.implicitHeight + 4 : 0
-                radius: 6
-                color: audioWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                implicitWidth: audioWidget.visible ? audioWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+                implicitHeight: audioWidget.visible ? audioWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: audioWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: audioWidget.visible ? 1 : 0
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 visible: audioWidget.visible
                 
                 AudioWidget {
@@ -635,7 +662,7 @@ PanelWindow {
                     visible: configService ? configService.getValue("audio.enabled", true) : true
                     
                     // Services
-                    themeService: bar.themeService
+                    // themeService removed - now integrated into configService
                     configService: bar.configService
                     anchorWindow: bar
                     
@@ -649,12 +676,12 @@ PanelWindow {
             // Brightness Widget
             Rectangle {
                 id: brightnessContainer
-                implicitWidth: brightnessWidget.visible ? brightnessWidget.implicitWidth + 8 : 0
-                implicitHeight: brightnessWidget.visible ? brightnessWidget.implicitHeight + 4 : 0
-                radius: 6
-                color: brightnessWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                implicitWidth: brightnessWidget.visible ? brightnessWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+                implicitHeight: brightnessWidget.visible ? brightnessWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: brightnessWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: brightnessWidget.visible ? 1 : 0
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 visible: brightnessWidget.visible
                 
                 BrightnessWidget {
@@ -663,7 +690,7 @@ PanelWindow {
                     visible: configService ? configService.getValue("brightness.enabled", true) : true
                     
                     // Services
-                    themeService: bar.themeService
+                    // themeService removed - now integrated into configService
                     configService: bar.configService
                     anchorWindow: bar
                     
@@ -677,12 +704,12 @@ PanelWindow {
             // CPU Temperature Widget
             Rectangle {
                 id: cpuTempContainer
-                implicitWidth: cpuTempWidget.visible ? cpuTempWidget.implicitWidth + 8 : 0
-                implicitHeight: cpuTempWidget.visible ? cpuTempWidget.implicitHeight + 4 : 0
-                radius: 6
-                color: cpuTempWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                implicitWidth: cpuTempWidget.visible ? cpuTempWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+                implicitHeight: cpuTempWidget.visible ? cpuTempWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: cpuTempWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: cpuTempWidget.visible ? 1 : 0
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 visible: cpuTempWidget.visible
                 
                 CpuTempWidget {
@@ -691,7 +718,7 @@ PanelWindow {
                     visible: configService ? configService.getValue("cpu_temp.enabled", true) : true
                     
                     // Services
-                    themeService: bar.themeService
+                    // themeService removed - now integrated into configService
                     configService: bar.configService
                     anchorWindow: bar
                     
@@ -705,12 +732,12 @@ PanelWindow {
             // GPU Temperature Widget
             Rectangle {
                 id: gpuTempContainer
-                implicitWidth: gpuTempWidget.visible ? gpuTempWidget.implicitWidth + 8 : 0
-                implicitHeight: gpuTempWidget.visible ? gpuTempWidget.implicitHeight + 4 : 0
-                radius: 6
-                color: gpuTempWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                implicitWidth: gpuTempWidget.visible ? gpuTempWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+                implicitHeight: gpuTempWidget.visible ? gpuTempWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: gpuTempWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: gpuTempWidget.visible ? 1 : 0
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 visible: gpuTempWidget.visible
                 
                 GpuTempWidget {
@@ -719,7 +746,7 @@ PanelWindow {
                     visible: configService ? configService.getValue("gpu_temp.enabled", true) : true
                     
                     // Services
-                    themeService: bar.themeService
+                    // themeService removed - now integrated into configService
                     configService: bar.configService
                     anchorWindow: bar
                     
@@ -733,21 +760,21 @@ PanelWindow {
             // Battery Widget
             Rectangle {
                 id: batteryContainer
-                implicitWidth: batteryWidget.visible ? batteryWidget.implicitWidth + 8 : 0
-                implicitHeight: batteryWidget.visible ? batteryWidget.implicitHeight + 4 : 0
-                radius: 6
-                color: batteryWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                implicitWidth: batteryWidget.visible ? batteryWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+                implicitHeight: batteryWidget.visible ? batteryWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: batteryWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: batteryWidget.visible ? 1 : 0
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 visible: batteryWidget.visible
                 
                 BatteryWidget {
                     id: batteryWidget
                     anchors.centerIn: parent
-                    visible: configService ? configService.getValue("battery.enabled", true) : true
+                    visible: configService ? configService.getBatteryEnabled() : true
                     
                     // Services
-                    themeService: bar.themeService
+                    // themeService removed - now integrated into configService
                     configService: bar.configService
                     anchorWindow: bar
                     
@@ -762,188 +789,37 @@ PanelWindow {
         // Right section - Clock (anchored to right)
         Rectangle {
             id: rightSection
-            implicitWidth: 140 // Fixed width to prevent janky resizing
-            implicitHeight: 28 // Fixed height to fit within bar (32px - 4px margin)
-            color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-            radius: 6
+            // Use same dynamic sizing pattern as other widgets
+            implicitWidth: clockWidget.implicitWidth + (configService ? configService.marginNormal() : 8)
+            implicitHeight: clockWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4)
+            color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+            radius: configService ? configService.borderRadius : 8
             border.width: 1
-            border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
-            
-            // GraphicalComponent interface implementation
-            property string componentId: "clock"
-            property string parentComponentId: "bar"
-            property var childComponentIds: []
-            property string menuPath: "clock"
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
             
             anchors {
                 right: powerSection.left
-                rightMargin: 8
+                rightMargin: configService ? configService.marginNormal() : 8
                 verticalCenter: parent.verticalCenter
             }
             
-            SystemClock {
-                id: clock
-                precision: SystemClock.Minutes  // Battery optimization - only update every minute
-            }
-            
-            Column {
-                id: clockDisplay
-                anchors.fill: parent
-                anchors.margins: 8
-                spacing: 1
-                
-                // Helper functions accessible to all children
-                function getClockConfigValue(key, defaultValue) {
-                    if (!configService) return defaultValue
-                    return configService.getValue("clock." + key, defaultValue)
-                }
-                
-                function generateTimeText() {
-                    const format24Hour = getClockConfigValue("format24Hour", true)
-                    const showSeconds = getClockConfigValue("showSeconds", false)
-                    
-                    let timeFormat = format24Hour ? "hh:mm" : "h:mm AP"
-                    if (showSeconds) {
-                        timeFormat = format24Hour ? "hh:mm:ss" : "h:mm:ss AP"
-                        // Update clock precision if seconds are shown
-                        if (clock.precision !== SystemClock.Seconds) {
-                            clock.precision = SystemClock.Seconds
-                        }
-                    } else {
-                        // Use minute precision for battery optimization
-                        if (clock.precision !== SystemClock.Minutes) {
-                            clock.precision = SystemClock.Minutes
-                        }
-                    }
-                    
-                    return Qt.formatDateTime(clock.date, timeFormat)
-                }
-                
-                function generateDateText() {
-                    if (!getClockConfigValue("showDate", false)) return ""
-                    
-                    const dateFormat = getClockConfigValue("dateFormat", "short")
-                    let format = ""
-                    
-                    switch (dateFormat) {
-                        case "short":
-                            format = "yyyy-MM-dd"
-                            break
-                        case "medium":
-                            format = "MMM d, yyyy"
-                            break
-                        case "long":
-                            format = "MMMM d, yyyy"
-                            break
-                        default:
-                            format = "yyyy-MM-dd"
-                    }
-                    
-                    return Qt.formatDateTime(clock.date, format)
-                }
-                
-                Text {
-                    id: clockText
-                    width: Math.min(implicitWidth, rightSection.width - 16)
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: {
-                        const timeText = parent.generateTimeText()
-                        const showDate = parent.getClockConfigValue("showDate", false)
-                        if (showDate) {
-                            const dateText = parent.generateDateText()
-                            return `${timeText} • ${dateText}`
-                        }
-                        return timeText
-                    }
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                    font.family: "Inter"
-                    font.pixelSize: 11
-                    font.weight: Font.Medium
-                    elide: Text.ElideRight
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-            }
-            
-            // Right-click context menu for clock settings
-            MouseArea {
-                anchors.fill: parent
-                acceptedButtons: Qt.RightButton
-                z: 10
-                
-                onClicked: mouse => {
-                    if (mouse.button === Qt.RightButton) {
-                        mouse.accepted = true
-                        rightSection.menu(bar, mouse.x, mouse.y)
-                    }
-                }
-            }
-            
-            // GraphicalComponent interface: menu() function
-            function menu(anchorWindow, x, y, startPath) {
-                console.log(`[${componentId}] Opening clock context menu`)
-                
-                // Use dedicated clock context menu
-                if (!clockMenuLoader.active) {
-                    clockMenuLoader.active = true
-                }
-                
-                if (clockMenuLoader.item) {
-                    const windowToUse = anchorWindow || bar
-                    const globalPos = rightSection.mapToItem(null, x || 0, y || 0)
-                    clockMenuLoader.item.show(windowToUse, globalPos.x, globalPos.y)
-                }
-            }
-            
-            // Dedicated loader for ClockContextMenu
-            Loader {
-                id: clockMenuLoader
-                source: "../overlays/ClockContextMenu.qml"
-                active: false
-                
-                onLoaded: {
-                    item.configService = bar.configService
-                    item.themeService = bar.themeService
-                    
-                    item.closed.connect(function() {
-                        clockMenuLoader.active = false
-                    })
-                }
-            }
-            
-            // GraphicalComponent interface methods
-            function registerComponent() {
-                if (componentId) {
-                    ComponentRegistry.registerComponent(componentId, rightSection)
-                    console.log(`[${componentId}] Registered component with hierarchy: parent=${parentComponentId}, children=[${childComponentIds.join(', ')}]`)
-                }
-            }
-            
-            function unregisterComponent() {
-                if (componentId) {
-                    ComponentRegistry.unregisterComponent(componentId)
-                    console.log(`[${componentId}] Unregistered component`)
-                }
-            }
-            
-            Component.onCompleted: {
-                registerComponent()
-            }
-            
-            Component.onDestruction: {
-                unregisterComponent()
+            Clock {
+                id: clockWidget
+                anchors.centerIn: parent
+                configService: bar.configService
+                anchorWindow: bar
             }
         }
         
         // Power section - Far right power button
         Rectangle {
             id: powerSection
-            implicitWidth: powerSectionWidget.visible ? powerSectionWidget.implicitWidth + 8 : 0
-            implicitHeight: powerSectionWidget.visible ? powerSectionWidget.implicitHeight + 4 : 0
-            radius: 6
-            color: powerSectionWidget.visible ? (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+            implicitWidth: powerSectionWidget.visible ? powerSectionWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+            implicitHeight: powerSectionWidget.visible ? powerSectionWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+            radius: configService ? configService.borderRadius : 8
+            color: powerSectionWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
             border.width: powerSectionWidget.visible ? 1 : 0
-            border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
             visible: powerSectionWidget.visible
             
             anchors {
@@ -957,7 +833,7 @@ PanelWindow {
                 visible: configService ? configService.getValue("power.enabled", true) : true
                 
                 // Services
-                themeService: bar.themeService
+                // themeService removed - now integrated into configService
                 configService: bar.configService
                 sessionOverlay: bar.sessionOverlay
                 anchorWindow: bar
@@ -972,15 +848,15 @@ PanelWindow {
     // Quick menu popup (inline definition)
     PopupWindow {
         id: quickMenu
-        implicitWidth: 200
-        implicitHeight: 150
+        implicitWidth: configService ? configService.scaled(200) : 200
+        implicitHeight: configService ? configService.scaled(150) : 150
         visible: false
         
         anchor {
             window: bar
             rect {
                 x: 0
-                y: 32
+                y: configService ? configService.scaled(32) : 32
                 width: 1
                 height: 1
             }
@@ -988,45 +864,45 @@ PanelWindow {
         
         Rectangle {
             anchors.fill: parent
-            color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-            radius: 8
+            color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+            radius: configService ? configService.borderRadius : 8
             border.width: 1
-            border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
             
             Column {
                 anchors.fill: parent
-                anchors.margins: 8
-                spacing: 4
+                anchors.margins: configService ? configService.scaledMarginNormal() : 8
+                spacing: configService ? configService.scaledMarginSmall() : 4
                 
                 Text {
                     text: "Quick Settings"
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     font.family: "Inter"
-                    font.pixelSize: 12
+                    font.pixelSize: configService ? configService.fontMedium() : 12
                     font.weight: Font.DemiBold
                 }
                 
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Theme toggle button
                 Rectangle {
                     width: parent.width
-                    height: 24
-                    color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
-                    radius: 4
+                    height: configService ? configService.scaled(24) : 24
+                    color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+                    radius: configService ? configService.borderRadius : 8
                     border.width: 1
-                    border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                     
                     Text {
                         anchors.centerIn: parent
                         text: "🌓 Toggle Mode"
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         font.family: "Inter"
-                        font.pixelSize: 10
+                        font.pixelSize: configService ? configService.fontNormal() : 10
                     }
                     
                     MouseArea {
@@ -1035,8 +911,8 @@ PanelWindow {
                         hoverEnabled: true
                         
                         onClicked: {
-                            if (themeService) {
-                                themeService.toggleDarkMode()
+                            if (configService) {
+                                configService.toggleDarkMode()
                             }
                             quickMenu.visible = false
                         }
@@ -1053,18 +929,18 @@ PanelWindow {
                 // Cycle theme button
                 Rectangle {
                     width: parent.width
-                    height: 24
-                    color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
-                    radius: 4
+                    height: configService ? configService.scaled(24) : 24
+                    color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+                    radius: configService ? configService.borderRadius : 8
                     border.width: 1
-                    border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                     
                     Text {
                         anchors.centerIn: parent
-                        text: "🎨 Next Theme"
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        text: "🎨 Theme Settings"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         font.family: "Inter"
-                        font.pixelSize: 10
+                        font.pixelSize: configService ? configService.fontNormal() : 10
                     }
                     
                     MouseArea {
@@ -1073,9 +949,8 @@ PanelWindow {
                         hoverEnabled: true
                         
                         onClicked: {
-                            if (themeService) {
-                                themeService.cycleTheme()
-                            }
+                            // Theme cycling functionality removed - manage themes via config
+                            console.log("Theme cycling not implemented in ConfigService approach")
                             quickMenu.visible = false
                         }
                         
@@ -1128,9 +1003,10 @@ PanelWindow {
         
         onLoaded: {
             item.configService = bar.configService
-            item.themeService = bar.themeService
+            // themeService removed - now integrated into configService
             item.wallpaperService = bar.wallpaperService
             item.widgetRegistry = bar.widgetRegistry
+            item.shellRoot = bar.shellRoot
             
             item.closed.connect(function() {
                 barMenuLoader.active = false

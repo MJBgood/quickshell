@@ -1,12 +1,12 @@
 import QtQuick
 import Quickshell
+import "../../services"
 
 PopupWindow {
     id: quickMenu
     
     // Services passed from parent
-    property var themeService: null
-    property var configService: null
+    property var configService: ConfigService
     
     // Popup configuration
     width: 200
@@ -25,7 +25,7 @@ PopupWindow {
     }
     
     // Background
-    color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+    color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
     radius: 8
     
     // Auto-hide when clicking outside
@@ -41,7 +41,7 @@ PopupWindow {
         // Header
         Text {
             text: "Quick Settings"
-            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
             font.family: "Inter"
             font.pixelSize: 12
             font.weight: Font.DemiBold
@@ -52,7 +52,7 @@ PopupWindow {
         Rectangle {
             width: parent.width
             height: 1
-            color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+            color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         }
         
         // Theme section
@@ -63,7 +63,7 @@ PopupWindow {
             
             Text {
                 text: "Theme"
-                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                 font.family: "Inter"
                 font.pixelSize: 10
                 font.weight: Font.Medium
@@ -73,7 +73,7 @@ PopupWindow {
             Rectangle {
                 width: parent.width
                 height: 24
-                color: themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+                color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
                 radius: 4
                 
                 Row {
@@ -83,8 +83,8 @@ PopupWindow {
                     
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: themeService ? (themeService.activeTheme || "catppuccin") : "catppuccin"
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        text: configService ? (configService.activeTheme || "catppuccin") : "catppuccin"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         font.family: "Inter"
                         font.pixelSize: 10
                     }
@@ -93,8 +93,8 @@ PopupWindow {
                     
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: themeService ? (themeService.activeMode || "dark") : "dark"
-                        color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+                        text: configService ? (configService.activeMode || "dark") : "dark"
+                        color: configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
                         font.family: "Inter"
                         font.pixelSize: 9
                         font.weight: Font.Medium
@@ -111,15 +111,15 @@ PopupWindow {
                 Rectangle {
                     width: (parent.width - 4) / 2
                     height: 20
-                    color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+                    color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
                     radius: 3
                     border.width: 1
-                    border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                     
                     Text {
                         anchors.centerIn: parent
                         text: "🌓 Mode"
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         font.family: "Inter"
                         font.pixelSize: 9
                     }
@@ -130,9 +130,9 @@ PopupWindow {
                         hoverEnabled: true
                         
                         onClicked: {
-                            if (themeService) {
+                            if (configService) {
                                 console.log("QuickMenu: Toggling theme mode")
-                                themeService.toggleDarkMode()
+                                configService.toggleDarkMode()
                             }
                         }
                         
@@ -149,15 +149,15 @@ PopupWindow {
                 Rectangle {
                     width: (parent.width - 4) / 2
                     height: 20
-                    color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+                    color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
                     radius: 3
                     border.width: 1
-                    border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                     
                     Text {
                         anchors.centerIn: parent
                         text: "🎨 Next"
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         font.family: "Inter"
                         font.pixelSize: 9
                     }
@@ -168,9 +168,9 @@ PopupWindow {
                         hoverEnabled: true
                         
                         onClicked: {
-                            if (themeService) {
+                            if (configService) {
                                 console.log("QuickMenu: Cycling to next theme")
-                                themeService.cycleTheme()
+                                configService.cycleTheme()
                             }
                         }
                         
@@ -189,7 +189,7 @@ PopupWindow {
         Rectangle {
             width: parent.width
             height: 1
-            color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+            color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
             anchors.topMargin: 4
         }
         
@@ -201,7 +201,7 @@ PopupWindow {
             
             Text {
                 text: "Quick Actions"
-                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                 font.family: "Inter"
                 font.pixelSize: 10
                 font.weight: Font.Medium
@@ -211,15 +211,15 @@ PopupWindow {
             Rectangle {
                 width: parent.width
                 height: 20
-                color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+                color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
                 radius: 3
                 border.width: 1
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 
                 Text {
                     anchors.centerIn: parent
                     text: "🔄 Reload Themes"
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     font.family: "Inter"
                     font.pixelSize: 9
                 }
@@ -230,9 +230,9 @@ PopupWindow {
                     hoverEnabled: true
                     
                     onClicked: {
-                        if (themeService) {
+                        if (configService) {
                             console.log("QuickMenu: Refreshing themes")
-                            themeService.refreshThemes()
+                            configService.refreshThemes()
                         }
                         quickMenu.visible = false
                     }
@@ -257,8 +257,8 @@ PopupWindow {
         visible = true
         
         // Lazy load themes when menu opens (following architecture principle)
-        if (themeService) {
-            themeService.loadAllThemes()
+        if (configService) {
+            configService.loadAllThemes()
         }
     }
     

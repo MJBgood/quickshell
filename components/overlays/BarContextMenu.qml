@@ -15,10 +15,10 @@ PopupWindow {
     color: "transparent"
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     property var wallpaperService: null
     property var widgetRegistry: null
+    property var shellRoot: null
     
     // Component hierarchy properties
     property string componentId: "bar"
@@ -59,8 +59,8 @@ PopupWindow {
     Rectangle {
         id: menuContent
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         border.width: 1
         radius: 12
         
@@ -88,7 +88,7 @@ PopupWindow {
                 }
                 
                 contentItem: Rectangle {
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                     radius: 4
                     opacity: 0.6
                 }
@@ -112,7 +112,7 @@ PopupWindow {
                         visible: false  // Bar has no parent, but keep structure consistent
                         color: "transparent"
                         border.width: 1
-                        border.color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                        border.color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                     }
                     
                     // Header content
@@ -138,13 +138,13 @@ PopupWindow {
                                 text: "Status Bar"
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
-                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             }
                             
                             Text {
                                 text: "Layout and Position Settings"
                                 font.pixelSize: 10
-                                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                             }
                         }
                     }
@@ -160,7 +160,7 @@ PopupWindow {
                         Text {
                             anchors.centerIn: parent
                             text: "✕"
-                            color: closeArea.containsMouse ? "#1e1e2e" : (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+                            color: closeArea.containsMouse ? "#1e1e2e" : (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
                             font.pixelSize: 12
                             font.weight: Font.Bold
                         }
@@ -183,7 +183,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Bar configuration
@@ -195,7 +195,7 @@ PopupWindow {
                         text: "Bar Configuration:"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     // Bar position toggle
@@ -212,7 +212,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Widget management
@@ -228,14 +228,14 @@ PopupWindow {
                             text: "Widgets:"
                             font.pixelSize: 12
                             font.weight: Font.DemiBold
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         
                         Text {
                             text: getWidgetStats()
                             font.pixelSize: 10
-                            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                            color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
@@ -254,7 +254,7 @@ PopupWindow {
                                 text: modelData.icon + " " + modelData.name
                                 font.pixelSize: 10
                                 font.weight: Font.Medium
-                                color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                                color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                             }
                             
                             // Widgets in this category
@@ -277,7 +277,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Wallpaper Configuration
@@ -289,7 +289,7 @@ PopupWindow {
                         text: "Wallpaper:"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     // Current wallpaper info
@@ -324,7 +324,36 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // Scaling Options
+                Column {
+                    width: parent.width
+                    spacing: 8
+                    
+                    Text {
+                        text: "Display:"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    }
+                    
+                    // Scaling Options menu item
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Scaling Options"
+                        value: "Configure UI Scaling"
+                        isActive: true
+                        onClicked: openScalingOptions()
+                    }
+                }
+                
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Quick Actions
@@ -336,7 +365,7 @@ PopupWindow {
                         text: "Quick Actions:"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     // Enable all widgets
@@ -380,7 +409,7 @@ PopupWindow {
         height: 24
         radius: 4
         color: toggleMouse.containsMouse ? 
-               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
+               (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
                "transparent"
         
         Row {
@@ -392,7 +421,7 @@ PopupWindow {
             Text {
                 text: label + ":"
                 font.pixelSize: 10
-                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 anchors.verticalCenter: parent.verticalCenter
             }
             
@@ -545,6 +574,8 @@ PopupWindow {
     
     function openWallpaperSelector() {
         console.log("Opening wallpaper selector...")
+        console.log("shellRoot:", shellRoot)
+        
         const service = getWallpaperService()
         if (service && service.wallpapers.length === 0) {
             // Show instructional message first, then open selector anyway
@@ -552,8 +583,11 @@ PopupWindow {
         }
         
         // Call global function (same as theme dropdown)
-        if (configService && configService.shellRoot) {
-            configService.shellRoot.showWallpaperSelector()
+        if (shellRoot) {
+            console.log("Calling shellRoot.showWallpaperSelector()")
+            shellRoot.showWallpaperSelector()
+        } else {
+            console.error("Cannot call showWallpaperSelector - shellRoot is null")
         }
     }
     
@@ -569,6 +603,13 @@ PopupWindow {
         if (service) {
             service.openWallpaperDirectory()
         }
+    }
+    
+    function openScalingOptions() {
+        console.log("Opening scaling options...")
+        
+        // Load the scaling context menu on demand
+        scalingMenuLoader.active = true
     }
     
     function show(anchorWindow, x, y) {
@@ -637,24 +678,25 @@ PopupWindow {
         }
     }
     
-    // Wallpaper selector - lazy loaded
+    // Wallpaper selector is now handled globally by shell.qml
+    
+    // Scaling context menu - lazy loaded
     Loader {
-        id: wallpaperSelectorLoader
-        source: "../widgets/WallpaperSelector.qml"
+        id: scalingMenuLoader
+        source: "ScalingContextMenu.qml"
         active: false
         
         onLoaded: {
-            console.log("WallpaperSelector loaded on demand")
-            item.wallpaperService = wallpaperService
-            item.themeService = themeService
+            console.log("ScalingContextMenu loaded on demand")
+            // themeService removed - now integrated into configService
             
             // Auto-hide when closed
             item.closed.connect(function() {
-                wallpaperSelectorLoader.active = false
+                scalingMenuLoader.active = false
             })
             
-            // Show immediately after loading
-            item.show(anchor.window)
+            // Show immediately after loading at the same position
+            item.show(anchor.window, anchor.rect.x, anchor.rect.y)
         }
     }
 }

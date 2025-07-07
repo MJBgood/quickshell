@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls
-import Quickshell
 import "../../services"
 import "../overlays"
 
@@ -14,33 +13,62 @@ Rectangle {
     property bool showUnit: true
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     property var anchorWindow: null
     
     // GraphicalComponent interface
-    property string componentId: "cpu_temp"
+    property string componentId: "cpu_temp_widget"
     property string parentComponentId: ""
     property var childComponentIds: []
-    property string menuPath: "cpu_temp"
+    property string menuPath: "cpu_temp_widget"
     
-    // Size configuration
-    implicitWidth: showIcon && showValue ? 55 : showIcon ? 24 : 40
-    implicitHeight: 20
+    // Dynamic sizing based on content
+    implicitWidth: cpuTempContent.implicitWidth
+    implicitHeight: cpuTempContent.implicitHeight
     color: "transparent"
     
     // Context menu
     CpuTempContextMenu {
         id: contextMenu
         temperatureService: TemperatureService
-        themeService: cpuTempWidget.themeService
+        configService: cpuTempWidget.configService
         visible: false
+    }
+    
+    // Delegate functions to service
+    function getCpuTemp() { return TemperatureService.cpuTemp }
+    function getCpuStatus() { return TemperatureService.getCpuStatus() }
+    function refreshTemperature() { return TemperatureService.refreshTemperature() }
+    
+    // GraphicalComponent interface methods
+    function menu(startPath) {
+        const globalPos = cpuTempWidget.mapToItem(null, width / 2, height / 2)
+        contextMenu.show(anchorWindow, globalPos.x, globalPos.y)
+    }
+    
+    function getParent() {
+        return parentComponentId ? parent : null
+    }
+    
+    function getChildren() {
+        return childComponentIds
+    }
+    
+    function navigateToParent() {
+        if (parentComponentId && parent && parent.menu) {
+            parent.menu()
+        }
+    }
+    
+    function navigateToChild(childId) {
+        // No children for this component
     }
     
     // Content layout
     Row {
+        id: cpuTempContent
         anchors.centerIn: parent
-        spacing: 3
+        spacing: configService ? configService.scaledMarginTiny() : 4
         
         Text {
             visible: showIcon
@@ -55,7 +83,8 @@ Rectangle {
                     default: return "❓"
                 }
             }
-            font.pixelSize: 12
+            font.pixelSize: configService ? configService.scaledFontMedium() : 12
+            color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
         }
         
         Text {
@@ -67,21 +96,21 @@ Rectangle {
                 return Math.round(temp) + (showUnit ? "°C" : "")
             }
             font.family: "Inter"
-            font.pixelSize: 11
+            font.pixelSize: configService ? configService.scaledFontSmall() : 9
             font.weight: Font.Medium
             color: {
                 const status = TemperatureService.getCpuStatus()
                 switch (status) {
                     case "cool": 
-                        return themeService?.getThemeProperty("colors", "success") || "#a6e3a1"
+                        return configService?.getThemeProperty("colors", "success") || "#a6e3a1"
                     case "warm": 
-                        return themeService?.getThemeProperty("colors", "warning") || "#f9e2af"
+                        return configService?.getThemeProperty("colors", "warning") || "#f9e2af"
                     case "hot": 
-                        return themeService?.getThemeProperty("colors", "error") || "#f38ba8"
+                        return configService?.getThemeProperty("colors", "error") || "#f38ba8"
                     case "critical": 
-                        return themeService?.getThemeProperty("colors", "error") || "#f38ba8"
+                        return configService?.getThemeProperty("colors", "error") || "#f38ba8"
                     default: 
-                        return themeService?.getThemeProperty("colors", "text") || "#cdd6f4"
+                        return configService?.getThemeProperty("colors", "text") || "#cdd6f4"
                 }
             }
         }
@@ -104,11 +133,27 @@ Rectangle {
         onExited: parent.parent && (parent.parent.opacity = 1.0)
     }
     
+    // Component lifecycle
     Component.onCompleted: {
-        console.log("[CpuTempWidget] Initialized with TemperatureService")
+        console.log("[CpuTempWidget] Initialized with TemperatureService singleton")
+        
         // Connect config service to TemperatureService if available
         if (configService && !TemperatureService.configService) {
             TemperatureService.configService = configService
+        }
+        
+        // Register component with parent if it exists
+        if (parent && parent.registerChild) {
+            parent.registerChild(componentId, cpuTempWidget)
+        }
+    }
+    
+    Component.onDestruction: {
+        console.log("[CpuTempWidget] Cleaning up component")
+        
+        // Unregister component from parent if it exists
+        if (parent && parent.unregisterChild) {
+            parent.unregisterChild(componentId)
         }
     }
 }

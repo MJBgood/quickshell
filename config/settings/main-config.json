@@ -23,6 +23,19 @@
       "autoHideDelay": 5000,
       "animationDuration": 300
     },
+    "scaling": {
+      "globalScale": 1,
+      "useCustomScaling": false,
+      "customScales": {
+        "padding": 1,
+        "margin": 1,
+        "font": 1,
+        "borderRadius": 1,
+        "icon": 1,
+        "spacing": 1
+      },
+      "preset": "normal"
+    },
     "monitors": {
       "cpu": {
         "precisionDigits": 1,
@@ -41,17 +54,6 @@
         "warningThreshold": 80,
         "criticalThreshold": 90,
         "pollingRate": 60
-      },
-      "temperature": {
-        "pollingRate": 10,
-        "cpu": {
-          "warningThreshold": 70,
-          "criticalThreshold": 85
-        },
-        "gpu": {
-          "warningThreshold": 75,
-          "criticalThreshold": 90
-        }
       }
     }
   },
@@ -85,6 +87,14 @@
     "systray": {
       "enabled": true,
       "spacing": 4
+    },
+    "battery": {
+      "enabled": null,
+      "showIcon": true,
+      "showPercentage": true,
+      "showTime": false,
+      "autoHideOnDesktop": true,
+      "autoShowOnLaptop": true
     }
   },
   "shortcuts": {
@@ -93,6 +103,7 @@
     "settings": "Super+Comma"
   },
   "system": {
+    "type": "auto",
     "updateInterval": 2000,
     "showSystemStats": true,
     "enableNotifications": true
@@ -100,7 +111,7 @@
   "performance": {
     "enabled": true,
     "layout": "horizontal",
-    "displayMode": "minimal",
+    "displayMode": "compact",
     "cpu": {
       "enabled": true,
       "precision": 1,
@@ -108,12 +119,12 @@
       "showIcon": true,
       "showLabel": false,
       "showPercentage": true,
-      "showFrequency": true,
+      "showFrequency": false,
       "customIcon": ""
     },
     "ram": {
       "enabled": true,
-      "precision": 1,
+      "precision": 0,
       "updateInterval": 2000,
       "showIcon": true,
       "showLabel": false,
@@ -124,12 +135,12 @@
     },
     "storage": {
       "enabled": true,
-      "precision": 1,
+      "precision": 0,
       "updateInterval": 30000,
       "showIcon": true,
       "showLabel": false,
       "showPercentage": true,
-      "showBytes": true,
+      "showBytes": false,
       "customIcon": ""
     }
   },
@@ -139,101 +150,20 @@
     "verboseLogging": false
   },
   "clock": {
-    "showDate": true,
-    "dateFormat": "short"
+    "showDate": true
   },
   "cpu": {
-    "showFrequency": true,
-    "monitor": {
-      "enabled": false
-    }
+    "showLabel": true,
+    "showIcon": false,
+    "showFrequency": true
   },
-  "workspaces": {
-    "showNumbers": true,
-    "showNames": true,
-    "showWindowCount": true,
-    "showOnlyActive": false,
-    "autoHideEmpty": true,
-    "showPreviews": true,
-    "cornerRadius": "medium",
-    "showApplicationIcons": false,
-    "maxApplicationIcons": 3,
-    "iconSize": "medium",
-    "showIconCounts": true
+  "ram": {
+    "showLabel": true,
+    "showIcon": false
   },
   "storage": {
+    "showLabel": true,
+    "showIcon": false,
     "showBytes": true
-  },
-  "audio": {
-    "enabled": true,
-    "showIcon": true,
-    "showPercentage": true,
-    "showSlider": false,
-    "precision": 0
-  },
-  "brightness": {
-    "enabled": true,
-    "showIcon": true,
-    "showPercentage": true,
-    "showSlider": false,
-    "precision": 0
-  },
-  "cpu_temp": {
-    "enabled": true,
-    "showIcon": true,
-    "showValue": true,
-    "showUnit": true,
-    "updateInterval": 10000
-  },
-  "gpu_temp": {
-    "enabled": true,
-    "showIcon": true,
-    "showValue": true,
-    "showUnit": true,
-    "updateInterval": 10000
-  },
-  "battery": {
-    "enabled": true,
-    "showIcon": true,
-    "showPercentage": true,
-    "showTime": false,
-    "precision": 0
-  },
-  "temperature": {
-    "updateInterval": 10000,
-    "cpuSensor": "k10temp",
-    "gpuSensor": "amdgpu",
-    "thresholds": {
-      "cpu": {
-        "warm": 65,
-        "hot": 80,
-        "critical": 90
-      },
-      "gpu": {
-        "warm": 70,
-        "hot": 85,
-        "critical": 95
-      }
-    }
-  },
-  "power": {
-    "enabled": true,
-    "showIcon": true,
-    "showText": true,
-    "confirmActions": true,
-    "lockCommand": "hyprlock",
-    "actions": {
-      "lock": true,
-      "logout": true,
-      "suspend": true,
-      "hibernate": true,
-      "reboot": true,
-      "poweroff": true
-    },
-    "shortcuts": {
-      "lock": "Super+L",
-      "logout": "Super+Shift+Q",
-      "powerMenu": "Super+Shift+P"
-    }
   }
 }

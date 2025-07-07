@@ -9,7 +9,7 @@ PopupWindow {
     
     // Services
     property var batteryService: null
-    property var themeService: null
+    property var configService: ConfigService
     
     // Standard window properties
     implicitWidth: 240
@@ -37,8 +37,8 @@ PopupWindow {
     // Content structure
     Rectangle {
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
         border.width: 1
         radius: 8
         
@@ -56,13 +56,13 @@ PopupWindow {
                     font.family: "Inter"
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 }
                 
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 }
                 
                 // Battery presence check
@@ -76,7 +76,7 @@ PopupWindow {
                         font.family: "Inter"
                         font.pixelSize: 12
                         font.weight: Font.Medium
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     Row {
@@ -88,14 +88,14 @@ PopupWindow {
                             font.pixelSize: 18
                             font.weight: Font.Bold
                             color: {
-                                if (!batteryService) return themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                if (!batteryService) return configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                                 const status = batteryService.getBatteryStatus()
                                 switch (status) {
-                                    case "high": return themeService ? themeService.getThemeProperty("colors", "success") || "#a6e3a1" : "#a6e3a1"
-                                    case "medium": return themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                                    case "low": return themeService ? themeService.getThemeProperty("colors", "warning") || "#f9e2af" : "#f9e2af"
-                                    case "critical": return themeService ? themeService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
-                                    default: return themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                    case "high": return configService ? configService.getThemeProperty("colors", "success") || "#a6e3a1" : "#a6e3a1"
+                                    case "medium": return configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                    case "low": return configService ? configService.getThemeProperty("colors", "warning") || "#f9e2af" : "#f9e2af"
+                                    case "critical": return configService ? configService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
+                                    default: return configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                                 }
                             }
                         }
@@ -108,10 +108,10 @@ PopupWindow {
                             font.family: "Inter"
                             font.pixelSize: 11
                             color: {
-                                if (!batteryService) return themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                                if (!batteryService) return configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                                 return batteryService.charging ? 
-                                    themeService ? themeService.getThemeProperty("colors", "success") || "#a6e3a1" : "#a6e3a1" :
-                                    themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                                    configService ? configService.getThemeProperty("colors", "success") || "#a6e3a1" : "#a6e3a1" :
+                                    configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                             }
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -131,7 +131,7 @@ PopupWindow {
                         }
                         font.family: "Inter"
                         font.pixelSize: 11
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                     }
                 }
                 
@@ -141,14 +141,14 @@ PopupWindow {
                     text: "No battery detected"
                     font.family: "Inter"
                     font.pixelSize: 12
-                    color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                    color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                     width: parent.width
                 }
                 
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                     visible: batteryService ? batteryService.present : false
                 }
                 
@@ -163,7 +163,7 @@ PopupWindow {
                         font.family: "Inter"
                         font.pixelSize: 12
                         font.weight: Font.Medium
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     Text {
@@ -174,7 +174,7 @@ PopupWindow {
                         }
                         font.family: "Inter"
                         font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         wrapMode: Text.Wrap
                         width: parent.width
                     }
@@ -186,14 +186,14 @@ PopupWindow {
                         }
                         font.family: "Inter"
                         font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                     }
                 }
                 
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                     visible: batteryService ? batteryService.present : false
                 }
                 
@@ -208,14 +208,14 @@ PopupWindow {
                         font.family: "Inter"
                         font.pixelSize: 12
                         font.weight: Font.Medium
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     Text {
                         text: "Power management via UPower"
                         font.family: "Inter"
                         font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         wrapMode: Text.Wrap
                         width: parent.width
                     }
@@ -224,7 +224,7 @@ PopupWindow {
                         text: "Battery level thresholds: Critical <10%, Low <20%, Medium <80%, High ≥80%"
                         font.family: "Inter"
                         font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         wrapMode: Text.Wrap
                         width: parent.width
                     }

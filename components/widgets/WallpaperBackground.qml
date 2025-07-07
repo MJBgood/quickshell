@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
+import "../../services"
 
 PanelWindow {
     id: wallpaperBackground
@@ -18,7 +19,15 @@ PanelWindow {
     
     // Services
     property var wallpaperService: null
-    property var themeService: null
+    property var configService: ConfigService
+    property var scalingService: ScalingService
+    property var componentRegistry: ComponentRegistry
+    
+    // GraphicalComponent interface
+    property string componentId: "wallpaper-background"
+    property string parentComponentId: "desktop"
+    property var childComponentIds: []
+    property string menuPath: "desktop.wallpaper-background"
     
     // Required property for screen assignment
     property var modelData
@@ -57,24 +66,24 @@ PanelWindow {
                 
                 // Loading indicator
                 Rectangle {
-                    width: 60
-                    height: 60
-                    radius: 30
-                    color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+                    width: scalingService.scaleValue(60)
+                    height: scalingService.scaleValue(60)
+                    radius: scalingService.scaleValue(30)
+                    color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
                     anchors.centerIn: parent
                     opacity: 0.8
                     
                     Text {
                         anchors.centerIn: parent
                         text: "⏳"
-                        font.pixelSize: 24
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        font.pixelSize: scalingService.scaleValue(24)
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         
                         RotationAnimation on rotation {
                             running: wallpaperImage.status === Image.Loading
                             from: 0
                             to: 360
-                            duration: 2000
+                            duration: scalingService.scaleAnimationDuration(2000)
                             loops: Animation.Infinite
                         }
                     }
@@ -89,28 +98,28 @@ PanelWindow {
                 
                 Column {
                     anchors.centerIn: parent
-                    spacing: 16
+                    spacing: scalingService.scaleValue(16)
                     
                     Text {
                         text: "🖼️"
-                        font.pixelSize: 64
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        font.pixelSize: scalingService.scaleValue(64)
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
                     
                     Text {
                         text: "Unable to load wallpaper"
-                        font.pixelSize: 16
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        font.pixelSize: scalingService.scaleValue(16)
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
                     
                     Text {
                         text: getCurrentWallpaperPath()
-                        font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        font.pixelSize: scalingService.scaleValue(10)
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         anchors.horizontalCenter: parent.horizontalCenter
-                        width: 400
+                        width: scalingService.scaleValue(400)
                         elide: Text.ElideMiddle
                         horizontalAlignment: Text.AlignHCenter
                     }
@@ -125,47 +134,47 @@ PanelWindow {
             
             // Subtle gradient background
             gradient: Gradient {
-                GradientStop { position: 0.0; color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e" }
-                GradientStop { position: 0.3; color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244" }
-                GradientStop { position: 0.7; color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244" }
-                GradientStop { position: 1.0; color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e" }
+                GradientStop { position: 0.0; color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e" }
+                GradientStop { position: 0.3; color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244" }
+                GradientStop { position: 0.7; color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244" }
+                GradientStop { position: 1.0; color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e" }
             }
             
             // Instructional content
             Column {
                 anchors.centerIn: parent
-                spacing: 24
-                width: Math.min(600, parent.width - 100)
+                spacing: scalingService.scaleValue(24)
+                width: Math.min(scalingService.scaleValue(600), parent.width - scalingService.scaleValue(100))
                 
                 // Icon
                 Text {
                     text: "🖼️"
-                    font.pixelSize: 72
-                    color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                    font.pixelSize: scalingService.scaleValue(72)
+                    color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
                 
                 // Title
                 Text {
                     text: "Welcome to Quickshell"
-                    font.pixelSize: 28
+                    font.pixelSize: scalingService.scaleValue(28)
                     font.weight: Font.Bold
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
                 
                 // Subtitle
                 Text {
                     text: "Add wallpapers to personalize your desktop"
-                    font.pixelSize: 16
-                    color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                    font.pixelSize: scalingService.scaleValue(16)
+                    color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
                 
                 // Instructions
                 Column {
                     width: parent.width
-                    spacing: 12
+                    spacing: scalingService.scaleValue(12)
                     anchors.horizontalCenter: parent.horizontalCenter
                     
                     Repeater {
@@ -173,28 +182,28 @@ PanelWindow {
                         
                         Row {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            spacing: 12
+                            spacing: scalingService.scaleValue(12)
                             
                             Rectangle {
-                                width: 24
-                                height: 24
-                                radius: 12
-                                color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                                width: scalingService.scaleValue(24)
+                                height: scalingService.scaleValue(24)
+                                radius: scalingService.scaleValue(12)
+                                color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                                 anchors.verticalCenter: parent.verticalCenter
                                 
                                 Text {
                                     anchors.centerIn: parent
                                     text: (index + 1).toString()
-                                    font.pixelSize: 10
+                                    font.pixelSize: scalingService.scaleValue(10)
                                     font.weight: Font.Bold
-                                    color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+                                    color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
                                 }
                             }
                             
                             Text {
                                 text: modelData
-                                font.pixelSize: 14
-                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                font.pixelSize: scalingService.scaleValue(14)
+                                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                         }
@@ -203,20 +212,20 @@ PanelWindow {
                 
                 // Quick action button
                 Rectangle {
-                    width: 200
-                    height: 40
-                    radius: 8
-                    color: quickActionMouse.containsMouse ? (themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1") : "transparent"
-                    border.color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
-                    border.width: 2
+                    width: scalingService.scaleValue(200)
+                    height: scalingService.scaleValue(40)
+                    radius: scalingService.scaleValue(8)
+                    color: quickActionMouse.containsMouse ? (configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"):  "transparent"
+                    border.color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                    border.width: scalingService.scaleValue(2)
                     anchors.horizontalCenter: parent.horizontalCenter
                     
                     Text {
                         anchors.centerIn: parent
                         text: "📁 Open Wallpaper Folder"
-                        font.pixelSize: 12
+                        font.pixelSize: scalingService.scaleValue(12)
                         font.weight: Font.Medium
-                        color: quickActionMouse.containsMouse ? (themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e") : (themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1")
+                        color: quickActionMouse.containsMouse ? (configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"):  (configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1")
                     }
                     
                     MouseArea {
@@ -228,15 +237,15 @@ PanelWindow {
                     }
                     
                     Behavior on color {
-                        ColorAnimation { duration: 200 }
+                        ColorAnimation { duration: scalingService.scaleAnimationDuration(200) }
                     }
                 }
                 
                 // Additional info
                 Text {
                     text: `Wallpaper directory: ${getWallpaperDirectory()}`
-                    font.pixelSize: 10
-                    color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                    font.pixelSize: scalingService.scaleValue(10)
+                    color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: parent.width
                     elide: Text.ElideMiddle
@@ -253,30 +262,30 @@ PanelWindow {
             
             // Preview indicator
             Rectangle {
-                width: 180
-                height: 40
-                radius: 8
-                color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+                width: scalingService.scaleValue(180)
+                height: scalingService.scaleValue(40)
+                radius: scalingService.scaleValue(8)
+                color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
                 border.color: "#f9e2af"
-                border.width: 2
+                border.width: scalingService.scaleValue(2)
                 anchors.top: parent.top
                 anchors.right: parent.right
-                anchors.margins: 20
+                anchors.margins: scalingService.scaleValue(20)
                 opacity: 0.9
                 
                 Row {
                     anchors.centerIn: parent
-                    spacing: 8
+                    spacing: scalingService.scaleValue(8)
                     
                     Text {
                         text: "👁️"
-                        font.pixelSize: 16
+                        font.pixelSize: scalingService.scaleValue(16)
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     
                     Text {
                         text: "Preview Mode"
-                        font.pixelSize: 12
+                        font.pixelSize: scalingService.scaleValue(12)
                         font.weight: Font.Medium
                         color: "#f9e2af"
                         anchors.verticalCenter: parent.verticalCenter
@@ -315,7 +324,7 @@ PanelWindow {
     }
     
     function getFallbackColor() {
-        return themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+        return configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
     }
     
     function getWallpaperDirectory() {
@@ -354,13 +363,50 @@ PanelWindow {
         }
     }
     
+    // GraphicalComponent interface methods
+    function menu(startPath) {
+        console.log(`[WallpaperBackground] Menu requested for path: ${startPath || menuPath}`)
+        // Wallpaper backgrounds don't typically have context menus
+        // but we implement the interface for consistency
+    }
+    
+    function getParent() {
+        return componentRegistry.getComponent(parentComponentId)
+    }
+    
+    function getChildren() {
+        return childComponentIds.map(id => componentRegistry.getComponent(id)).filter(c => c)
+    }
+    
+    function navigateToParent() {
+        const parent = getParent()
+        if (parent && parent.menu) {
+            parent.menu()
+        }
+    }
+    
+    function navigateToChild(childId) {
+        const child = componentRegistry.getComponent(childId)
+        if (child && child.menu) {
+            child.menu()
+        }
+    }
+    
     Component.onCompleted: {
         console.log("WallpaperBackground initialized for screen:", screen ? screen.name : "unknown")
+        
+        // Register with ComponentRegistry
+        componentRegistry.registerComponent(componentId, wallpaperBackground)
         
         // Log initial state
         if (wallpaperService) {
             console.log("Background: Initial wallpaper count:", wallpaperService.wallpapers ? wallpaperService.wallpapers.length : 0)
             console.log("Background: Current wallpaper:", wallpaperService.currentWallpaper || "none")
         }
+    }
+    
+    Component.onDestruction: {
+        // Unregister from ComponentRegistry
+        componentRegistry.unregisterComponent(componentId)
     }
 }

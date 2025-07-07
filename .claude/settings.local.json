@@ -12,7 +12,11 @@
       "Bash(mkdir:*)",
       "Bash(quickshell:*)",
       "Bash(qs)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(qmlformat:*)",
+      "Bash(qml:*)",
+      "Bash(rm:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }

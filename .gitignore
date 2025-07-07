@@ -6,6 +6,9 @@
 *.log
 *.tmp
 
+# Inspiration code
+inspiration/
+
 # IDE files
 .vscode/
 .idea/

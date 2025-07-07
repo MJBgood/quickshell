@@ -15,8 +15,7 @@ Rectangle {
     
     // Services
     property var systemMonitorService: null
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     property var anchorWindow: null
     
     // Dedicated context menu loader - lazy loaded
@@ -29,7 +28,6 @@ Rectangle {
         
         onLoaded: {
             item.configService = storageMonitor.configService
-            item.themeService = storageMonitor.themeService
             item.systemMonitorService = storageMonitor.systemMonitorService
             
             item.closed.connect(function() {
@@ -55,20 +53,20 @@ Rectangle {
     property string storageDisplay: StorageService.usedDisplay + " / " + StorageService.totalDisplay
     
     // Visual configuration
-    implicitWidth: contentRow.implicitWidth + 12
-    implicitHeight: 20
-    radius: 4
+    implicitWidth: contentRow.implicitWidth + (configService ? configService.scaled(12) : 12)
+    implicitHeight: configService ? configService.scaled(20) : 20
+    radius: configService ? configService.scaled(4) : 4
     
     // Dynamic background color based on storage usage
     color: {
-        if (!themeService) return "#313244"
+        if (!configService) return "#313244"
         
         if (storageUsagePercent > 90) {
-            return themeService.getThemeProperty("colors", "error") || "#f38ba8"
+            return configService.getThemeProperty("colors", "error") || "#f38ba8"
         } else if (storageUsagePercent > 80) {
-            return themeService.getThemeProperty("colors", "warning") || "#f9e2af"
+            return configService.getThemeProperty("colors", "warning") || "#f9e2af"
         } else {
-            return themeService.getThemeProperty("colors", "surface") || "#313244"
+            return configService.getThemeProperty("colors", "surface") || "#313244"
         }
     }
     
@@ -81,7 +79,7 @@ Rectangle {
     Row {
         id: contentRow
         anchors.centerIn: parent
-        spacing: 4
+        spacing: configService ? configService.scaled(4) : 4
         
         // Storage icon
         Text {
@@ -89,17 +87,17 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: "💾"  // Storage/disk icon
             color: {
-                if (!themeService) return "#cdd6f4"
+                if (!configService) return "#cdd6f4"
                 
                 // Dynamic icon color based on usage
                 if (storageUsagePercent > 90) {
-                    return themeService.getThemeProperty("colors", "background") || "#1e1e2e"
+                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
                 } else {
-                    return themeService.getThemeProperty("colors", "text") || "#cdd6f4"
+                    return configService.getThemeProperty("colors", "text") || "#cdd6f4"
                 }
             }
             font.family: "Inter"
-            font.pixelSize: 10
+            font.pixelSize: configService ? configService.scaledFontNormal() : 10
         }
         
         // Storage usage text
@@ -129,17 +127,17 @@ Rectangle {
                 return parts.join(" ")
             }
             color: {
-                if (!themeService) return "#cdd6f4"
+                if (!configService) return "#cdd6f4"
                 
                 // Dynamic text color based on usage
                 if (storageUsagePercent > 90) {
-                    return themeService.getThemeProperty("colors", "background") || "#1e1e2e"
+                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
                 } else {
-                    return themeService.getThemeProperty("colors", "text") || "#cdd6f4"
+                    return configService.getThemeProperty("colors", "text") || "#cdd6f4"
                 }
             }
             font.family: "Inter"
-            font.pixelSize: 9
+            font.pixelSize: configService ? configService.scaledFontSmall() : 9
             font.weight: storageUsagePercent > 85 ? Font.DemiBold : Font.Medium
         }
     }
@@ -150,18 +148,18 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 2
-        radius: 1
+        height: configService ? configService.scaled(2) : 2
+        radius: configService ? configService.scaled(1) : 1
         
         color: {
-            if (!themeService) return "#89b4fa"
+            if (!configService) return "#89b4fa"
             
             if (storageUsagePercent > 90) {
-                return themeService.getThemeProperty("colors", "error") || "#f38ba8"
+                return configService.getThemeProperty("colors", "error") || "#f38ba8"
             } else if (storageUsagePercent > 80) {
-                return themeService.getThemeProperty("colors", "warning") || "#f9e2af"
+                return configService.getThemeProperty("colors", "warning") || "#f9e2af"
             } else {
-                return themeService.getThemeProperty("colors", "accent") || "#a6e3a1"
+                return configService.getThemeProperty("colors", "accent") || "#a6e3a1"
             }
         }
         
@@ -198,25 +196,25 @@ Rectangle {
         id: hoverText
         visible: false
         anchors.bottom: parent.top
-        anchors.bottomMargin: 8
+        anchors.bottomMargin: configService ? configService.scaled(8) : 8
         anchors.horizontalCenter: parent.horizontalCenter
         z: 1000
         
-        width: hoverContent.implicitWidth + 8
-        height: hoverContent.implicitHeight + 4
-        radius: 4
+        width: hoverContent.implicitWidth + (configService ? configService.scaled(8) : 8)
+        height: hoverContent.implicitHeight + (configService ? configService.scaled(4) : 4)
+        radius: configService ? configService.scaled(4) : 4
         
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
         border.width: 1
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         
         Text {
             id: hoverContent
             anchors.centerIn: parent
             text: `Storage: ${storageUsed.toFixed(1)}/${storageTotal.toFixed(1)} GB (${storageUsagePercent.toFixed(1)}%)`
-            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
             font.family: "Inter"
-            font.pixelSize: 8
+            font.pixelSize: configService ? configService.scaledFontTiny() : 8
         }
     }
     

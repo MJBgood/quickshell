@@ -1,9 +1,10 @@
+pragma Singleton
 import QtQuick
 import QtCore
 import Quickshell
 import Quickshell.Io
 
-Item {
+Singleton {
     id: configService
     
     // Logging category for this service
@@ -16,6 +17,19 @@ Item {
     // Configuration state
     property bool initialized: false
     property var config: ({})
+    
+    // System type - can be auto-detected or manually set in config
+    property string systemType: getValue("system.type", "auto")
+    property bool isLaptop: systemType === "laptop" || (systemType === "auto" && autoDetectLaptop())
+    property bool isDesktop: systemType === "desktop" || (systemType === "auto" && !autoDetectLaptop())
+    
+    // Theme state
+    property string activeTheme: "catppuccin"
+    property string activeMode: "dark"
+    property bool darkMode: true
+    property var currentThemeData: null
+    property var availableThemes: []
+    
     // Configuration file path - following Quickshell best practices
     readonly property string configPath: {
         // Priority: 1) Environment variable 2) Config directory (recommended)
@@ -25,6 +39,12 @@ Item {
         // Default: ~/.config/quickshell/config/settings/main-config.json (follows XDG standards)
         const configDir = Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
         return configDir + "/quickshell/config/settings/main-config.json"
+    }
+    
+    // Theme file path
+    readonly property string themePath: {
+        const configDir = Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
+        return configDir + "/quickshell/themes/" + activeTheme + ".json"
     }
     
     // Default configuration
@@ -52,6 +72,19 @@ Item {
                 "hoverDelay": 800,
                 "autoHideDelay": 5000,
                 "animationDuration": 300
+            },
+            "scaling": {
+                "globalScale": 1.0,
+                "useCustomScaling": false,
+                "customScales": {
+                    "padding": 1.0,
+                    "margin": 1.0,
+                    "font": 1.0,
+                    "borderRadius": 1.0,
+                    "icon": 1.0,
+                    "spacing": 1.0
+                },
+                "preset": "normal"
             },
             "monitors": {
                 "cpu": {
@@ -101,6 +134,14 @@ Item {
             "systray": {
                 "enabled": true,
                 "spacing": 4
+            },
+            "battery": {
+                "enabled": null,  // null = auto-detect based on system type
+                "showIcon": true,
+                "showPercentage": true,
+                "showTime": false,
+                "autoHideOnDesktop": true,
+                "autoShowOnLaptop": true
             }
         },
         "shortcuts": {
@@ -109,6 +150,7 @@ Item {
             "settings": "Super+Comma"
         },
         "system": {
+            "type": "auto",  // "auto", "laptop", "desktop" - controls battery widget auto-hide
             "updateInterval": 2000,
             "showSystemStats": true,
             "enableNotifications": true
@@ -161,6 +203,12 @@ Item {
     signal configSaved()
     signal errorOccurred(string error)
     
+    // Theme signals
+    signal themeLoaded(string themeName, string mode)
+    signal themeChanged(string oldTheme, string newTheme)
+    signal modeChanged(string oldMode, string newMode)
+    signal themesDiscovered(var themes)
+    
     // Auto-generated property change signals (automatically available):
     // - configChanged()        // when config object changes (RECOMMENDED: use this)
     // - configPathChanged()    // when configPath changes
@@ -202,13 +250,14 @@ Item {
         return result
     }
 
-    // Config file loader process
+    // Config file loader process - reverting to Process approach with better error handling
     Process {
         id: configLoader
         command: ["cat", configPath]
         
         stdout: StdioCollector {
             onStreamFinished: {
+                console.log(logCategory, "Config loading process finished, text length:", this.text.length)
                 if (this.text.trim().length === 0) {
                     console.warn(logCategory, "Config file empty or not found, using defaults")
                     config = JSON.parse(JSON.stringify(defaultConfig))
@@ -219,16 +268,18 @@ Item {
                 try {
                     const loadedConfig = JSON.parse(this.text)
                     config = mergeConfig(defaultConfig, loadedConfig)
-                    console.log(logCategory, "Configuration loaded successfully")
+                    console.log(logCategory, "Configuration loaded successfully from:", configPath)
                     configLoaded()
                 } catch (error) {
                     console.warn(logCategory, "Failed to parse config file, using defaults:", error)
                     config = JSON.parse(JSON.stringify(defaultConfig))
-                    // Save the default config so it exists for next time
-                    saveConfig()
                     configLoaded()
                 }
             }
+        }
+        
+        onExited: {
+            console.log(logCategory, "Config loading process completed with exit code:", exitCode)
         }
     }
 
@@ -241,6 +292,71 @@ Item {
     // Config file saver process
     Process {
         id: configSaver
+    }
+    
+    // Theme loader process - reverting to Process approach with better error handling
+    Process {
+        id: themeLoader
+        command: ["cat", themePath]
+        
+        stdout: StdioCollector {
+            onStreamFinished: {
+                console.log(logCategory, "Theme loading process finished, text length:", this.text.length)
+                if (this.text.trim().length === 0) {
+                    console.warn(logCategory, "Theme file empty or not found, using fallback")
+                    loadFallbackTheme()
+                    return
+                }
+                
+                try {
+                    const theme = JSON.parse(this.text)
+                    if (validateTheme(theme)) {
+                        // Extract the appropriate mode data
+                        if (theme.supportsModes) {
+                            const modeData = theme[activeMode]
+                            if (modeData) {
+                                currentThemeData = Object.assign({}, theme, modeData)
+                            } else {
+                                // Fallback to default mode
+                                const defaultMode = theme.defaultMode || "dark"
+                                currentThemeData = Object.assign({}, theme, theme[defaultMode])
+                                activeMode = defaultMode
+                            }
+                        } else {
+                            // Single-mode theme
+                            currentThemeData = theme
+                        }
+                        
+                        darkMode = activeMode === "dark"
+                        console.log(logCategory, "Theme loaded:", theme.name, "(" + activeMode + " mode)")
+                        themeLoaded(activeTheme, activeMode)
+                    } else {
+                        console.warn(logCategory, "Theme validation failed, using fallback")
+                        loadFallbackTheme()
+                    }
+                } catch (error) {
+                    console.warn(logCategory, "Failed to parse theme, using fallback:", error)
+                    loadFallbackTheme()
+                }
+            }
+        }
+        
+        onExited: {
+            console.log(logCategory, "Theme loading process completed with exit code:", exitCode)
+        }
+    }
+    
+    // Theme discovery process
+    Process {
+        id: themeDiscovery
+        command: ["find", themePath.substring(0, themePath.lastIndexOf('/')), "-name", "*.json", "-type", "f"]
+        
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const paths = this.text.trim().split('\n').filter(p => p.length > 0)
+                discoverThemes(paths)
+            }
+        }
     }
     
     function saveConfig() {
@@ -378,11 +494,427 @@ Item {
         return getUISetting("monitors", `${monitorType}.${key}`, fallback)
     }
     
+    // Scaling helpers
+    property real globalScale: {
+        // Use device pixel ratio from primary screen, with user override
+        const primaryScreen = Quickshell.screens[0]
+        const deviceScale = primaryScreen ? primaryScreen.devicePixelRatio : 1.0
+        const userScale = getUISetting("scaling", "globalScale", 1.0)
+        return deviceScale * userScale
+    }
+    
+    function scaled(baseValue, scaleType = "base") {
+        const useCustom = getUISetting("scaling", "useCustomScaling", false)
+        if (useCustom) {
+            const customScale = getUISetting("scaling", `customScales.${scaleType}`, 1.0)
+            return Math.round(baseValue * globalScale * customScale)
+        }
+        return Math.round(baseValue * globalScale)
+    }
+    
+    // Convenience scaling functions
+    function fontScale(baseSize) { return scaled(baseSize, "font") }
+    function paddingScale(baseSize) { return scaled(baseSize, "padding") }
+    function marginScale(baseSize) { return scaled(baseSize, "margin") }
+    function iconScale(baseSize) { return scaled(baseSize, "icon") }
+    function borderRadiusScale(baseSize) { return scaled(baseSize, "borderRadius") }
+    function spacingScale(baseSize) { return scaled(baseSize, "spacing") }
+    
+    // Common UI sizes (scaled)
+    function scaledFontTiny() { return fontScale(8) }
+    function scaledFontSmall() { return fontScale(9) }
+    function scaledFontNormal() { return fontScale(10) }
+    function scaledFontMedium() { return fontScale(12) }
+    function scaledFontLarge() { return fontScale(14) }
+    
+    // ISO-compliant size scales following international standards
+    
+    // Typography scale (based on modular scale + Apple/WCAG guidelines)
+    property var typographyScale: {
+        "xs": 11,     // 11px (Apple minimum readable size)
+        "sm": 14,     // 14px (common UI text)
+        "base": 16,   // 16px (web standard default)
+        "lg": 20,     // 20px (large text)
+        "xl": 24,     // 24px (headings)
+        "2xl": 32,    // 32px (large headings)
+        "3xl": 48     // 48px (display text)
+    }
+    
+    // Spacing scale (8px grid system for consistency)
+    property var spacingScale: {
+        "xs": 4,      // 4px (micro spacing)
+        "sm": 8,      // 8px (small spacing)
+        "md": 16,     // 16px (default spacing)
+        "lg": 24,     // 24px (WCAG AA minimum touch target)
+        "xl": 32,     // 32px (large spacing)
+        "2xl": 48,    // 48px (section spacing)
+        "3xl": 64     // 64px (major section spacing)
+    }
+    
+    // Touch target sizes (accessibility compliant)
+    property var touchTargetScale: {
+        "minimum": 24,  // WCAG AA minimum
+        "standard": 44, // Apple/WCAG AAA standard
+        "large": 56     // Enhanced accessibility
+    }
+    
+    // Legacy font functions (for backward compatibility)
+    function fontTiny() { return typographyScale.xs }
+    function fontSmall() { return typographyScale.sm }
+    function fontNormal() { return typographyScale.base }
+    function fontMedium() { return typographyScale.lg }
+    function fontLarge() { return typographyScale.xl }
+    
+    // Legacy margin functions (for backward compatibility)
+    function marginTiny() { return spacingScale.xs }
+    function marginSmall() { return spacingScale.sm }
+    function marginNormal() { return spacingScale.md }
+    function marginLarge() { return spacingScale.lg }
+    
+    // Legacy scaled functions (for backward compatibility)
+    function scaledMarginTiny() { return marginScale(spacingScale.xs) }
+    function scaledMarginSmall() { return marginScale(spacingScale.sm) }
+    function scaledMarginNormal() { return marginScale(spacingScale.md) }
+    function scaledMarginLarge() { return marginScale(spacingScale.lg) }
+    
+    function scaledIconSmall() { return iconScale(16) }
+    function scaledIconMedium() { return iconScale(20) }
+    function scaledIconLarge() { return iconScale(24) }
+    
+    // Modern ISO-compliant size functions
+    
+    // Typography helpers (scaled)
+    function fontSize(size) { return fontScale(typographyScale[size] || typographyScale.base) }
+    function fontSizeXs() { return fontSize("xs") }
+    function fontSizeSm() { return fontSize("sm") }
+    function fontSizeBase() { return fontSize("base") }
+    function fontSizeLg() { return fontSize("lg") }
+    function fontSizeXl() { return fontSize("xl") }
+    function fontSize2xl() { return fontSize("2xl") }
+    function fontSize3xl() { return fontSize("3xl") }
+    
+    // Spacing helpers (scaled)
+    function spacing(size) { return marginScale(spacingScale[size] || spacingScale.md) }
+    function spacingXs() { return spacing("xs") }
+    function spacingSm() { return spacing("sm") }
+    function spacingMd() { return spacing("md") }
+    function spacingLg() { return spacing("lg") }
+    function spacingXl() { return spacing("xl") }
+    function spacing2xl() { return spacing("2xl") }
+    function spacing3xl() { return spacing("3xl") }
+    
+    // Touch target helpers (scaled, accessibility compliant)
+    function touchTarget(size) { return scaled(touchTargetScale[size] || touchTargetScale.standard) }
+    function touchTargetMinimum() { return touchTarget("minimum") }
+    function touchTargetStandard() { return touchTarget("standard") }
+    function touchTargetLarge() { return touchTarget("large") }
+    
+    // Icon size helpers (following spacing scale)
+    function iconSize(size) { return iconScale(spacingScale[size] || spacingScale.md) }
+    function iconSizeXs() { return iconSize("xs") }
+    function iconSizeSm() { return iconSize("sm") }
+    function iconSizeMd() { return iconSize("md") }
+    function iconSizeLg() { return iconSize("lg") }
+    function iconSizeXl() { return iconSize("xl") }
+    
+    // Widget helper functions (updated to use ISO-compliant sizing)
+    function widgetSpacing() { return spacingSm() }  // 8px spacing
+    function badgeSize() { return spacingMd() }      // 16px (readable badge size)
+    function badgeRadius() { return spacingSm() }     // 8px radius
+    function badgePadding() { return spacingXs() }    // 4px padding
+    
+    // Workspace helper functions (ISO-compliant sizing with accessibility)
+    function workspaceSize(mode) {
+        const sizes = {
+            "xs": { width: spacingLg(), height: spacingMd() },      // 24x16px (compact)
+            "sm": { width: touchTargetMinimum(), height: spacingMd() }, // 24x16px (WCAG minimum)
+            "md": { width: spacingXl(), height: spacingLg() },      // 32x24px (default)
+            "lg": { width: spacing2xl(), height: spacingXl() },     // 48x32px (large)
+            "xl": { width: touchTargetStandard(), height: spacingXl() } // 44x32px (touch-friendly)
+        }
+        return sizes[mode] || sizes["md"]
+    }
+    
+    // Scaling preset management
+    function applyScalingPreset(presetName) {
+        const presets = {
+            "compact": { globalScale: 0.8, customScales: { font: 0.9, padding: 0.8, margin: 0.8 } },
+            "normal": { globalScale: 1.0, customScales: { font: 1.0, padding: 1.0, margin: 1.0 } },
+            "large": { globalScale: 1.2, customScales: { font: 1.1, padding: 1.2, margin: 1.2 } },
+            "extraLarge": { globalScale: 1.5, customScales: { font: 1.3, padding: 1.5, margin: 1.5 } }
+        }
+        
+        const preset = presets[presetName]
+        if (preset) {
+            setUISetting("scaling", "preset", presetName)
+            setUISetting("scaling", "globalScale", preset.globalScale)
+            setUISetting("scaling", "useCustomScaling", true)
+            for (const [key, value] of Object.entries(preset.customScales)) {
+                setUISetting("scaling", `customScales.${key}`, value)
+            }
+            return true
+        }
+        return false
+    }
+    
+    // Theme management functions
+    function loadTheme() {
+        activeTheme = getValue("theme.activeTheme", "catppuccin")
+        activeMode = getValue("theme.activeMode", "dark")
+        darkMode = activeMode === "dark"
+        
+        console.log(logCategory, "Loading theme:", activeTheme, "mode:", activeMode)
+        themeLoader.running = true
+    }
+    
+    function validateTheme(theme) {
+        if (!theme || typeof theme.id !== 'string' || typeof theme.name !== 'string') {
+            return false
+        }
+        
+        // Check if theme supports modes (has dark/light mode data)
+        if (theme.supportsModes) {
+            const darkMode = theme.dark
+            const lightMode = theme.light
+            
+            // At least one mode must have colors
+            return (darkMode && darkMode.colors && typeof darkMode.colors === 'object') ||
+                   (lightMode && lightMode.colors && typeof lightMode.colors === 'object')
+        } else {
+            // Flat theme structure
+            return theme.colors && typeof theme.colors === 'object'
+        }
+    }
+    
+    function loadFallbackTheme() {
+        console.log(logCategory, "Loading fallback theme")
+        currentThemeData = {
+            id: "catppuccin-mocha",
+            name: "Catppuccin Mocha",
+            description: "Dark theme with purple accents",
+            supportsModes: false,
+            colors: {
+                background: "#1e1e2e",
+                surface: "#313244",
+                surfaceAlt: "#45475a",
+                surfaceContainer: "#45475a",
+                text: "#cdd6f4",
+                primary: "#89b4fa",
+                onPrimary: "#1e1e2e",
+                secondary: "#f38ba8",
+                accent: "#a6e3a1",
+                success: "#a6e3a1",
+                warning: "#f9e2af",
+                error: "#f38ba8",
+                border: "#585b70",
+                textAlt: "#bac2de"
+            },
+            spacing: {
+                small: 4,
+                medium: 8,
+                large: 16,
+                xl: 24
+            }
+        }
+        themeLoaded(activeTheme, activeMode)
+    }
+    
+    function getThemeProperty(category, property) {
+        if (!currentThemeData) {
+            console.warn(logCategory, "No theme data loaded, using fallback")
+            return getFallbackProperty(category, property)
+        }
+        
+        const categoryData = currentThemeData[category]
+        if (!categoryData) {
+            console.warn(logCategory, "Theme category not found:", category)
+            return getFallbackProperty(category, property)
+        }
+        
+        const value = categoryData[property]
+        if (value === undefined) {
+            console.warn(logCategory, "Theme property not found:", category + "." + property)
+            return getFallbackProperty(category, property)
+        }
+        
+        return value
+    }
+    
+    function getFallbackProperty(category, property) {
+        // Fallback theme properties (Catppuccin Mocha)
+        const fallback = {
+            colors: {
+                background: "#1e1e2e",
+                surface: "#313244", 
+                surfaceAlt: "#45475a",
+                surfaceContainer: "#45475a",
+                text: "#cdd6f4",
+                primary: "#89b4fa",
+                onPrimary: "#1e1e2e",
+                secondary: "#f38ba8",
+                accent: "#a6e3a1",
+                success: "#a6e3a1",
+                warning: "#f9e2af",
+                error: "#f38ba8",
+                border: "#585b70",
+                textAlt: "#bac2de"
+            },
+            spacing: {
+                small: 4,
+                medium: 8,
+                large: 16,
+                xl: 24
+            }
+        }
+        
+        return fallback[category] && fallback[category][property]
+    }
+    
+    function setTheme(themeName, mode) {
+        if (!themeName) return false
+        
+        const oldTheme = activeTheme
+        const oldMode = activeMode
+        
+        activeTheme = themeName
+        activeMode = mode || "dark"
+        darkMode = activeMode === "dark"
+        
+        // Save to configuration
+        setValue("theme.activeTheme", activeTheme)
+        setValue("theme.activeMode", activeMode)
+        saveConfig()
+        
+        // Load the new theme
+        loadTheme()
+        
+        if (oldTheme !== activeTheme) {
+            themeChanged(oldTheme, activeTheme)
+        }
+        if (oldMode !== activeMode) {
+            modeChanged(oldMode, activeMode)
+        }
+        
+        return true
+    }
+    
+    function toggleDarkMode() {
+        if (!currentThemeData) return false
+        
+        if (!currentThemeData.supportsModes) {
+            console.log(logCategory, "Theme does not support light/dark mode switching")
+            return false
+        }
+        
+        const newMode = activeMode === "dark" ? "light" : "dark"
+        return setTheme(activeTheme, newMode)
+    }
+    
+    function discoverThemes(themePaths) {
+        console.log(logCategory, "Discovering themes...")
+        const themeList = []
+        
+        for (const path of themePaths) {
+            const filename = path.split('/').pop()
+            const fileId = filename.replace('.json', '')
+            
+            // Create simplified theme entry for discovery
+            themeList.push({
+                id: fileId,
+                name: fileId.charAt(0).toUpperCase() + fileId.slice(1).replace(/-/g, ' '),
+                description: "Theme file: " + filename,
+                filePath: path
+            })
+        }
+        
+        availableThemes = themeList
+        themesDiscovered(themeList)
+        
+        console.log(logCategory, "Discovered", themeList.length, "themes:", themeList.map(t => t.id).join(", "))
+    }
+    
+    function refreshThemes() {
+        console.log(logCategory, "Refreshing theme list...")
+        const themesDir = themePath.substring(0, themePath.lastIndexOf('/'))
+        themeDiscovery.command = ["find", themesDir, "-name", "*.json", "-type", "f"]
+        themeDiscovery.running = true
+    }
+    
+    function loadAllThemes() {
+        if (availableThemes.length > 0) {
+            console.log(logCategory, "Themes already loaded")
+            return
+        }
+        console.log(logCategory, "Loading all themes...")
+        refreshThemes()
+    }
+    
+    // Simple laptop detection for auto-mode
+    function autoDetectLaptop() {
+        // Use environment variables and system hints that are typically available
+        // This is a simple heuristic - users can override with system.type config
+        
+        // Check for common laptop environment indicators
+        const powerProfile = Quickshell.env("POWER_PROFILE_DAEMON_PREFERRED_PROFILE")
+        if (powerProfile === "power-saver" || powerProfile === "balanced") {
+            console.log(logCategory, "Laptop detected: power profile indicates mobile device")
+            return true
+        }
+        
+        // Check for touchpad (common on laptops)
+        const session = Quickshell.env("XDG_SESSION_TYPE")
+        const desktop = Quickshell.env("XDG_CURRENT_DESKTOP")
+        
+        // For now, default to desktop unless explicitly configured
+        // This is safer for desktop users who don't want battery widgets
+        console.log(logCategory, "System type auto-detection: defaulting to desktop")
+        return false
+    }
+    
+    // Helper function to get battery widget enabled state with auto-detection
+    function getBatteryEnabled() {
+        const explicitSetting = getValue("widgets.battery.enabled", null)
+        if (explicitSetting !== null) {
+            return explicitSetting  // User explicitly set it
+        }
+        
+        // Auto-detect based on system type and config
+        const autoHideOnDesktop = getValue("widgets.battery.autoHideOnDesktop", true)
+        const autoShowOnLaptop = getValue("widgets.battery.autoShowOnLaptop", true)
+        
+        if (isLaptop && autoShowOnLaptop) {
+            return true
+        } else if (isDesktop && autoHideOnDesktop) {
+            return false
+        }
+        
+        // Fallback: show on laptop, hide on desktop
+        return isLaptop
+    }
+    
+    // Load theme after config is loaded
+    onConfigLoaded: {
+        loadTheme()
+        refreshThemes()  // Also discover available themes
+    }
+    
     // Initialization
     Component.onCompleted: {
-        console.log(logCategory, "Initializing...")
+        console.log(logCategory, "Initializing ConfigService singleton...")
+        console.log(logCategory, "Config path:", configPath)
+        console.log(logCategory, "Theme path:", themePath)
+        
+        // Load default configuration first
+        config = JSON.parse(JSON.stringify(defaultConfig))
+        console.log(logCategory, "Default config loaded")
+        
+        // Load fallback theme immediately to ensure currentThemeData is available
+        loadFallbackTheme()
+        console.log(logCategory, "Fallback theme loaded")
+        
+        // Then try to load actual config/theme
         loadConfig()
         initialized = true
-        console.log(logCategory, "Initialization complete")
+        console.log(logCategory, "ConfigService initialization complete")
     }
 }

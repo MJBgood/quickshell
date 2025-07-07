@@ -14,8 +14,7 @@ Rectangle {
     property bool showTime: false
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     property var anchorWindow: null
     
     // GraphicalComponent interface
@@ -24,23 +23,24 @@ Rectangle {
     property var childComponentIds: []
     property string menuPath: "battery"
     
-    // Size configuration
-    implicitWidth: showIcon && showPercentage ? 65 : showIcon ? 24 : 45
-    implicitHeight: 20
+    // Dynamic sizing based on content
+    implicitWidth: batteryContent.implicitWidth
+    implicitHeight: batteryContent.implicitHeight
     color: "transparent"
     
     // Context menu
     BatteryContextMenu {
         id: contextMenu
         batteryService: BatteryService
-        themeService: batteryWidget.themeService
+        configService: batteryWidget.configService
         visible: false
     }
     
     // Content layout
     Row {
+        id: batteryContent
         anchors.centerIn: parent
-        spacing: 3
+        spacing: configService ? configService.scaledMarginTiny() : 4
         
         Text {
             visible: showIcon
@@ -61,7 +61,7 @@ Rectangle {
                     return "🪫"  // Low battery
                 }
             }
-            font.pixelSize: 12
+            font.pixelSize: configService ? configService.scaledFontSmall() : 9
         }
         
         Text {
@@ -72,25 +72,25 @@ Rectangle {
                 return Math.round(BatteryService.percentage) + "%"
             }
             font.family: "Inter"
-            font.pixelSize: 11
+            font.pixelSize: configService ? configService.scaledFontSmall() : 9
             font.weight: Font.Medium
             color: {
                 if (!BatteryService.present) {
-                    return themeService?.getThemeProperty("colors", "textAlt") || "#bac2de"
+                    return configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
                 }
                 
                 const status = BatteryService.getBatteryStatus()
                 switch (status) {
                     case "high": 
-                        return themeService?.getThemeProperty("colors", "success") || "#a6e3a1"
+                        return configService?.getThemeProperty("colors", "success") || "#a6e3a1"
                     case "medium": 
-                        return themeService?.getThemeProperty("colors", "text") || "#cdd6f4"
+                        return configService?.getThemeProperty("colors", "text") || "#cdd6f4"
                     case "low": 
-                        return themeService?.getThemeProperty("colors", "warning") || "#f9e2af"
+                        return configService?.getThemeProperty("colors", "warning") || "#f9e2af"
                     case "critical": 
-                        return themeService?.getThemeProperty("colors", "error") || "#f38ba8"
+                        return configService?.getThemeProperty("colors", "error") || "#f38ba8"
                     default: 
-                        return themeService?.getThemeProperty("colors", "textAlt") || "#bac2de"
+                        return configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
                 }
             }
         }
@@ -103,9 +103,9 @@ Rectangle {
                 return estimatedTime || ""
             }
             font.family: "Inter"
-            font.pixelSize: 9
+            font.pixelSize: configService ? configService.scaledFontTiny() : 8
             font.weight: Font.Normal
-            color: themeService?.getThemeProperty("colors", "textAlt") || "#bac2de"
+            color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
         }
     }
     

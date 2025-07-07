@@ -8,7 +8,7 @@ Column {
     // Required properties
     required property string monitorType  // "cpu", "ram", or "storage"
     required property var systemMonitorService
-    property var themeService: null
+    property var configService: ConfigService
     
     spacing: 8
     width: parent.width
@@ -71,7 +71,7 @@ Column {
         font.family: "Inter"
         font.pixelSize: 12
         font.weight: Font.DemiBold
-        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
     }
     
     // Current rate display
@@ -79,7 +79,7 @@ Column {
         text: "Current: " + currentRate.toFixed(1) + "s"
         font.family: "Inter"
         font.pixelSize: 10
-        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
     }
     
     // Preset rate buttons
@@ -95,9 +95,9 @@ Column {
                 height: 24
                 radius: 4
                 color: isSelected() ? 
-                    (themeService ? themeService.getThemeProperty("colors", "accent") || "#cba6f7" : "#cba6f7") :
-                    (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244")
-                border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    (configService ? configService.getThemeProperty("colors", "accent") || "#cba6f7" : "#cba6f7") :
+                    (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244")
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 border.width: 1
                 
                 function isSelected() {
@@ -111,8 +111,8 @@ Column {
                     font.pixelSize: 9
                     font.weight: Font.Medium
                     color: parent.isSelected() ? 
-                        (themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e") :
-                        (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
+                        (configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e") :
+                        (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
                 }
                 
                 MouseArea {

@@ -1,4 +1,5 @@
 import QtQuick
+import "../../services"
 
 Rectangle {
     id: toggleItem
@@ -6,14 +7,14 @@ Rectangle {
     property string label: ""
     property string value: ""
     property bool isActive: false
-    property var themeService: null
+    property var configService: ConfigService
     
     signal clicked()
     
     height: 24
     radius: 6
     color: hoverArea.containsMouse ? 
-           (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") :
+           (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") :
            "transparent"
     
     Row {
@@ -40,7 +41,7 @@ Rectangle {
             text: label + ":"
             font.pixelSize: 11
             font.weight: Font.Medium
-            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
             anchors.verticalCenter: parent.verticalCenter
         }
     }
@@ -54,8 +55,8 @@ Rectangle {
         font.pixelSize: 11
         font.family: "monospace"
         color: isActive ? 
-               (themeService ? themeService.getThemeProperty("colors", "accent") || "#89b4fa" : "#89b4fa") :
-               (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+               (configService ? configService.getThemeProperty("colors", "accent") || "#89b4fa" : "#89b4fa") :
+               (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
         
         Component.onCompleted: {
             console.log("DataToggleItem value text:", text, "label:", toggleItem.label)

@@ -14,8 +14,7 @@ Rectangle {
     property bool showSlider: false
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     property var anchorWindow: null
     
     // GraphicalComponent interface
@@ -24,16 +23,16 @@ Rectangle {
     property var childComponentIds: []
     property string menuPath: "audio"
     
-    // Size configuration
-    implicitWidth: showSlider ? 120 : (showIcon && showPercentage ? 60 : showIcon ? 24 : 40)
-    implicitHeight: 20
+    // Dynamic sizing based on content
+    implicitWidth: audioContent.implicitWidth
+    implicitHeight: audioContent.implicitHeight
     color: "transparent"
     
     // Context menu
     AudioContextMenu {
         id: contextMenu
         audioService: AudioService
-        themeService: audioWidget.themeService
+        configService: audioWidget.configService
         visible: false
     }
     
@@ -51,8 +50,9 @@ Rectangle {
     
     // Content layout
     Row {
+        id: audioContent
         anchors.centerIn: parent
-        spacing: 4
+        spacing: configService ? configService.scaledMarginSmall() : 4
         
         Text {
             visible: showIcon
@@ -64,11 +64,11 @@ Rectangle {
                 if (AudioService.volume > 0.0) return "🔈"
                 return "🔇"
             }
-            font.pixelSize: 14
+            font.pixelSize: configService ? configService.scaledFontLarge() : 14
             color: {
                 return AudioService.muted ? 
-                    (themeService?.getThemeProperty("colors", "warning") || "#f9e2af") :
-                    (themeService?.getThemeProperty("colors", "text") || "#cdd6f4")
+                    (configService?.getThemeProperty("colors", "warning") || "#f9e2af"): 
+                    (configService?.getThemeProperty("colors", "text") || "#cdd6f4")
             }
         }
         
@@ -77,16 +77,16 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: `${Math.round(AudioService.volume * 100)}%`
             font.family: "Inter"
-            font.pixelSize: 11
+            font.pixelSize: configService ? configService.scaledFontSmall() : 9
             font.weight: Font.Medium
-            color: themeService?.getThemeProperty("colors", "text") || "#cdd6f4"
+            color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
         }
         
         Slider {
             visible: showSlider
             anchors.verticalCenter: parent.verticalCenter
-            width: 80
-            height: 16
+            width: configService ? configService.scaled(80) : 80
+            height: configService ? configService.scaled(16) : 16
             from: 0.0
             to: 1.0
             value: AudioService.volume
@@ -100,31 +100,31 @@ Rectangle {
             background: Rectangle {
                 x: parent.leftPadding
                 y: parent.topPadding + parent.availableHeight / 2 - height / 2
-                implicitWidth: 80
-                implicitHeight: 4
+                implicitWidth: configService ? configService.scaled(80) : 80
+                implicitHeight: configService ? configService.scaled(4) : 4
                 width: parent.availableWidth
                 height: implicitHeight
-                radius: 2
-                color: themeService?.getThemeProperty("colors", "surfaceAlt") || "#45475a"
+                radius: configService ? configService.scaled(2) : 2
+                color: configService?.getThemeProperty("colors", "surfaceAlt") || "#45475a"
                 
                 Rectangle {
                     width: parent.parent.visualPosition * parent.width
                     height: parent.height
-                    color: themeService?.getThemeProperty("colors", "primary") || "#89b4fa"
-                    radius: 2
+                    color: configService?.getThemeProperty("colors", "primary") || "#89b4fa"
+                    radius: configService ? configService.scaled(2) : 2
                 }
             }
             
             handle: Rectangle {
                 x: parent.leftPadding + parent.visualPosition * (parent.availableWidth - width)
                 y: parent.topPadding + parent.availableHeight / 2 - height / 2
-                implicitWidth: 12
-                implicitHeight: 12
-                radius: 6
+                implicitWidth: configService ? configService.scaled(12) : 12
+                implicitHeight: configService ? configService.scaled(12) : 12
+                radius: configService ? configService.scaled(6) : 6
                 color: parent.pressed ? 
-                    (themeService?.getThemeProperty("colors", "primaryAlt") || "#74c7ec") :
-                    (themeService?.getThemeProperty("colors", "primary") || "#89b4fa")
-                border.color: themeService?.getThemeProperty("colors", "border") || "#6c7086"
+                    (configService?.getThemeProperty("colors", "primaryAlt") || "#74c7ec"): 
+                    (configService?.getThemeProperty("colors", "primary") || "#89b4fa")
+                border.color: configService?.getThemeProperty("colors", "border") || "#6c7086"
             }
         }
     }
@@ -162,6 +162,34 @@ Rectangle {
         
         onEntered: parent.parent && (parent.parent.opacity = 0.8)
         onExited: parent.parent && (parent.parent.opacity = 1.0)
+    }
+    
+    // GraphicalComponent interface methods
+    function menu(startPath) {
+        const globalPos = audioWidget.mapToItem(null, 0, 0)
+        contextMenu.show(anchorWindow, globalPos.x, globalPos.y)
+    }
+    
+    function getParent() {
+        // Return parent component reference if available
+        return null
+    }
+    
+    function getChildren() {
+        // Return child components array
+        return []
+    }
+    
+    function navigateToParent() {
+        // Navigate to parent menu if available
+        if (getParent()) {
+            getParent().menu()
+        }
+    }
+    
+    function navigateToChild(childId) {
+        // Navigate to child menu - no children for audio widget
+        console.log("AudioWidget has no child components")
     }
     
     Component.onCompleted: console.log("[AudioWidget] Initialized with AudioService singleton")

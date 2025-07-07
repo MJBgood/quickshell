@@ -391,11 +391,13 @@ Item {
     }
     
     Component.onCompleted: {
+        console.log(logCategory, "SystemMonitorService Component.onCompleted starting")
         console.log(logCategory, "Initialized")
         initialized = true
         
         // Load intervals from config once configService is available
         Qt.callLater(() => {
+            console.log(logCategory, "Qt.callLater executing, configService:", !!configService)
             if (configService) {
                 updateIntervalsFromConfig()
                 console.log(logCategory, "Loaded polling rates from config")
@@ -403,6 +405,8 @@ Item {
         })
         
         // Start monitoring by default
+        console.log(logCategory, "About to call startMonitoring()")
         startMonitoring()
+        console.log(logCategory, "SystemMonitorService Component.onCompleted finished")
     }
 }

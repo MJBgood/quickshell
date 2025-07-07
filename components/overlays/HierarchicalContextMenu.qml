@@ -34,8 +34,7 @@ PopupWindow {
     }
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     
     // Navigation state
     property string currentPath: "root"
@@ -158,8 +157,8 @@ PopupWindow {
     Rectangle {
         id: menuContent
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         border.width: 1
         radius: 8
         
@@ -192,15 +191,15 @@ PopupWindow {
                         radius: 6
                         visible: currentPath !== "root"
                         color: homeMouse.containsMouse ? 
-                               (themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1") : 
+                               (configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1") : 
                                "transparent"
                         border.width: 1
-                        border.color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                        border.color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                         
                         Text {
                             anchors.centerIn: parent
                             text: "🏠"
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             font.pixelSize: 12
                         }
                         
@@ -219,7 +218,7 @@ PopupWindow {
                         text: getBreadcrumbText()
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         wrapMode: Text.WordWrap
                         maximumLineCount: 2
                         elide: Text.ElideRight
@@ -239,15 +238,15 @@ PopupWindow {
                         radius: 4
                         visible: historyIndex > 0
                         color: histBackMouse.containsMouse ? 
-                               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
+                               (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
                                "transparent"
                         border.width: 1
-                        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                         
                         Text {
                             anchors.centerIn: parent
                             text: "←"
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             font.pixelSize: 11
                         }
                         
@@ -265,15 +264,15 @@ PopupWindow {
                         radius: 4
                         visible: historyIndex < pathHistory.length - 1
                         color: histForwardMouse.containsMouse ? 
-                               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
+                               (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
                                "transparent"
                         border.width: 1
-                        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                         
                         Text {
                             anchors.centerIn: parent
                             text: "→" 
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             font.pixelSize: 11
                         }
                         
@@ -290,7 +289,7 @@ PopupWindow {
             Rectangle { 
                 width: parent.width
                 height: 1
-                color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70" 
+                color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70" 
             }
             
             // Menu Content - dynamically loaded based on current path
@@ -332,13 +331,13 @@ PopupWindow {
                 height: 28
                 color: "transparent"
                 border.width: 1
-                border.color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                border.color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                 radius: 4
                 
                 Text {
                     anchors.centerIn: parent
                     text: "💡 Click monitor items to configure individual settings"
-                    color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                    color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                     font.pixelSize: 9
                     font.italic: true
                 }
@@ -352,7 +351,7 @@ PopupWindow {
                     height: 28
                     radius: 6
                     color: childMouse.containsMouse ? 
-                           (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
+                           (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
                            "transparent"
                     
                     property string childId: modelData
@@ -366,14 +365,14 @@ PopupWindow {
                         
                         Text {
                             text: parent.parent.childMenu ? parent.parent.childMenu.icon + " " + parent.parent.childMenu.title : ""
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             font.pixelSize: 12
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         
                         Text {
                             text: "►"
-                            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                            color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                             font.pixelSize: 9
                             anchors.verticalCenter: parent.verticalCenter
                         }
@@ -387,7 +386,7 @@ PopupWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         text: "⚙️"
                         font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                        color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                     }
                     
                     MouseArea {
@@ -438,13 +437,13 @@ PopupWindow {
                             text: "Theme Selector"
                             font.pixelSize: 13
                             font.weight: Font.DemiBold
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         }
                         
                         Text {
                             text: "Choose your interface theme"
                             font.pixelSize: 9
-                            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                            color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         }
                     }
                 }
@@ -453,7 +452,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Current theme display
@@ -461,7 +460,7 @@ PopupWindow {
                     width: parent.width
                     height: 40
                     radius: 6
-                    color: themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+                    color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
                     
                     Row {
                         anchors.left: parent.left
@@ -474,23 +473,23 @@ PopupWindow {
                             height: 8
                             radius: 4
                             anchors.verticalCenter: parent.verticalCenter
-                            color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                            color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                         }
                         
                         Column {
                             spacing: 2
                             
                             Text {
-                                text: "Current: " + (themeService ? (themeService.currentThemeData ? themeService.currentThemeData.name : themeService.activeTheme) : "Unknown")
+                                text: "Current: " + (configService ? (configService.currentThemeData ? configService.currentThemeData.name : configService.activeTheme) : "Unknown")
                                 font.pixelSize: 11
                                 font.weight: Font.Medium
-                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             }
                             
                             Text {
-                                text: (themeService && themeService.darkMode ? "🌙 Dark" : "☀️ Light") + " Mode"
+                                text: (configService && configService.darkMode ? "🌙 Dark" : "☀️ Light") + " Mode"
                                 font.pixelSize: 9
-                                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                             }
                         }
                     }
@@ -503,12 +502,12 @@ PopupWindow {
                         width: 60
                         height: 24
                         radius: 12
-                        color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
-                        visible: themeService && themeService.currentThemeData && themeService.currentThemeData.supportsModes
+                        color: configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+                        visible: configService && configService.currentThemeData && configService.currentThemeData.supportsModes
                         
                         Text {
                             anchors.centerIn: parent
-                            text: themeService && themeService.darkMode ? "🌙" : "☀️"
+                            text: configService && configService.darkMode ? "🌙" : "☀️"
                             font.pixelSize: 10
                         }
                         
@@ -516,8 +515,8 @@ PopupWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                if (themeService) {
-                                    themeService.toggleDarkMode()
+                                if (configService) {
+                                    configService.toggleDarkMode()
                                 }
                             }
                         }
@@ -530,10 +529,10 @@ PopupWindow {
                     height: 32
                     radius: 6
                     color: themeSelectorMouse.containsMouse ? 
-                           (themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
-                           (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244")
+                           (configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
+                           (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244")
                     border.width: 1
-                    border.color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+                    border.color: configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
                     
                     Row {
                         anchors.centerIn: parent
@@ -549,8 +548,8 @@ PopupWindow {
                             font.pixelSize: 11
                             font.weight: Font.Medium
                             color: themeSelectorMouse.containsMouse ?
-                                   (themeService ? themeService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
-                                   (themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa")
+                                   (configService ? configService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
+                                   (configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa")
                         }
                     }
                     
@@ -598,7 +597,7 @@ PopupWindow {
                     }
                     
                     contentItem: Rectangle {
-                        color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                        color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                         radius: 3
                         opacity: 0.6
                     }
@@ -630,7 +629,7 @@ PopupWindow {
                                 text: getMonitorTitle(currentPath) + " Monitor"
                                 font.pixelSize: 13
                                 font.weight: Font.DemiBold
-                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             }
                             
                             Text {
@@ -645,7 +644,7 @@ PopupWindow {
                     Rectangle {
                         width: parent.width
                         height: 1
-                        color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                        color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                     }
                     
                     // Interactive configuration options
@@ -733,7 +732,7 @@ PopupWindow {
                     Rectangle {
                         width: parent.width
                         height: 1
-                        color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                        color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                     }
                     
                     // Live preview
@@ -745,13 +744,13 @@ PopupWindow {
                             text: "Current Display:"
                             font.pixelSize: 10
                             font.weight: Font.DemiBold
-                            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                            color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         }
                         
                         Rectangle {
                             width: parent.width
                             height: previewText.implicitHeight + 8
-                            color: themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+                            color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
                             radius: 6
                             
                             Text {
@@ -760,7 +759,7 @@ PopupWindow {
                                 text: getMonitorDisplayPreview(currentPath)
                                 font.pixelSize: 11
                                 font.family: "monospace"
-                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             }
                         }
                     }
@@ -780,7 +779,7 @@ PopupWindow {
         height: 24
         radius: 4
         color: toggleMouse.containsMouse ? 
-               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
+               (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
                "transparent"
         
         Row {
@@ -792,7 +791,7 @@ PopupWindow {
             Text {
                 text: label + ":"
                 font.pixelSize: 10
-                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 anchors.verticalCenter: parent.verticalCenter
             }
             

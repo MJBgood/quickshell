@@ -1,4 +1,5 @@
 import QtQuick
+import "../../services"
 
 Rectangle {
     id: menuItem
@@ -7,14 +8,13 @@ Rectangle {
     property bool enabled: true
     property bool checkable: false
     property bool checked: false
-    property var themeService: null
-    property var configService: null
+    property var configService: ConfigService
     
     signal clicked()
     
     height: 28
     color: mouseArea.containsMouse && enabled ? 
-           (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") :
+           (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") :
            "transparent"
     
     Row {
@@ -28,8 +28,8 @@ Rectangle {
             text: checkable ? (checked ? "✓" : "✗") : ""
             font.pixelSize: 11
             color: checked ? 
-                   (themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
-                   (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+                   (configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa") :
+                   (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
             anchors.verticalCenter: parent.verticalCenter
             visible: checkable
         }
@@ -38,8 +38,8 @@ Rectangle {
             text: menuItem.text
             font.pixelSize: 11
             color: enabled ?
-                   (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4") :
-                   (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+                   (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4") :
+                   (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
             anchors.verticalCenter: parent.verticalCenter
         }
     }

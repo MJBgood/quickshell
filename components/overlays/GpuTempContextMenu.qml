@@ -9,7 +9,7 @@ PopupWindow {
     
     // Services
     property var temperatureService: null
-    property var themeService: null
+    property var configService: ConfigService
     
     // Standard window properties
     implicitWidth: 220
@@ -37,8 +37,8 @@ PopupWindow {
     // Content structure
     Rectangle {
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
         border.width: 1
         radius: 8
         
@@ -56,13 +56,13 @@ PopupWindow {
                     font.family: "Inter"
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 }
                 
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 }
                 
                 // Current temperature display
@@ -75,7 +75,7 @@ PopupWindow {
                         font.family: "Inter"
                         font.pixelSize: 12
                         font.weight: Font.Medium
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     Text {
@@ -84,14 +84,14 @@ PopupWindow {
                         font.pixelSize: 18
                         font.weight: Font.Bold
                         color: {
-                            if (!temperatureService) return themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            if (!temperatureService) return configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             const status = temperatureService.getGpuStatus()
                             switch (status) {
-                                case "cool": return themeService ? themeService.getThemeProperty("colors", "success") || "#a6e3a1" : "#a6e3a1"
-                                case "warm": return themeService ? themeService.getThemeProperty("colors", "warning") || "#f9e2af" : "#f9e2af"
-                                case "hot": return themeService ? themeService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
-                                case "critical": return themeService ? themeService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
-                                default: return themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                case "cool": return configService ? configService.getThemeProperty("colors", "success") || "#a6e3a1" : "#a6e3a1"
+                                case "warm": return configService ? configService.getThemeProperty("colors", "warning") || "#f9e2af" : "#f9e2af"
+                                case "hot": return configService ? configService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
+                                case "critical": return configService ? configService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
+                                default: return configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             }
                         }
                     }
@@ -110,14 +110,14 @@ PopupWindow {
                         }
                         font.family: "Inter"
                         font.pixelSize: 11
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                     }
                 }
                 
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 }
                 
                 // Sensor information
@@ -130,14 +130,14 @@ PopupWindow {
                         font.family: "Inter"
                         font.pixelSize: 12
                         font.weight: Font.Medium
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     Text {
                         text: temperatureService ? `Sensor: ${temperatureService.gpuSensor}` : "Sensor: Unknown"
                         font.family: "Inter"
                         font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         wrapMode: Text.Wrap
                         width: parent.width
                     }
@@ -147,20 +147,20 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 }
                 
                 // Polling Rate Control
                 TemperaturePollingRateControl {
                     width: parent.width
                     temperatureService: contextMenu.temperatureService
-                    themeService: contextMenu.themeService
+                    configService: contextMenu.configService
                 }
                 
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 }
                 
                 // GPU-specific information
@@ -173,14 +173,14 @@ PopupWindow {
                         font.family: "Inter"
                         font.pixelSize: 12
                         font.weight: Font.Medium
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     Text {
                         text: "Graphics processing unit temperature monitoring"
                         font.family: "Inter"
                         font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         wrapMode: Text.Wrap
                         width: parent.width
                     }
@@ -189,7 +189,7 @@ PopupWindow {
                         text: "Higher temperatures during gaming/rendering are normal"
                         font.family: "Inter"
                         font.pixelSize: 10
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         wrapMode: Text.Wrap
                         width: parent.width
                     }

@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Hyprland
 import QtQuick
 import QtCore
+import "./services"
 
 ShellRoot {
     id: root
@@ -14,29 +15,7 @@ ShellRoot {
     }
     
     // Initialize core services using loaders
-    Loader {
-        id: themeServiceLoader
-        source: "./services/ThemeService.qml"
-        onLoaded: {
-            // Connect the config service
-            item.configService = configServiceLoader.item
-        }
-    }
-    
-    Loader {
-        id: configServiceLoader  
-        source: "./services/ConfigService.qml"
-        onLoaded: {
-            console.log("ConfigService loaded successfully")
-            // Connect to SystemMonitorService if it's already loaded
-            Qt.callLater(() => {
-                if (systemMonitorServiceLoader.item) {
-                    console.log("Connecting ConfigService to SystemMonitorService (late)")
-                    systemMonitorServiceLoader.item.configService = item
-                }
-            })
-        }
-    }
+    // ConfigService is now a singleton - no loader needed
     
     Loader {
         id: hyprlandServiceLoader
@@ -70,15 +49,9 @@ ShellRoot {
         onLoaded: {
             console.log("SystemMonitorService loaded successfully")
             console.log("SystemMonitorService initialized:", item.initialized)
-            // Connect config service - use callLater to ensure ConfigService is ready
-            Qt.callLater(() => {
-                if (configServiceLoader.item) {
-                    console.log("Connecting ConfigService to SystemMonitorService")
-                    item.configService = configServiceLoader.item
-                } else {
-                    console.warn("ConfigService not ready when SystemMonitorService loaded")
-                }
-            })
+            // Connect config service directly
+            console.log("Connecting ConfigService to SystemMonitorService")
+            item.configService = ConfigService
         }
         onStatusChanged: {
             if (status === Loader.Error) {
@@ -137,9 +110,8 @@ ShellRoot {
             console.log("WidgetRegistry initialized:", item.initialized)
             // Connect config service to widget registry
             Qt.callLater(() => {
-                if (configServiceLoader.item) {
-                    item.configService = configServiceLoader.item
-                }
+                // ConfigService is now a singleton - directly accessible
+                item.configService = ConfigService
             })
         }
         onStatusChanged: {
@@ -149,9 +121,10 @@ ShellRoot {
         }
     }
     
+    
     // Convenience aliases
-    property alias themeService: themeServiceLoader.item
-    property alias configService: configServiceLoader.item
+    // themeService removed - theme functionality integrated into configService
+    property var configService: ConfigService
     property alias hyprlandService: hyprlandServiceLoader.item
     property alias windowStore: windowStoreLoader.item
     property alias workspaceStore: workspaceStoreLoader.item
@@ -187,23 +160,22 @@ ShellRoot {
         source: "./components/bars/Bar.qml"
         
         // Only load when all services are initialized AND theme is loaded
-        active: themeServiceLoader.item && 
-                configServiceLoader.item && 
+        active: ConfigService && 
                 hyprlandServiceLoader.item &&
                 systemMonitorServiceLoader.item &&
                 windowTrackerLoader.item &&
                 iconResolverLoader.item &&
                 wallpaperServiceLoader.item &&
                 widgetRegistryLoader.item &&
-                themeServiceLoader.item.currentThemeData !== null
+                ConfigService.currentThemeData !== null
         
         onLoaded: {
             console.log("Main bar loaded")
             
             // Pass primary screen and services to the loaded component
             item.modelData = Quickshell.screens[0] || null
-            item.themeService = themeServiceLoader.item
-            item.configService = configServiceLoader.item
+            // themeService removed - theme functionality integrated into configService
+            item.configService = ConfigService
             item.systemMonitorService = systemMonitorServiceLoader.item
             item.windowTracker = windowTrackerLoader.item
             item.iconResolver = iconResolverLoader.item
@@ -230,8 +202,8 @@ ShellRoot {
         
         onLoaded: {
             console.log("SettingsOverlay loaded on demand")
-            item.themeService = themeServiceLoader.item
-            item.configService = configServiceLoader.item
+            // themeService removed - theme functionality integrated into configService
+            item.configService = ConfigService
             item.shellRoot = root
             
             // Auto-hide when closed
@@ -304,8 +276,8 @@ ShellRoot {
             
             onLoaded: {
                 console.log("SessionOverlay loaded")
-                item.themeService = themeServiceLoader.item
-                item.configService = configServiceLoader.item
+                // themeService removed - theme functionality integrated into configService
+                item.configService = ConfigService
             }
             
             onStatusChanged: {
@@ -324,8 +296,8 @@ ShellRoot {
         
         onLoaded: {
             console.log(logCategory, "Global ThemeDropdown loaded")
-            item.themeService = themeServiceLoader.item
-            item.configService = configServiceLoader.item
+            // themeService removed - theme functionality integrated into configService
+            item.configService = ConfigService
             
             // Auto-hide when closed
             item.closed.connect(function() {
@@ -353,7 +325,7 @@ ShellRoot {
         onLoaded: {
             console.log(logCategory, "Global WallpaperSelector loaded")
             item.wallpaperService = wallpaperServiceLoader.item
-            item.themeService = themeServiceLoader.item
+            // themeService removed - theme functionality integrated into configService
             
             // Auto-hide when closed
             item.closed.connect(function() {
@@ -361,7 +333,7 @@ ShellRoot {
                 globalWallpaperSelectorLoader.active = false
             })
             
-            // Show immediately after loading
+            // Show immediately after loading with main bar as anchor
             item.show(mainBarLoader.item)
         }
         
@@ -376,10 +348,8 @@ ShellRoot {
     function showThemeDropdown() {
         console.log(logCategory, "showThemeDropdown() called")
         
-        // Ensure themes are loaded before showing dropdown
-        if (themeServiceLoader.item) {
-            themeServiceLoader.item.loadAllThemes()
-        }
+        // Theme functionality now integrated into ConfigService
+        // (Theme loading happens automatically in ConfigService)
         
         globalThemeDropdownLoader.active = true
     }
@@ -387,16 +357,29 @@ ShellRoot {
     // Global function to show wallpaper selector
     function showWallpaperSelector() {
         console.log(logCategory, "showWallpaperSelector() called")
+        console.log(logCategory, "globalWallpaperSelectorLoader.active:", globalWallpaperSelectorLoader.active)
+        console.log(logCategory, "wallpaperServiceLoader.item:", wallpaperServiceLoader.item)
         
         // Ensure wallpapers are loaded before showing selector
         if (wallpaperServiceLoader.item) {
             wallpaperServiceLoader.item.discoverWallpapers()
         }
         
+        console.log(logCategory, "Setting globalWallpaperSelectorLoader.active = true")
         globalWallpaperSelectorLoader.active = true
+        console.log(logCategory, "globalWallpaperSelectorLoader.active after:", globalWallpaperSelectorLoader.active)
     }
     
     Component.onCompleted: {
+        console.log("ConfigService loaded successfully")
+        // Connect to SystemMonitorService when it's ready
+        Qt.callLater(() => {
+            if (systemMonitorServiceLoader.item) {
+                console.log("Connecting ConfigService to SystemMonitorService")
+                systemMonitorServiceLoader.item.configService = ConfigService
+            }
+        })
+        
         console.log(logCategory, "Quickshell Hyprland Interface - Initialization Complete")
         console.log(logCategory, "Architecture: Modern QML with Separation of Concerns")
     }

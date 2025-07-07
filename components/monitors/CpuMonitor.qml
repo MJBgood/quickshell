@@ -15,8 +15,7 @@ Rectangle {
     
     // Services
     property var systemMonitorService: null
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     property var anchorWindow: null
     
     // Dedicated context menu loader - lazy loaded
@@ -29,7 +28,6 @@ Rectangle {
         
         onLoaded: {
             item.configService = cpuMonitor.configService
-            item.themeService = cpuMonitor.themeService
             item.systemMonitorService = cpuMonitor.systemMonitorService
             
             item.closed.connect(function() {
@@ -54,20 +52,20 @@ Rectangle {
     property var cpuCores: CpuService.cores
     
     // Visual configuration
-    implicitWidth: contentRow.implicitWidth + 12
-    implicitHeight: 20
-    radius: 4
+    implicitWidth: contentRow.implicitWidth + (configService ? configService.scaled(12) : 12)
+    implicitHeight: configService ? configService.scaled(20) : 20
+    radius: configService ? configService.scaled(4) : 4
     
     // Dynamic background color based on CPU usage
     color: {
-        if (!themeService) return "#313244"
+        if (!configService) return "#313244"
         
         if (cpuUsage > 80) {
-            return themeService.getThemeProperty("colors", "error") || "#f38ba8"
+            return configService.getThemeProperty("colors", "error") || "#f38ba8"
         } else if (cpuUsage > 60) {
-            return themeService.getThemeProperty("colors", "warning") || "#f9e2af"
+            return configService.getThemeProperty("colors", "warning") || "#f9e2af"
         } else {
-            return themeService.getThemeProperty("colors", "surface") || "#313244"
+            return configService.getThemeProperty("colors", "surface") || "#313244"
         }
     }
     
@@ -80,7 +78,7 @@ Rectangle {
     Row {
         id: contentRow
         anchors.centerIn: parent
-        spacing: 4
+        spacing: configService ? configService.scaled(4) : 4
         
         // CPU icon
         Text {
@@ -88,17 +86,17 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: "🖥️"  // Computer/processor icon
             color: {
-                if (!themeService) return "#cdd6f4"
+                if (!configService) return "#cdd6f4"
                 
                 // Dynamic icon color based on usage
                 if (cpuUsage > 80) {
-                    return themeService.getThemeProperty("colors", "background") || "#1e1e2e"
+                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
                 } else {
-                    return themeService.getThemeProperty("colors", "text") || "#cdd6f4"
+                    return configService.getThemeProperty("colors", "text") || "#cdd6f4"
                 }
             }
             font.family: "Inter"
-            font.pixelSize: 10
+            font.pixelSize: configService ? configService.scaledFontNormal() : 10
         }
         
         // CPU usage text
@@ -129,17 +127,17 @@ Rectangle {
                 return parts.join(" ")
             }
             color: {
-                if (!themeService) return "#cdd6f4"
+                if (!configService) return "#cdd6f4"
                 
                 // Dynamic text color based on usage
                 if (cpuUsage > 80) {
-                    return themeService.getThemeProperty("colors", "background") || "#1e1e2e"
+                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
                 } else {
-                    return themeService.getThemeProperty("colors", "text") || "#cdd6f4"
+                    return configService.getThemeProperty("colors", "text") || "#cdd6f4"
                 }
             }
             font.family: "Inter"
-            font.pixelSize: 9
+            font.pixelSize: configService ? configService.scaledFontSmall() : 9
             font.weight: cpuUsage > 70 ? Font.DemiBold : Font.Medium
         }
     }
@@ -150,18 +148,18 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 2
-        radius: 1
+        height: configService ? configService.scaled(2) : 2
+        radius: configService ? configService.scaled(1) : 1
         
         color: {
-            if (!themeService) return "#89b4fa"
+            if (!configService) return "#89b4fa"
             
             if (cpuUsage > 80) {
-                return themeService.getThemeProperty("colors", "error") || "#f38ba8"
+                return configService.getThemeProperty("colors", "error") || "#f38ba8"
             } else if (cpuUsage > 60) {
-                return themeService.getThemeProperty("colors", "warning") || "#f9e2af"
+                return configService.getThemeProperty("colors", "warning") || "#f9e2af"
             } else {
-                return themeService.getThemeProperty("colors", "primary") || "#89b4fa"
+                return configService.getThemeProperty("colors", "primary") || "#89b4fa"
             }
         }
         

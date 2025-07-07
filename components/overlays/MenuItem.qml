@@ -1,19 +1,20 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import "../../services"
 
 Rectangle {
     id: menuItem
     
     property string text: ""
     property bool enabled: true
-    property var themeService: null
+    property var configService: ConfigService
     
     signal clicked()
     
     height: 24
     color: mouseArea.containsMouse && enabled ? 
-           (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") :
+           (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") :
            "transparent"
     
     Text {
@@ -23,8 +24,8 @@ Rectangle {
         text: menuItem.text
         font.pixelSize: 11
         color: enabled ?
-               (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4") :
-               (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+               (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4") :
+               (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
     }
     
     MouseArea {

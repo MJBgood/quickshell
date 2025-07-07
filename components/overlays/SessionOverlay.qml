@@ -7,8 +7,7 @@ Item {
     id: root
     
     // Services
-    property var themeService: null
-    property var configService: null
+    property var configService: ConfigService
     
     // Visibility control
     property bool sessionVisible: false
@@ -91,15 +90,15 @@ Item {
             width: 64
             height: 64
             radius: 32
-            color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-            border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+            color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
             border.width: 2
             
             Text {
                 anchors.centerIn: parent
                 text: "⚡"
                 font.pixelSize: 32
-                color: themeService ? themeService.getThemeProperty("colors", "accent") || "#cba6f7" : "#cba6f7"
+                color: configService ? configService.getThemeProperty("colors", "accent") || "#cba6f7" : "#cba6f7"
                 
                 SequentialAnimation on scale {
                     running: root.sessionVisible
@@ -145,9 +144,9 @@ Item {
         
         radius: 16
         color: button.activeFocus ? 
-            (themeService ? themeService.getThemeProperty("colors", "accent") || "#cba6f7" : "#cba6f7") :
-            (themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244")
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+            (configService ? configService.getThemeProperty("colors", "accent") || "#cba6f7" : "#cba6f7") :
+            (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244")
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
         border.width: button.activeFocus ? 2 : 1
         
         Keys.onEnterPressed: executeCommand()
@@ -169,8 +168,8 @@ Item {
                 text: button.icon
                 font.pixelSize: 24
                 color: button.activeFocus ? 
-                    (themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e") :
-                    (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
+                    (configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e") :
+                    (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
             }
             
             Text {
@@ -180,8 +179,8 @@ Item {
                 font.pixelSize: 8
                 font.weight: Font.Medium
                 color: button.activeFocus ? 
-                    (themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e") :
-                    (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+                    (configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e") :
+                    (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
             }
         }
         
@@ -209,13 +208,13 @@ Item {
     Rectangle {
         anchors.fill: content
         anchors.margins: -8
-        color: themeService ? themeService.getThemeProperty("colors", "surfaceContainer") || "#45475a" : "#45475a"
+        color: configService ? configService.getThemeProperty("colors", "surfaceContainer") || "#45475a" : "#45475a"
         radius: 24
         opacity: 0.95
         z: -1
         
         // Subtle border
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
         border.width: 1
     }
 }

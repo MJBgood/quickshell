@@ -1,14 +1,14 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import "../../services"
 
 Column {
     id: section
     
     property string title: ""
     property string icon: ""
-    property var themeService: null
-    property var configService: null
+    property var configService: ConfigService
     property string configPrefix: ""
     
     signal itemClicked(string action, var value)
@@ -37,7 +37,7 @@ Column {
                 text: title
                 font.pixelSize: 11
                 font.weight: Font.DemiBold
-                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -48,7 +48,7 @@ Column {
         width: parent.width
         text: "  ✓ Enabled" 
         enabled: true
-        themeService: section.themeService
+        configService: section.configService
         
         onClicked: {
             if (configService) {
@@ -80,7 +80,7 @@ Column {
         width: parent.width
         text: "  ✓ Show Icon"
         enabled: true
-        themeService: section.themeService
+        configService: section.configService
         
         onClicked: {
             if (configService) {
@@ -111,7 +111,7 @@ Column {
         width: parent.width
         text: "  ✓ Show Label"
         enabled: true
-        themeService: section.themeService
+        configService: section.configService
         
         onClicked: {
             if (configService) {
@@ -142,7 +142,7 @@ Column {
         width: parent.width
         text: "  ✓ Show Percentage"
         enabled: true
-        themeService: section.themeService
+        configService: section.configService
         
         onClicked: {
             if (configService) {
@@ -173,7 +173,7 @@ Column {
         width: parent.width
         text: "  Precision: " + (configService ? configService.getValue(configPrefix + ".precision", 1) : 1)
         enabled: true
-        themeService: section.themeService
+        configService: section.configService
         
         onClicked: {
             if (configService) {

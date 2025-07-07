@@ -32,8 +32,7 @@ PopupWindow {
     }
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     
     // Navigation state
     property string currentPath: "performance"
@@ -87,8 +86,8 @@ PopupWindow {
     Rectangle {
         id: menuContent
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         border.width: 1
         radius: 8
         
@@ -114,12 +113,12 @@ PopupWindow {
                         height: 18
                         radius: 3
                         visible: getCurrentMenu().parent !== null
-                        color: backMouse.containsMouse ? (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
+                        color: backMouse.containsMouse ? (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
                         
                         Text {
                             anchors.centerIn: parent
                             text: "↑"
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             font.pixelSize: 10
                         }
                         
@@ -137,7 +136,7 @@ PopupWindow {
                         text: getCurrentMenu().icon + " " + getCurrentMenu().title
                         font.pixelSize: 11
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                 }
                 
@@ -152,12 +151,12 @@ PopupWindow {
                         height: 18
                         radius: 3
                         visible: historyIndex > 0
-                        color: histBackMouse.containsMouse ? (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
+                        color: histBackMouse.containsMouse ? (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
                         
                         Text {
                             anchors.centerIn: parent
                             text: "←"
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             font.pixelSize: 9
                         }
                         
@@ -174,12 +173,12 @@ PopupWindow {
                         height: 18
                         radius: 3
                         visible: historyIndex < pathHistory.length - 1
-                        color: histForwardMouse.containsMouse ? (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
+                        color: histForwardMouse.containsMouse ? (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
                         
                         Text {
                             anchors.centerIn: parent
                             text: "→" 
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             font.pixelSize: 9
                         }
                         
@@ -193,7 +192,7 @@ PopupWindow {
                 }
             }
             
-            Rectangle { width: parent.width; height: 1; color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70" }
+            Rectangle { width: parent.width; height: 1; color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70" }
             
             // Menu Content
             Loader {
@@ -223,7 +222,7 @@ PopupWindow {
                 text: "Components"
                 font.pixelSize: 9
                 font.weight: Font.Medium
-                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
             }
             
             MenuNavItem {
@@ -231,7 +230,7 @@ PopupWindow {
                 text: "💻 CPU Monitor"
                 enabled: configService ? configService.getValue("performance.cpu.enabled", true) : true
                 onClicked: navigateTo("performance.cpu")
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuNavItem {
@@ -239,7 +238,7 @@ PopupWindow {
                 text: "🧠 RAM Monitor"
                 enabled: configService ? configService.getValue("performance.ram.enabled", true) : true
                 onClicked: navigateTo("performance.ram")
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuNavItem {
@@ -247,16 +246,16 @@ PopupWindow {
                 text: "💾 Storage Monitor"
                 enabled: configService ? configService.getValue("performance.storage.enabled", true) : true
                 onClicked: navigateTo("performance.storage")
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
-            Rectangle { width: parent.width; height: 1; color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"; topMargin: 2 }
+            Rectangle { width: parent.width; height: 1; color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"; topMargin: 2 }
             
             Text {
                 text: "Settings"
                 font.pixelSize: 9
                 font.weight: Font.Medium
-                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                 topPadding: 2
             }
             
@@ -264,7 +263,7 @@ PopupWindow {
                 width: parent.width
                 text: "⚙️ Global Settings"
                 onClicked: navigateTo("performance.global")
-                themeService: menu.themeService
+                configService: menu.configService
             }
         }
     }
@@ -280,7 +279,7 @@ PopupWindow {
                 text: "Enabled"
                 checked: configService ? configService.getValue("performance.cpu.enabled", true) : true
                 onToggled: { if (configService) { configService.setValue("performance.cpu.enabled", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuCheckItem {
@@ -288,7 +287,7 @@ PopupWindow {
                 text: "Show Icon"
                 checked: configService ? configService.getValue("performance.cpu.showIcon", true) : true
                 onToggled: { if (configService) { configService.setValue("performance.cpu.showIcon", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuCheckItem {
@@ -296,7 +295,7 @@ PopupWindow {
                 text: "Show Label"
                 checked: configService ? configService.getValue("performance.cpu.showLabel", false) : false
                 onToggled: { if (configService) { configService.setValue("performance.cpu.showLabel", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuCheckItem {
@@ -304,7 +303,7 @@ PopupWindow {
                 text: "Show Percentage"
                 checked: configService ? configService.getValue("performance.cpu.showPercentage", true) : true
                 onToggled: { if (configService) { configService.setValue("performance.cpu.showPercentage", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuCheckItem {
@@ -312,7 +311,7 @@ PopupWindow {
                 text: "Show Frequency"
                 checked: configService ? configService.getValue("performance.cpu.showFrequency", false) : false
                 onToggled: { if (configService) { configService.setValue("performance.cpu.showFrequency", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuClickItem {
@@ -326,7 +325,7 @@ PopupWindow {
                         configService.saveConfig()
                     }
                 }
-                themeService: menu.themeService
+                configService: menu.configService
             }
         }
     }
@@ -342,7 +341,7 @@ PopupWindow {
                 text: "Enabled"
                 checked: configService ? configService.getValue("performance.ram.enabled", true) : true
                 onToggled: { if (configService) { configService.setValue("performance.ram.enabled", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuCheckItem {
@@ -350,7 +349,7 @@ PopupWindow {
                 text: "Show Icon"
                 checked: configService ? configService.getValue("performance.ram.showIcon", true) : true
                 onToggled: { if (configService) { configService.setValue("performance.ram.showIcon", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuCheckItem {
@@ -358,7 +357,7 @@ PopupWindow {
                 text: "Show Percentage"
                 checked: configService ? configService.getValue("performance.ram.showPercentage", true) : true
                 onToggled: { if (configService) { configService.setValue("performance.ram.showPercentage", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuClickItem {
@@ -372,7 +371,7 @@ PopupWindow {
                         configService.saveConfig()
                     }
                 }
-                themeService: menu.themeService
+                configService: menu.configService
             }
         }
     }
@@ -388,7 +387,7 @@ PopupWindow {
                 text: "Enabled"
                 checked: configService ? configService.getValue("performance.storage.enabled", true) : true
                 onToggled: { if (configService) { configService.setValue("performance.storage.enabled", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuCheckItem {
@@ -396,7 +395,7 @@ PopupWindow {
                 text: "Show Icon"
                 checked: configService ? configService.getValue("performance.storage.showIcon", true) : true
                 onToggled: { if (configService) { configService.setValue("performance.storage.showIcon", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuCheckItem {
@@ -404,7 +403,7 @@ PopupWindow {
                 text: "Show Bytes"
                 checked: configService ? configService.getValue("performance.storage.showBytes", false) : false
                 onToggled: { if (configService) { configService.setValue("performance.storage.showBytes", checked); configService.saveConfig() }}
-                themeService: menu.themeService
+                configService: menu.configService
             }
         }
     }
@@ -428,7 +427,7 @@ PopupWindow {
                         configService.saveConfig()
                     }
                 }
-                themeService: menu.themeService
+                configService: menu.configService
             }
             
             MenuClickItem {
@@ -444,7 +443,7 @@ PopupWindow {
                         configService.saveConfig()
                     }
                 }
-                themeService: menu.themeService
+                configService: menu.configService
             }
         }
     }
@@ -508,11 +507,11 @@ PopupWindow {
 component MenuNavItem: Rectangle {
     property string text: ""
     property bool enabled: true
-    property var themeService: null
+    property var configService: ConfigService
     signal clicked()
     
     height: 20
-    color: mouseArea.containsMouse ? (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
+    color: mouseArea.containsMouse ? (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
     
     Row {
         anchors.left: parent.left
@@ -522,14 +521,14 @@ component MenuNavItem: Rectangle {
         
         Text {
             text: parent.parent.text
-            color: parent.parent.enabled ? (themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4") : (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+            color: parent.parent.enabled ? (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4") : (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
             font.pixelSize: 10
             anchors.verticalCenter: parent.verticalCenter
         }
         
         Text {
             text: parent.parent.enabled ? "►" : "(disabled)"
-            color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+            color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
             font.pixelSize: 8
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -547,11 +546,11 @@ component MenuNavItem: Rectangle {
 component MenuCheckItem: Rectangle {
     property string text: ""
     property bool checked: false
-    property var themeService: null
+    property var configService: ConfigService
     signal toggled(bool checked)
     
     height: 20
-    color: mouseArea.containsMouse ? (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
+    color: mouseArea.containsMouse ? (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
     
     Row {
         anchors.left: parent.left
@@ -561,14 +560,14 @@ component MenuCheckItem: Rectangle {
         
         Text {
             text: parent.parent.checked ? "✓" : "○"
-            color: parent.parent.checked ? "#a6e3a1" : (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+            color: parent.parent.checked ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
             font.pixelSize: 9
             anchors.verticalCenter: parent.verticalCenter
         }
         
         Text {
             text: parent.parent.text
-            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
             font.pixelSize: 10
             anchors.verticalCenter: parent.verticalCenter
         }
@@ -588,18 +587,18 @@ component MenuCheckItem: Rectangle {
 // Clickable menu item (for cycling values)
 component MenuClickItem: Rectangle {
     property string text: ""
-    property var themeService: null
+    property var configService: ConfigService
     signal clicked()
     
     height: 20
-    color: mouseArea.containsMouse ? (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
+    color: mouseArea.containsMouse ? (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : "transparent"
     
     Text {
         anchors.left: parent.left
         anchors.leftMargin: 8
         anchors.verticalCenter: parent.verticalCenter
         text: parent.text
-        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
         font.pixelSize: 10
     }
     
@@ -608,7 +607,7 @@ component MenuClickItem: Rectangle {
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
         text: "↻"
-        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
         font.pixelSize: 8
     }
     

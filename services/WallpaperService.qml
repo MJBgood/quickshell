@@ -32,6 +32,10 @@ Item {
     property bool previewMode: false
     property string previewWallpaper: ""
     
+    // Cache state
+    property var wallpaperCache: ({})
+    property string lastDirectoryHash: ""
+    
     // Wallpaper directories to monitor
     property var wallpaperDirs: [defaultWallpaperDir]
     
@@ -47,6 +51,8 @@ Item {
             property string currentWallpaper: ""
             property var additionalDirectories: []
             property string lastUsed: ""
+            property var wallpaperCache: ({})
+            property string lastDirectoryHash: ""
             
             onCurrentWallpaperChanged: {
                 if (currentWallpaper !== wallpaperService.currentWallpaper) {
@@ -101,6 +107,16 @@ Item {
                     wallpaperDirs = newDirs
                 }
             }
+            
+            // Restore cache and hash
+            if (wallpaperState.wallpaperCache && Object.keys(wallpaperState.wallpaperCache).length > 0) {
+                wallpaperCache = wallpaperState.wallpaperCache
+                console.log(logCategory, "Restored cache with", Object.keys(wallpaperCache).length, "wallpapers")
+            }
+            
+            if (wallpaperState.lastDirectoryHash) {
+                lastDirectoryHash = wallpaperState.lastDirectoryHash
+            }
         } catch (error) {
             console.warn(logCategory, "Failed to load state from file:", error)
         }
@@ -111,6 +127,8 @@ Item {
             wallpaperState.currentWallpaper = currentWallpaper
             wallpaperState.additionalDirectories = wallpaperDirs.slice(1) // Remove default directory
             wallpaperState.lastUsed = new Date().toISOString()
+            wallpaperState.wallpaperCache = wallpaperCache
+            wallpaperState.lastDirectoryHash = lastDirectoryHash
             stateFile.writeAdapter()
             console.log(logCategory, "Wallpaper state saved to file")
         } catch (error) {
@@ -139,6 +157,47 @@ Item {
         }
     }
 
+    // Directory hash calculator for cache invalidation
+    Process {
+        id: directoryHasher
+        
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const newHash = this.text.trim()
+                console.log("WallpaperService: Directory hash:", newHash)
+                
+                if (newHash !== lastDirectoryHash) {
+                    console.log("WallpaperService: Directory changed, clearing cache")
+                    wallpaperCache = {}
+                    lastDirectoryHash = newHash
+                    
+                    // Proceed with wallpaper discovery
+                    wallpaperDiscovery.running = true
+                } else {
+                    console.log("WallpaperService: Directory unchanged, using cache")
+                    // Use cached wallpapers if available
+                    if (Object.keys(wallpaperCache).length > 0) {
+                        wallpapers = Object.values(wallpaperCache)
+                        wallpapersDiscovered(wallpapers)
+                    } else {
+                        // Cache empty, need to discover
+                        wallpaperDiscovery.running = true
+                    }
+                }
+            }
+        }
+        
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if (this.text.trim().length > 0) {
+                    console.warn("WallpaperService: Hash calculation error:", this.text.trim())
+                    // Fall back to normal discovery
+                    wallpaperDiscovery.running = true
+                }
+            }
+        }
+    }
+
     // Wallpaper discovery process
     Process {
         id: wallpaperDiscovery
@@ -151,7 +210,7 @@ Item {
         
         stdout: StdioCollector {
             onStreamFinished: {
-                console.log("WallpaperService: Find command output:", this.text.trim())
+                // Reduced logging for cleaner console output
                 const files = this.text.trim().split('\n').filter(path => {
                     if (!path || path.length === 0) return false
                     
@@ -165,15 +224,24 @@ Item {
                 if (files.length === 0) {
                     // No wallpapers found, provide helpful instructions
                     wallpapers = []
+                    wallpaperCache = {}
                     console.log("WallpaperService: No wallpapers found, will show instructions")
                 } else {
-                    console.log("WallpaperService: Found wallpapers:", files)
-                    wallpapers = files.map(path => ({
+                    console.log("WallpaperService: Found", files.length, "wallpapers, updating cache")
+                    const newWallpapers = files.map(path => ({
                         path: path,
                         name: path.split('/').pop().split('.')[0],
                         filename: path.split('/').pop(),
                         directory: path.substring(0, path.lastIndexOf('/'))
                     }))
+                    
+                    // Update cache
+                    const newCache = {}
+                    newWallpapers.forEach(wallpaper => {
+                        newCache[wallpaper.path] = wallpaper
+                    })
+                    wallpaperCache = newCache
+                    wallpapers = newWallpapers
                 }
                 
                 wallpapersDiscovered(wallpapers)
@@ -256,6 +324,9 @@ Item {
             loadStateFromFile()
         }
         
+        // Restore last wallpaper if it exists
+        restoreLastWallpaper()
+        
         // Start wallpaper discovery
         discoverWallpapers()
         
@@ -264,6 +335,35 @@ Item {
         
         initialized = true
         console.log(logCategory, "Wallpaper service started")
+    }
+    
+    /**
+     * Restore the last used wallpaper on startup
+     */
+    function restoreLastWallpaper() {
+        if (currentWallpaper && currentWallpaper.length > 0) {
+            console.log(logCategory, "Restoring last wallpaper:", currentWallpaper)
+            
+            // Verify the file still exists and is valid
+            if (isValidWallpaper(currentWallpaper)) {
+                // Apply the wallpaper without changing currentWallpaper (avoid recursive state save)
+                try {
+                    // Kill any existing swaybg processes first
+                    wallpaperKiller.command = ["pkill", "swaybg"]
+                    wallpaperKiller.running = true
+                    
+                    console.log(logCategory, "Wallpaper restored on startup")
+                } catch (error) {
+                    console.warn(logCategory, "Failed to restore wallpaper on startup:", error)
+                }
+            } else {
+                console.warn(logCategory, "Last wallpaper file no longer exists:", currentWallpaper)
+                currentWallpaper = "" // Clear invalid wallpaper
+                saveStateToFile()
+            }
+        } else {
+            console.log(logCategory, "No previous wallpaper to restore")
+        }
     }
     
     /**
@@ -284,9 +384,27 @@ Item {
     }
 
     /**
-     * Discover wallpapers in configured directories
+     * Discover wallpapers in configured directories with caching
      */
     function discoverWallpapers() {
+        if (wallpaperDirs.length === 0) {
+            console.warn(logCategory, "No wallpaper directories configured")
+            return
+        }
+        
+        // First, calculate directory hash to check if cache is valid
+        let dirList = wallpaperDirs.join(" ")
+        let hashCommand = `find ${dirList} -type f -printf "%T@-%s-%p\\n" 2>/dev/null | sort | sha256sum`
+        
+        // Use shell to execute the pipe command
+        directoryHasher.command = ["sh", "-c", hashCommand]
+        directoryHasher.running = true
+    }
+    
+    /**
+     * Force wallpaper discovery without cache check
+     */
+    function forceDiscoverWallpapers() {
         if (wallpaperDirs.length === 0) {
             console.warn(logCategory, "No wallpaper directories configured")
             return
@@ -363,24 +481,19 @@ Item {
             const wallpaperCommand = ["swaybg", "-i", wallpaperPath, "-m", "fill"]
             console.log("WallpaperService: Running wallpaper command:", wallpaperCommand.join(" "))
             
-            // Kill any existing swaybg processes first
-            wallpaperSetter.command = ["pkill", "swaybg"]
-            wallpaperSetter.running = true
+            // Kill any existing swaybg processes first and wait for completion
+            wallpaperKiller.command = ["pkill", "swaybg"]
+            wallpaperKiller.running = true
             
-            // Wait a moment, then start the new wallpaper
-            Qt.callLater(() => {
-                wallpaperSetter.command = wallpaperCommand
-                wallpaperSetter.running = true
-                
-                const previousWallpaper = currentWallpaper
-                currentWallpaper = wallpaperPath
-                
-                // Save to state file
-                saveStateToFile()
-                
-                wallpaperChanged(wallpaperPath)
-                console.log("WallpaperService: Wallpaper changed from", previousWallpaper, "to", wallpaperPath)
-            })
+            // Update state immediately (optimistic update)
+            const previousWallpaper = currentWallpaper
+            currentWallpaper = wallpaperPath
+            
+            // Save to state file
+            saveStateToFile()
+            
+            wallpaperChanged(wallpaperPath)
+            console.log("WallpaperService: Wallpaper changed from", previousWallpaper, "to", wallpaperPath)
             
         } catch (error) {
             console.error("WallpaperService: Failed to set wallpaper:", error)
@@ -517,6 +630,7 @@ Item {
         return supportedExtensions.includes(extension)
     }
     
+    
     /**
      * Get current wallpaper for display
      */
@@ -524,6 +638,37 @@ Item {
         return previewMode ? previewWallpaper : currentWallpaper
     }
     
+    // Wallpaper killer process
+    Process {
+        id: wallpaperKiller
+        
+        stdout: StdioCollector {
+            onStreamFinished: {
+                console.log("WallpaperService: Kill command output:", this.text.trim())
+            }
+        }
+        
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if (this.text.trim().length > 0) {
+                    console.log("WallpaperService: Kill command stderr (expected):", this.text.trim())
+                }
+            }
+        }
+        
+        onRunningChanged: {
+            if (!running) {
+                console.log("WallpaperService: Kill command completed, starting wallpaper setter")
+                // Wait a brief moment then start the wallpaper
+                Qt.callLater(() => {
+                    const wallpaperCommand = ["swaybg", "-i", currentWallpaper, "-m", "fill"]
+                    wallpaperSetter.command = wallpaperCommand
+                    wallpaperSetter.running = true
+                })
+            }
+        }
+    }
+
     // Wallpaper setter process
     Process {
         id: wallpaperSetter

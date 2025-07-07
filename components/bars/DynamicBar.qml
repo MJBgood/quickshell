@@ -13,8 +13,7 @@ PanelWindow {
     property var modelData
     
     // Access to services (passed from parent)
-    property var themeService: null
-    property var configService: null
+    property var configService: ConfigService
     property var systemMonitorService: null
     property var windowTracker: null
     property var iconResolver: null
@@ -43,7 +42,7 @@ PanelWindow {
     }
     
     implicitHeight: 32
-    color: themeService ? themeService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+    color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
     
     // Content - Dynamic layout based on widget registry
     Item {
@@ -55,7 +54,7 @@ PanelWindow {
             id: leftSection
             width: 32
             height: parent.height
-            color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+            color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
             radius: 4
             
             anchors {
@@ -67,7 +66,7 @@ PanelWindow {
             Text {
                 anchors.centerIn: parent
                 text: "⚙"  // Settings gear icon as placeholder
-                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 font.pixelSize: 16
             }
             
@@ -118,7 +117,6 @@ PanelWindow {
                     
                     // Pass all services to widget containers
                     configService: bar.configService
-                    themeService: bar.themeService
                     systemMonitorService: bar.systemMonitorService
                     wallpaperService: bar.wallpaperService
                     
@@ -143,14 +141,14 @@ PanelWindow {
             Rectangle {
                 width: clockText.implicitWidth + 16
                 height: rightSection.height  // Use parent row height
-                color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+                color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
                 radius: 4
                 
                 Text {
                     id: clockText
                     anchors.centerIn: parent
                     text: getCurrentTime()
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     font.pixelSize: 11
                     font.weight: Font.Medium
                 }
@@ -226,7 +224,6 @@ PanelWindow {
         
         onLoaded: {
             item.configService = bar.configService
-            item.themeService = bar.themeService
             item.wallpaperService = bar.wallpaperService
             item.widgetRegistry = bar.widgetRegistry
             

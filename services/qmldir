@@ -1,5 +1,4 @@
-ThemeService 1.0 ThemeService.qml
-ConfigService 1.0 ConfigService.qml
+singleton ConfigService ConfigService.qml
 HyprlandService 1.0 HyprlandService.qml
 SystemMonitorService 1.0 SystemMonitorService.qml
 singleton AudioService AudioService.qml

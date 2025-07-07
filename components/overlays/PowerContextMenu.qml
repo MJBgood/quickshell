@@ -9,7 +9,7 @@ PopupWindow {
     
     // Services
     property var powerService: null
-    property var themeService: null
+    property var configService: ConfigService
     
     // Standard window properties
     implicitWidth: 180
@@ -37,8 +37,8 @@ PopupWindow {
     // Content structure
     Rectangle {
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
         border.width: 1
         radius: 8
         
@@ -56,14 +56,14 @@ PopupWindow {
                     font.family: "Inter"
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
-                    color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
                 
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 }
                 
                 // Power action buttons
@@ -74,7 +74,7 @@ PopupWindow {
                         width: parent.width
                         height: 36
                         color: powerActionMouse.containsMouse ? 
-                            (themeService ? themeService.getThemeProperty("colors", "surfaceHover") || "#383849" : "#383849") :
+                            (configService ? configService.getThemeProperty("colors", "surfaceHover") || "#383849" : "#383849") :
                             "transparent"
                         radius: 4
                         
@@ -97,9 +97,9 @@ PopupWindow {
                                 font.weight: Font.Medium
                                 color: {
                                     if (modelData === "poweroff" || modelData === "reboot") {
-                                        return themeService ? themeService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
+                                        return configService ? configService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
                                     }
-                                    return themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                    return configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                                 }
                                 anchors.verticalCenter: parent.verticalCenter
                             }
@@ -160,7 +160,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
                 }
                 
                 // System information
@@ -173,7 +173,7 @@ PopupWindow {
                         font.family: "Inter"
                         font.pixelSize: 10
                         font.weight: Font.Medium
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
                     
@@ -181,7 +181,7 @@ PopupWindow {
                         text: powerService && powerService.ready ? "Power management ready" : "Checking capabilities..."
                         font.family: "Inter"
                         font.pixelSize: 9
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
                 }

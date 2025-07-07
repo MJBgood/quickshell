@@ -21,6 +21,7 @@ RamContextMenu 1.0 RamContextMenu.qml
 SettingsOverlay 1.0 SettingsOverlay.qml
 SimplePerformanceMenu 1.0 SimplePerformanceMenu.qml
 StorageContextMenu 1.0 StorageContextMenu.qml
+ScalingContextMenu 1.0 ScalingContextMenu.qml
 ThemeDropdown 1.0 ThemeDropdown.qml
 WorkspacesContextMenu 1.0 WorkspacesContextMenu.qml
 SessionOverlay 1.0 SessionOverlay.qml

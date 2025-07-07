@@ -1,11 +1,12 @@
 import QtQuick
+import "../../services"
 
 Rectangle {
     id: displayItem
     
     property string label: ""
     property string value: ""
-    property var themeService: null
+    property var configService: ConfigService
     
     height: 24
     radius: 6
@@ -23,7 +24,7 @@ Rectangle {
             height: 8
             radius: 4
             anchors.verticalCenter: parent.verticalCenter
-            color: themeService ? themeService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
+            color: configService ? configService.getThemeProperty("colors", "primary") || "#89b4fa" : "#89b4fa"
         }
         
         // Label
@@ -31,7 +32,7 @@ Rectangle {
             text: label + ":"
             font.pixelSize: 11
             font.weight: Font.Medium
-            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
             anchors.verticalCenter: parent.verticalCenter
         }
     }
@@ -45,6 +46,6 @@ Rectangle {
         font.pixelSize: 11
         font.family: "monospace"
         font.weight: Font.DemiBold
-        color: themeService ? themeService.getThemeProperty("colors", "accent") || "#89b4fa" : "#89b4fa"
+        color: configService ? configService.getThemeProperty("colors", "accent") || "#89b4fa" : "#89b4fa"
     }
 }

@@ -10,10 +10,17 @@ Item {
     id: widgetContainer
     
     // Required services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     property var systemMonitorService: null
     property var wallpaperService: null
+    // Removed scalingService - using configService for scaling
+    property var componentRegistry: ComponentRegistry
+    
+    // GraphicalComponent interface
+    property string componentId: widgetData ? `widget-container-${widgetData.id}` : "widget-container-unknown"
+    property string parentComponentId: "widget-bar"
+    property var childComponentIds: []
+    property string menuPath: `widget-bar.${componentId}`
     
     // Widget data
     property var widgetData: null
@@ -21,8 +28,8 @@ Item {
     property string widgetId: widgetData ? widgetData.id : ""
     
     // Visual properties
-    property real preferredWidth: widgetData ? widgetData.size.width : 60
-    property real preferredHeight: widgetData ? widgetData.size.height : 24
+    property real preferredWidth: widgetData ? (configService ? configService.scaled(widgetData.size.width) : widgetData.size.width) : (configService ? configService.scaled(60) : 60)
+    property real preferredHeight: widgetData ? (configService ? configService.scaled(widgetData.size.height) : widgetData.size.height) : (configService ? configService.scaled(24) : 24)
     
     // State
     property bool isHovered: false
@@ -37,13 +44,13 @@ Item {
         id: background
         anchors.fill: parent
         color: getBackgroundColor()
-        radius: 4
+        radius: configService ? configService.scaled(4) : 4
         opacity: enabled ? 1.0 : 0.5
         
         // Hover/active state overlay
         Rectangle {
             anchors.fill: parent
-            color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1" 
+            color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1" 
             radius: parent.radius
             opacity: isHovered ? 0.1 : 0
             
@@ -56,7 +63,7 @@ Item {
         Loader {
             id: widgetLoader
             anchors.fill: parent
-            anchors.margins: 2
+            anchors.margins: configService ? configService.scaled(2) : 2
             
             active: enabled && widgetData
             source: getWidgetSource()
@@ -83,15 +90,15 @@ Item {
             anchors.fill: parent
             color: "transparent"
             radius: parent.radius
-            border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
-            border.width: 1
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+            border.width: configService ? configService.scaled(1) : 1
             
             // Disabled icon
             Text {
                 anchors.centerIn: parent
                 text: widgetData ? widgetData.icon : "🔧"
-                font.pixelSize: 12
-                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                font.pixelSize: configService ? configService.scaledFontSmall() : 12
+                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                 opacity: 0.6
             }
         }
@@ -136,7 +143,8 @@ Item {
             // Pass services to context menu
             if (item) {
                 item.configService = configService
-                item.themeService = themeService
+                // Removed scalingService - using configService for scaling
+                item.componentRegistry = componentRegistry
                 item.widgetData = widgetData
                 
                 // Auto-hide when closed
@@ -155,7 +163,7 @@ Item {
         }
         
         if (isHovered || menuOpen) {
-            return themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+            return configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
         }
         
         return "transparent"
@@ -176,14 +184,17 @@ Item {
         if (widget.hasOwnProperty && widget.hasOwnProperty('configService')) {
             widget.configService = configService
         }
-        if (widget.hasOwnProperty && widget.hasOwnProperty('themeService')) {
-            widget.themeService = themeService
-        }
         if (widget.hasOwnProperty && widget.hasOwnProperty('systemMonitorService')) {
             widget.systemMonitorService = systemMonitorService
         }
         if (widget.hasOwnProperty && widget.hasOwnProperty('wallpaperService')) {
             widget.wallpaperService = wallpaperService
+        }
+        if (widget.hasOwnProperty && widget.hasOwnProperty('scalingService')) {
+            widget.scalingService = scalingService
+        }
+        if (widget.hasOwnProperty && widget.hasOwnProperty('componentRegistry')) {
+            widget.componentRegistry = componentRegistry
         }
     }
     
@@ -235,12 +246,48 @@ Item {
         }
     }
     
+    // GraphicalComponent interface methods
+    function menu(startPath) {
+        console.log(`[WidgetContainer] Menu requested for widget: ${widgetId}, path: ${startPath || menuPath}`)
+        showContextMenu()
+    }
+    
+    function getParent() {
+        return componentRegistry.getComponent(parentComponentId)
+    }
+    
+    function getChildren() {
+        return childComponentIds.map(id => componentRegistry.getComponent(id)).filter(c => c)
+    }
+    
+    function navigateToParent() {
+        const parent = getParent()
+        if (parent && parent.menu) {
+            parent.menu()
+        }
+    }
+    
+    function navigateToChild(childId) {
+        const child = componentRegistry.getComponent(childId)
+        if (child && child.menu) {
+            child.menu()
+        }
+    }
+    
     Component.onCompleted: {
         console.log(`[WidgetContainer] Initialized for widget: ${widgetId}`)
+        
+        // Register with ComponentRegistry
+        componentRegistry.registerComponent(componentId, widgetContainer)
         
         // Set initial enabled state
         if (widgetData) {
             enabled = WidgetRegistry.isWidgetEnabled(widgetId)
         }
+    }
+    
+    Component.onDestruction: {
+        // Unregister from ComponentRegistry
+        componentRegistry.unregisterComponent(componentId)
     }
 }

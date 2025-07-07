@@ -14,8 +14,7 @@ PopupWindow {
     color: "transparent"
     
     // Services
-    property var configService: null
-    property var themeService: null
+    property var configService: ConfigService
     
     // Component hierarchy properties
     property string componentId: "workspaces"
@@ -56,8 +55,8 @@ PopupWindow {
     Rectangle {
         id: menuContent
         anchors.fill: parent
-        color: themeService ? themeService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
-        border.color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
+        border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
         border.width: 1
         radius: 12
         
@@ -81,7 +80,7 @@ PopupWindow {
                 radius: 4
             }
             ScrollBar.vertical.contentItem: Rectangle {
-                color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 radius: 4
                 opacity: 0.6
             }
@@ -103,15 +102,15 @@ PopupWindow {
                         radius: 6
                         visible: parentComponentId !== ""
                         color: parentNavMouse.containsMouse ? 
-                               (themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1") : 
+                               (configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1") : 
                                "transparent"
                         border.width: 1
-                        border.color: themeService ? themeService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                        border.color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                         
                         Text {
                             anchors.centerIn: parent
                             text: "↑"
-                            color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             font.pixelSize: 12
                             font.weight: Font.Bold
                         }
@@ -148,7 +147,7 @@ PopupWindow {
                                 text: "Workspace Display"
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
-                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             }
                             
                             Text {
@@ -170,7 +169,7 @@ PopupWindow {
                         Text {
                             anchors.centerIn: parent
                             text: "✕"
-                            color: closeArea.containsMouse ? "#1e1e2e" : (themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
+                            color: closeArea.containsMouse ? "#1e1e2e" : (configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de")
                             font.pixelSize: 12
                             font.weight: Font.Bold
                         }
@@ -193,7 +192,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Workspace Display Configuration
@@ -205,7 +204,7 @@ PopupWindow {
                         text: "Display Settings:"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     // Show workspace numbers
@@ -253,7 +252,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Workspace Behavior Configuration
@@ -265,7 +264,7 @@ PopupWindow {
                         text: "Behavior Settings:"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     // Click to switch workspaces
@@ -309,7 +308,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Workspace Layout Configuration
@@ -321,7 +320,7 @@ PopupWindow {
                         text: "Layout Settings:"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
                     // Workspace size
@@ -356,7 +355,7 @@ PopupWindow {
                 Rectangle {
                     width: parent.width
                     height: 1
-                    color: themeService ? themeService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
                 // Current Workspace Info
@@ -368,13 +367,13 @@ PopupWindow {
                         text: "Current Status:"
                         font.pixelSize: 10
                         font.weight: Font.DemiBold
-                        color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                     }
                     
                     Rectangle {
                         width: parent.width
                         height: statusColumn.implicitHeight + 12
-                        color: themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+                        color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
                         radius: 6
                         
                         Column {
@@ -387,7 +386,7 @@ PopupWindow {
                                 text: `Active: ${Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : "Unknown"}`
                                 font.pixelSize: 11
                                 font.family: "monospace"
-                                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                             }
                             
                             Text {
@@ -395,7 +394,7 @@ PopupWindow {
                                 text: `Total: ${Hyprland.workspaces ? Hyprland.workspaces.length : 0} workspaces`
                                 font.pixelSize: 10
                                 font.family: "monospace"
-                                color: themeService ? themeService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                             }
                         }
                     }
@@ -414,7 +413,7 @@ PopupWindow {
         height: 24
         radius: 4
         color: toggleMouse.containsMouse ? 
-               (themeService ? themeService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
+               (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
                "transparent"
         
         Row {
@@ -426,7 +425,7 @@ PopupWindow {
             Text {
                 text: label + ":"
                 font.pixelSize: 10
-                color: themeService ? themeService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                 anchors.verticalCenter: parent.verticalCenter
             }
             
