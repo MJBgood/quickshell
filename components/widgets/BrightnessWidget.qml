@@ -23,7 +23,7 @@ Rectangle {
     property string menuPath: "brightness"
     
     // Dynamic sizing based on content
-    implicitWidth: brightnessContent.implicitWidth
+    implicitWidth: brightnessContent.implicitWidth + (configService ? configService.scaled(12) : 12)
     implicitHeight: brightnessContent.implicitHeight
     color: "transparent"
     

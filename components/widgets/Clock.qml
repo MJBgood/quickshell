@@ -1,11 +1,14 @@
 import QtQuick
+import Quickshell
 import "../../services"
+import "../base"
 
 Rectangle {
     id: clock
     
     // Services
     property var configService: ConfigService
+    property var anchorWindow: null  // Should be set to the PanelWindow (bar)
     
     // GraphicalComponent interface implementation
     property string componentId: "clock"
@@ -13,57 +16,81 @@ Rectangle {
     property var childComponentIds: []
     property string menuPath: "system.clock"
     
-    implicitWidth: configService ? configService.scaled(80) : 80
-    implicitHeight: configService ? configService.scaledFontMedium() + configService.scaledMarginNormal() : 24
+    implicitWidth: clockText.implicitWidth + (configService ? configService.scaled(12) : 12)
+    implicitHeight: configService ? configService.getWidgetHeight("clock", clockText.implicitHeight) : clockText.implicitHeight
     
     color: "transparent"
     
-    // Current time state
-    property string currentTime: getCurrentTime()
+    // Current time properties
+    property string separator: configService ? configService.getValue("widgets.clock.separator", "|") : "|"
+    property bool showDate: configService ? configService.getValue("widgets.clock.showDate", true) : true
+    
+    // System clock for proper time handling
+    SystemClock {
+        id: systemClock
+        precision: SystemClock.Seconds
+    }
     
     // Clock display
     Text {
         id: clockText
         anchors.centerIn: parent
-        text: clock.currentTime
-        font.pixelSize: configService ? configService.scaledFontMedium() : 12
+        text: showDate ? (Qt.formatDateTime(systemClock.date, "HH:mm") + " " + separator + " " + Qt.formatDateTime(systemClock.date, "yyyy-MM-dd")) : Qt.formatDateTime(systemClock.date, "HH:mm")
+        font.pixelSize: configService ? configService.scaledFontNormal() : 10
         font.weight: Font.Medium
         color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
     }
     
-    // Update timer
-    Timer {
-        id: clockTimer
-        interval: 1000
-        running: true
-        repeat: true
-        onTriggered: {
-            clock.currentTime = getCurrentTime()
+    // Clock menu interaction
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton | Qt.LeftButton
+        onClicked: (mouse) => {
+            if (mouse.button === Qt.RightButton) {
+                showClockMenu(mouse.x, mouse.y)
+                mouse.accepted = true
+            } else if (mouse.button === Qt.LeftButton) {
+                mouse.accepted = true  
+            }
         }
     }
     
-    function getCurrentTime() {
-        try {
-            const now = new Date()
-            // Use simple string formatting that's more reliable in QML
-            let hours = now.getHours()
-            let minutes = now.getMinutes()
+    // Clock context menu loader
+    Loader {
+        id: clockMenuLoader
+        source: "../overlays/ClockContextMenu.qml"
+        active: false
+        
+        onLoaded: {
+            item.configService = clock.configService
             
-            // Format with leading zeros
-            if (hours < 10) hours = "0" + hours
-            if (minutes < 10) minutes = "0" + minutes
+            item.closed.connect(function() {
+                clockMenuLoader.active = false
+            })
+        }
+    }
+    
+    
+    // Clock menu functions
+    function showClockMenu(x, y) {
+        if (!clockMenuLoader.active) {
+            clockMenuLoader.active = true
+        }
+        
+        if (clockMenuLoader.item) {
+            const globalPos = mapToItem(null, x, y)
             
-            return hours + ":" + minutes
-        } catch (error) {
-            console.error("Clock: Error getting current time:", error)
-            return "--:--"
+            if (anchorWindow) {
+                clockMenuLoader.item.show(anchorWindow, globalPos.x, globalPos.y)
+            } else {
+                console.error("Clock: No anchorWindow provided - clock menu cannot be shown")
+            }
         }
     }
     
     // GraphicalComponent interface methods
     function menu(startPath) {
-        // Clock widget has no menu implementation yet
-        console.log("Clock menu not implemented yet")
+        showClockMenu(width / 2, height / 2)
     }
     
     function getParent() {
@@ -89,8 +116,6 @@ Rectangle {
     }
     
     Component.onCompleted: {
-        console.log("Clock widget loaded, initial time:", getCurrentTime())
-        console.log("Clock widget configService:", configService)
-        console.log("Clock widget dimensions:", implicitWidth, "x", implicitHeight)
+        console.log("Clock widget loaded with SystemClock")
     }
 }

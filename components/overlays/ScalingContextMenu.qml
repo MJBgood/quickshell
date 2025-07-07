@@ -9,7 +9,7 @@ PopupWindow {
     
     // Window properties
     implicitWidth: 280
-    implicitHeight: Math.min(400, scalingContent.contentHeight + 32)
+    implicitHeight: Math.max(100, Math.min(400, scalingContent.contentHeight + 32))
     visible: false
     color: "transparent"
     
@@ -333,14 +333,18 @@ PopupWindow {
     
     // Functions
     function show(anchorWindow, x, y) {
-        if (anchorWindow) {
+        if (anchorWindow && anchorWindow.hasOwnProperty("screen")) {
             anchor.window = anchorWindow
             
             const screenWidth = anchorWindow.screen ? anchorWindow.screen.width : 1920
             const screenHeight = anchorWindow.screen ? anchorWindow.screen.height : 1080
             
-            let popupX = Math.min(x || 0, screenWidth - implicitWidth - 20)
-            let popupY = Math.min(y || 0, screenHeight - implicitHeight - 20)
+            // Ensure we have valid dimensions
+            const menuWidth = Math.max(280, implicitWidth)
+            const menuHeight = Math.max(100, implicitHeight)
+            
+            let popupX = Math.min(x || 0, screenWidth - menuWidth - 20)
+            let popupY = Math.min(y || 0, screenHeight - menuHeight - 20)
             
             popupX = Math.max(20, popupX)
             popupY = Math.max(20, popupY)
@@ -349,10 +353,12 @@ PopupWindow {
             anchor.rect.y = popupY
             anchor.rect.width = 1
             anchor.rect.height = 1
+            
+            visible = true
+            focusGrab.active = true
+        } else {
+            console.error("ScalingContextMenu: Invalid anchor window provided")
         }
-        
-        visible = true
-        focusGrab.active = true
     }
     
     function hide() {

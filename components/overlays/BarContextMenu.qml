@@ -688,15 +688,17 @@ PopupWindow {
         
         onLoaded: {
             console.log("ScalingContextMenu loaded on demand")
-            // themeService removed - now integrated into configService
+            item.configService = barMenu.configService
             
             // Auto-hide when closed
             item.closed.connect(function() {
                 scalingMenuLoader.active = false
             })
             
-            // Show immediately after loading at the same position
-            item.show(anchor.window, anchor.rect.x, anchor.rect.y)
+            // Show immediately after loading - pass the correct Quickshell window, not Rectangle
+            if (anchor.window) {
+                item.show(anchor.window, anchor.rect.x, anchor.rect.y)
+            }
         }
     }
 }

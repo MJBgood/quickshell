@@ -249,8 +249,8 @@ PopupWindow {
                     ConfigToggleItem {
                         width: parent.width
                         label: "Show Date"
-                        value: getConfigValue("showDate", false) ? "Enabled" : "Disabled"
-                        isActive: getConfigValue("showDate", false)
+                        value: getConfigValue("showDate", true) ? "Enabled" : "Disabled"
+                        isActive: getConfigValue("showDate", true)
                         onClicked: toggleConfig("showDate")
                     }
                 }
@@ -266,7 +266,7 @@ PopupWindow {
                 Column {
                     width: parent.width
                     spacing: 8
-                    visible: getConfigValue("showDate", false)
+                    visible: getConfigValue("showDate", true)
                     
                     Text {
                         text: "Date Format:"
@@ -299,7 +299,7 @@ PopupWindow {
                     width: parent.width
                     height: 1
                     color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
-                    visible: getConfigValue("showDate", false)
+                    visible: getConfigValue("showDate", true)
                 }
                 
                 // Live preview
@@ -326,22 +326,12 @@ PopupWindow {
                             spacing: 2
                             
                             Text {
-                                id: previewTimeText
+                                id: previewText
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: generateTimePreview()
+                                text: generateFullPreview()
                                 font.pixelSize: 12
                                 font.family: "monospace"
                                 color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                            }
-                            
-                            Text {
-                                id: previewDateText
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: generateDatePreview()
-                                font.pixelSize: 10
-                                font.family: "monospace"
-                                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
-                                visible: getConfigValue("showDate", false)
                             }
                         }
                     }
@@ -401,14 +391,14 @@ PopupWindow {
     // Helper functions
     function getConfigValue(key, defaultValue) {
         if (!configService) return defaultValue
-        return configService.getValue("clock." + key, defaultValue)
+        return configService.getValue("widgets.clock." + key, defaultValue)
     }
     
     function toggleConfig(key) {
         if (!configService) return
         
-        const configKey = "clock." + key
-        const currentValue = configService.getValue(configKey, key === "format24Hour" ? true : false)
+        const configKey = "widgets.clock." + key
+        const currentValue = configService.getValue(configKey, key === "format24Hour" ? true : (key === "showDate" ? true : false))
         const newValue = !currentValue
         
         configService.setValue(configKey, newValue)
@@ -418,7 +408,7 @@ PopupWindow {
     function cycleDateFormat() {
         if (!configService) return
         
-        const configKey = "clock.dateFormat"
+        const configKey = "widgets.clock.dateFormat"
         const currentFormat = configService.getValue(configKey, "short")
         const formats = ["short", "medium", "long"]
         const currentIndex = formats.indexOf(currentFormat)
@@ -431,7 +421,7 @@ PopupWindow {
     function cycleDatePosition() {
         if (!configService) return
         
-        const configKey = "clock.datePosition"
+        const configKey = "widgets.clock.datePosition"
         const currentPosition = configService.getValue(configKey, "below")
         const positions = ["below", "above", "inline"]
         const currentIndex = positions.indexOf(currentPosition)
@@ -454,26 +444,23 @@ PopupWindow {
     }
     
     function generateDatePreview() {
-        if (!getConfigValue("showDate", false)) return ""
+        if (!getConfigValue("showDate", true)) return ""
         
-        const dateFormat = getConfigValue("dateFormat", "short")
-        let format = ""
+        // Use the same format as the actual clock widget (ISO format)
+        return Qt.formatDateTime(currentTime, "yyyy-MM-dd")
+    }
+    
+    function generateFullPreview() {
+        const timeText = generateTimePreview()
+        const showDate = getConfigValue("showDate", true)
+        const separator = getConfigValue("separator", "|")
         
-        switch (dateFormat) {
-            case "short":
-                format = "yyyy-MM-dd"
-                break
-            case "medium":
-                format = "MMM d, yyyy"
-                break
-            case "long":
-                format = "MMMM d, yyyy"
-                break
-            default:
-                format = "yyyy-MM-dd"
+        if (showDate) {
+            const dateText = generateDatePreview()
+            return timeText + " " + separator + " " + dateText
+        } else {
+            return timeText
         }
-        
-        return Qt.formatDateTime(currentTime, format)
     }
     
     function show(anchorWindow, x, y) {

@@ -25,9 +25,9 @@ Rectangle {
     property var childComponentIds: []
     property string menuPath: "power"
     
-    // Size configuration
-    implicitWidth: showIcon ? (showText ? (configService ? configService.scaled(90) : 90) : (configService ? configService.scaled(28) : 28)) : (showText ? (configService ? configService.scaled(70) : 70) : (configService ? configService.scaled(24) : 24))
-    implicitHeight: configService ? configService.scaled(22) : 22
+    // Dynamic sizing based on content - no background since container provides it
+    implicitWidth: powerContent.implicitWidth + (configService ? configService.scaled(12) : 12)
+    implicitHeight: powerContent.implicitHeight + (configService ? configService.scaled(8) : 8)
     color: "transparent"
     
     // Context menu (kept for right-click fallback)
@@ -40,6 +40,7 @@ Rectangle {
     
     // Content layout
     Row {
+        id: powerContent
         anchors.centerIn: parent
         spacing: configService ? configService.scaledMarginTiny() : 4
         

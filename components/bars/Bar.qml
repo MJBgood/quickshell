@@ -798,7 +798,7 @@ PanelWindow {
             border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
             
             anchors {
-                right: powerSection.left
+                right: systraySection.visible ? systraySection.left : powerSection.left
                 rightMargin: configService ? configService.marginNormal() : 8
                 verticalCenter: parent.verticalCenter
             }
@@ -807,6 +807,63 @@ PanelWindow {
                 id: clockWidget
                 anchors.centerIn: parent
                 configService: bar.configService
+                anchorWindow: bar
+            }
+        }
+        
+        // System Tray section - Between clock and power button
+        Rectangle {
+            id: systraySection
+            implicitWidth: systrayWidget.visible ? systrayWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
+            implicitHeight: systrayWidget.visible ? systrayWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+            radius: configService ? configService.borderRadius : 8
+            color: systrayWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+            border.width: systrayWidget.visible ? 1 : 0
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+            visible: systrayWidget.visible
+            
+            anchors {
+                right: powerSection.left
+                rightMargin: visible ? configService ? configService.marginNormal() : 8 : 0
+                verticalCenter: parent.verticalCenter
+            }
+            
+            SystemTrayWidget {
+                id: systrayWidget
+                anchors.centerIn: parent
+                
+                // Services
+                configService: bar.configService
+                
+                // Widget configuration from config service
+                enabled: configService ? configService.getValue("widgets.systray.enabled", true) : true
+                iconSize: configService ? configService.getValue("widgets.systray.iconSize", 20) : 20
+                spacing: configService ? configService.getValue("widgets.systray.spacing", 4) : 4
+                layout: configService ? configService.getValue("widgets.systray.layout", "horizontal") : "horizontal"
+                showTooltips: configService ? configService.getValue("widgets.systray.showTooltips", true) : true
+                
+                // Handle tray item interactions
+                onItemClicked: (item) => {
+                    console.log("Bar: System tray item clicked:", item ? item.title : "unknown")
+                }
+                
+                onItemRightClicked: (item) => {
+                    console.log("Bar: System tray item right-clicked:", item ? item.title : "unknown")
+                }
+                
+                onMenuRequested: (item, anchorItem) => {
+                    console.log("Bar: System tray menu requested for:", item ? item.title : "unknown")
+                    // The SystemTrayWidget will handle the menu display
+                    if (item && item.hasMenu && item.menu) {
+                        // Use Quickshell's menu system to display the tray item's menu
+                        // This might need adjustment based on the actual Quickshell API
+                        try {
+                            item.menu.display(anchorItem, 0, anchorItem.height)
+                        } catch (error) {
+                            console.warn("Bar: Failed to display tray menu:", error)
+                        }
+                    }
+                }
             }
         }
         

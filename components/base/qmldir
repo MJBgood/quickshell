@@ -1,1 +1,3 @@
 singleton ComponentRegistry 1.0 ComponentRegistry.qml
+singleton WindowUtils 1.0 WindowUtils.qml
+WidgetBase 1.0 WidgetBase.qml

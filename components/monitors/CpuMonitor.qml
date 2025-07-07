@@ -53,7 +53,7 @@ Rectangle {
     
     // Visual configuration
     implicitWidth: contentRow.implicitWidth + (configService ? configService.scaled(12) : 12)
-    implicitHeight: configService ? configService.scaled(20) : 20
+    implicitHeight: contentRow.implicitHeight
     radius: configService ? configService.scaled(4) : 4
     
     // Dynamic background color based on CPU usage

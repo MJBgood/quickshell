@@ -55,6 +55,31 @@
         "criticalThreshold": 90,
         "pollingRate": 60
       }
+    },
+    "widgets": {
+      "global": {
+        "height": "auto",
+        "width": "auto",
+        "margin": "auto",
+        "padding": "auto",
+        "borderRadius": "auto",
+        "spacing": "auto"
+      },
+      "clock": {
+        "height": "auto",
+        "showDate": true,
+        "separator": "|",
+        "format": "HH:mm | MMM dd"
+      },
+      "systray": {
+        "enabled": true,
+        "iconSize": 16,
+        "spacing": 3,
+        "layout": "horizontal",
+        "showTooltips": true,
+        "alwaysShow": true,
+        "showEmpty": true
+      }
     }
   },
   "theme": {
@@ -77,7 +102,7 @@
     "clock": {
       "enabled": true,
       "format": "HH:mm",
-      "showDate": false
+      "showDate": true
     },
     "workspaces": {
       "enabled": true,
@@ -86,7 +111,12 @@
     },
     "systray": {
       "enabled": true,
-      "spacing": 4
+      "spacing": 4,
+      "iconSize": 20,
+      "layout": "horizontal",
+      "showTooltips": true,
+      "autoHide": false,
+      "showEmpty": false
     },
     "battery": {
       "enabled": null,

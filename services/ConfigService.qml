@@ -341,7 +341,7 @@ Singleton {
             }
         }
         
-        onExited: {
+        onExited: (exitCode) => {
             console.log(logCategory, "Theme loading process completed with exit code:", exitCode)
         }
     }
@@ -622,6 +622,18 @@ Singleton {
     function badgeSize() { return spacingMd() }      // 16px (readable badge size)
     function badgeRadius() { return spacingSm() }     // 8px radius
     function badgePadding() { return spacingXs() }    // 4px padding
+    
+    // Widget height helper - supports global and per-widget height configuration
+    function getWidgetHeight(widgetName, contentHeight) {
+        const globalHeight = getValue("widgets.global.height", "auto")
+        const widgetHeight = getValue("widgets." + widgetName + ".height", globalHeight)
+        
+        if (widgetHeight === "auto") {
+            return contentHeight
+        } else {
+            return scaled(widgetHeight)
+        }
+    }
     
     // Workspace helper functions (ISO-compliant sizing with accessibility)
     function workspaceSize(mode) {
