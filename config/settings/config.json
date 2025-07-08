@@ -54,6 +54,9 @@
         "warningThreshold": 80,
         "criticalThreshold": 90,
         "pollingRate": 60
+      },
+      "gpu": {
+        "pollingRate": 1
       }
     },
     "widgets": {
@@ -64,12 +67,6 @@
         "padding": "auto",
         "borderRadius": "auto",
         "spacing": "auto"
-      },
-      "clock": {
-        "height": "auto",
-        "showDate": true,
-        "separator": "|",
-        "format": "HH:mm | MMM dd"
       },
       "systray": {
         "enabled": true,
@@ -179,13 +176,118 @@
     "showPerformanceMetrics": true,
     "verboseLogging": false
   },
+  "scaling": {
+    "globalScale": 1,
+    "defaults": {
+      "typography": "md",
+      "spacing": "md",
+      "icon": "md"
+    }
+  },
+  "entities": {
+    "clockWidget": {
+      "showDate": true,
+      "separator": "|",
+      "timeFormat": "HH:mm:ss",
+      "dateFormat": "MMM dd",
+      "fontSize": "xs",
+      "spacing": "auto"
+    },
+    "powerWidget": {
+      "showIcon": true,
+      "showText": false,
+      "iconColor": "auto",
+      "fontSize": "sm",
+      "spacing": "auto"
+    },
+    "cpuWidget": {
+      "showIcon": true,
+      "showPercentage": true,
+      "showLabel": true,
+      "showTemperature": true,
+      "usagePrecision": 1,
+      "temperaturePrecision": 0,
+      "frequencyPrecision": 0,
+      "fontSize": "xs"
+    },
+    "ramWidget": {
+      "showIcon": true,
+      "showPercentage": true,
+      "showLabel": true,
+      "showTotal": true,
+      "usagePrecision": 0,
+      "memoryPrecision": 1,
+      "fontSize": "xs"
+    },
+    "storageWidget": {
+      "showIcon": true,
+      "showPercentage": true,
+      "showLabel": true,
+      "showBytes": false,
+      "usagePrecision": 0,
+      "storagePrecision": 1,
+      "fontSize": "xs"
+    },
+    "gpuTempWidget": {
+      "enabled": true,
+      "showIcon": true,
+      "showValue": true,
+      "showUnit": true,
+      "fontSize": "xs"
+    },
+    "batteryWidget": {
+      "enabled": true,
+      "showIcon": true,
+      "showPercentage": true,
+      "showTime": false,
+      "fontSize": "xs"
+    },
+    "brightnessWidget": {
+      "enabled": true,
+      "showIcon": true,
+      "showPercentage": true,
+      "showSlider": false,
+      "fontSize": "xs"
+    },
+    "audioWidget": {
+      "enabled": true,
+      "showIcon": true,
+      "showPercentage": true,
+      "showSlider": false,
+      "fontSize": "xs"
+    },
+    "gpuWidget": {
+      "showIcon": true,
+      "showPercentage": true,
+      "showLabel": true,
+      "showMemory": false,
+      "showClocks": false,
+      "usagePrecision": 1,
+      "memoryPrecision": 1,
+      "clockPrecision": 0,
+      "fontSize": "xs"
+    },
+    "barWidget": {
+      "height": 24,
+      "spacing": "xs",
+      "margin": "md",
+      "borderRadius": 6,
+      "fontSize": "lg"
+    },
+    "workspacesWidget": {
+      "fontSize": "sm",
+      "iconSize": "sm",
+      "spacing": "auto"
+    }
+  },
   "clock": {
     "showDate": true
   },
   "cpu": {
     "showLabel": true,
     "showIcon": false,
-    "showFrequency": true
+    "showFrequency": false,
+    "showTemperature": true
   },
   "ram": {
     "showLabel": true,
@@ -195,5 +297,11 @@
     "showLabel": true,
     "showIcon": false,
     "showBytes": true
+  },
+  "gpu": {
+    "showLabel": true,
+    "showMemory": false,
+    "showClocks": false,
+    "showIcon": false
   }
 }

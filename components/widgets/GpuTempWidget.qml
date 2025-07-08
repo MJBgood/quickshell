@@ -6,11 +6,14 @@ import "../overlays"
 Rectangle {
     id: gpuTempWidget
     
+    // Entity ID for configuration
+    property string entityId: "gpuTempWidget"
+    
     // Widget properties
-    property bool enabled: true
-    property bool showIcon: true
-    property bool showValue: true
-    property bool showUnit: true
+    property bool enabled: configService ? configService.getEntityProperty(entityId, "enabled", true) : true
+    property bool showIcon: configService ? configService.getEntityProperty(entityId, "showIcon", true) : true
+    property bool showValue: configService ? configService.getEntityProperty(entityId, "showValue", true) : true
+    property bool showUnit: configService ? configService.getEntityProperty(entityId, "showUnit", true) : true
     
     // Services
     property var configService: ConfigService
@@ -68,7 +71,7 @@ Rectangle {
     Row {
         id: gpuTempContent
         anchors.centerIn: parent
-        spacing: configService ? configService.scaledMarginTiny() : 4
+        spacing: configService ? configService.spacing("xs", entityId) : 4
         
         Text {
             visible: showIcon
@@ -83,7 +86,7 @@ Rectangle {
                     default: return "❓"
                 }
             }
-            font.pixelSize: configService ? configService.scaledFontMedium() : 12
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 10
             color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
         }
         
@@ -96,7 +99,7 @@ Rectangle {
                 return Math.round(temp) + (showUnit ? "°C" : "")
             }
             font.family: "Inter"
-            font.pixelSize: configService ? configService.scaledFontSmall() : 9
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 9
             font.weight: Font.Medium
             color: {
                 const status = TemperatureService.getGpuStatus()

@@ -7,11 +7,14 @@ import "../overlays"
 Rectangle {
     id: batteryWidget
     
+    // Entity ID for configuration
+    property string entityId: "batteryWidget"
+    
     // Widget properties
-    property bool enabled: true
-    property bool showIcon: true
-    property bool showPercentage: true
-    property bool showTime: false
+    property bool enabled: configService ? configService.getEntityProperty(entityId, "enabled", true) : true
+    property bool showIcon: configService ? configService.getEntityProperty(entityId, "showIcon", true) : true
+    property bool showPercentage: configService ? configService.getEntityProperty(entityId, "showPercentage", true) : true
+    property bool showTime: configService ? configService.getEntityProperty(entityId, "showTime", false) : false
     
     // Services
     property var configService: ConfigService
@@ -40,7 +43,7 @@ Rectangle {
     Row {
         id: batteryContent
         anchors.centerIn: parent
-        spacing: configService ? configService.scaledMarginTiny() : 4
+        spacing: configService ? configService.spacing("xs", entityId) : 4
         
         Text {
             visible: showIcon
@@ -61,7 +64,7 @@ Rectangle {
                     return "🪫"  // Low battery
                 }
             }
-            font.pixelSize: configService ? configService.scaledFontSmall() : 9
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 9
         }
         
         Text {
@@ -72,7 +75,7 @@ Rectangle {
                 return Math.round(BatteryService.percentage) + "%"
             }
             font.family: "Inter"
-            font.pixelSize: configService ? configService.scaledFontSmall() : 9
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 9
             font.weight: Font.Medium
             color: {
                 if (!BatteryService.present) {
@@ -103,7 +106,7 @@ Rectangle {
                 return estimatedTime || ""
             }
             font.family: "Inter"
-            font.pixelSize: configService ? configService.scaledFontTiny() : 8
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 8
             font.weight: Font.Normal
             color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
         }

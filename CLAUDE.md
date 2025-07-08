@@ -48,6 +48,86 @@ If you find yourself doing any of these, reconsider:
 - Making configuration difficult to share or discover
 - Breaking separation of concerns between components
 
+## 🧩 Entity ID Configuration System
+
+**Core Concept**: All configurable components (bars, widgets, menus, overlays) use unique entity IDs for unified configuration access. This provides four-tier scaling resolution and future-proof architecture for any shell component type.
+
+### Entity ID Architecture Principles
+
+1. **Unified Configuration**: Single flat namespace for all customizable components
+2. **Future-Proof Design**: Any component type uses the same entity-based configuration API
+3. **Four-Tier Resolution**: Global scale → global defaults → entity overrides → numerical overrides
+4. **Semantic Scaling**: Use meaningful size names (sm, md, lg) instead of pixel values
+
+### Required Entity Configuration Interface
+
+Every configurable component MUST implement:
+
+```qml
+Rectangle {
+    // Entity identification
+    property string entityId: "clockWidget"  // Unique identifier for configuration
+    
+    // Use entity-aware configuration
+    implicitHeight: configService.getEntityStyle(entityId, "height", "auto", contentHeight)
+    color: configService.getEntityStyle(entityId, "backgroundColor", "auto", "transparent")
+    
+    Text {
+        font.pixelSize: configService.typography("md", entityId)
+        color: configService.getEntityStyle(entityId, "textColor", "auto", themeColor)
+    }
+}
+```
+
+### Configuration Structure
+
+```yaml
+scaling:
+  globalScale: 1.0
+  defaults:
+    typography: "md"
+    spacing: "md"
+    icon: "md"
+
+entities:
+  topBar:
+    height: "auto"
+    backgroundColor: "surface"
+    
+  clockWidget:
+    fontSize: "lg"        # Semantic override
+    spacing: "sm"         # Semantic override
+    showDate: true        # Functional property
+    
+  customWidget:
+    fontSize: 13          # Numerical override (escape hatch)
+    spacing: "auto"       # Use global default
+```
+
+### Entity ID Naming Convention
+
+- **Bars**: topBar, bottomBar, leftSidebar
+- **Widgets**: clockWidget, cpuWidget, batteryWidget, systrayWidget
+- **Menus**: launcherMenu, contextMenu, settingsMenu
+- **Overlays**: workspaceOverlay, notificationOverlay
+- **Custom**: Descriptive names like "workClock", "gamingBar"
+
+### ConfigService Entity API
+
+```qml
+// Entity property access
+configService.getEntityProperty(entityId, property, defaultValue)
+configService.getEntityStyle(entityId, styleProperty, defaultValue, contentValue)
+
+// Semantic scaling with entity-aware overrides
+configService.typography(size, entityId)  // "xs", "sm", "md", "lg", "xl"
+configService.spacing(size, entityId)     // "xs", "sm", "md", "lg", "xl"
+configService.icon(size, entityId)        // "xs", "sm", "md", "lg", "xl"
+
+// Simplified height helper
+configService.getWidgetHeight(entityId, contentHeight)
+```
+
 ## 🧩 Singleton Service Pattern
 
 **Core Concept**: All backend logic is abstracted into reusable singleton services that provide reactive properties and clean APIs, following Quickshell's recommended patterns for efficient resource usage and consistent state management.

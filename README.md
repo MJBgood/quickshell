@@ -46,6 +46,20 @@ quickshell/
 - **Qt 6**: QML runtime environment
 - **Quickshell**: QML-based shell toolkit
 
+### System Dependencies
+For full functionality, install these optional system packages:
+
+#### GPU Monitoring (Optional)
+- **NVIDIA GPUs**: `nvidia-utils` (provides `nvidia-smi`)
+- **AMD GPUs**: `rocm-smi-lib` (provides `rocm-smi` via Python script)
+- **Intel GPUs**: `intel-gpu-tools` (provides `intel_gpu_top`)
+
+#### System Monitoring (Optional)
+- **Temperature sensors**: `lm-sensors` (provides `sensors` command)
+- **Network monitoring**: `iw` and `iwconfig` for wireless info
+
+Note: The interface will gracefully degrade if optional dependencies are missing.
+
 ### Installation
 ```bash
 # Clone or copy to your quickshell config directory

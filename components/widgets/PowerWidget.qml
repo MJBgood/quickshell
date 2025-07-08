@@ -7,10 +7,13 @@ import "../overlays"
 Rectangle {
     id: powerWidget
     
+    // Entity ID for configuration
+    property string entityId: "powerWidget"
+    
     // Widget properties
-    property bool enabled: true
-    property bool showIcon: true
-    property bool showText: false
+    property bool enabled: configService ? configService.getEntityProperty(entityId, "enabled", true) : true
+    property bool showIcon: configService ? configService.getEntityProperty(entityId, "showIcon", true) : true
+    property bool showText: configService ? configService.getEntityProperty(entityId, "showText", false) : false
     
     // Services
     property var configService: ConfigService
@@ -25,10 +28,10 @@ Rectangle {
     property var childComponentIds: []
     property string menuPath: "power"
     
-    // Dynamic sizing based on content - no background since container provides it
-    implicitWidth: powerContent.implicitWidth + (configService ? configService.scaled(12) : 12)
-    implicitHeight: powerContent.implicitHeight + (configService ? configService.scaled(8) : 8)
-    color: "transparent"
+    // Dynamic sizing based on content
+    implicitWidth: powerContent.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12)
+    implicitHeight: configService ? configService.getWidgetHeight(entityId, powerContent.implicitHeight) : powerContent.implicitHeight
+    color: configService ? configService.getEntityStyle(entityId, "backgroundColor", "auto", "transparent") : "transparent"
     
     // Context menu (kept for right-click fallback)
     PowerContextMenu {
@@ -42,14 +45,14 @@ Rectangle {
     Row {
         id: powerContent
         anchors.centerIn: parent
-        spacing: configService ? configService.scaledMarginTiny() : 4
+        spacing: configService ? configService.spacing("xs", entityId) : 4
         
         Text {
             visible: showIcon
             anchors.verticalCenter: parent.verticalCenter
             text: "⏻"
-            font.pixelSize: configService ? configService.scaledIconMedium() : 20
-            color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
+            font.pixelSize: configService ? configService.typography(configService.getEntityProperty(entityId, "fontSize", "md"), entityId) : 20
+            color: configService ? configService.getEntityStyle(entityId, "iconColor", "auto", configService.getThemeProperty("colors", "text") || "#cdd6f4") : "#cdd6f4"
         }
         
         Text {
@@ -57,9 +60,9 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: "Power"
             font.family: "Inter"
-            font.pixelSize: configService ? configService.scaledFontSmall() : 9
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 9
             font.weight: Font.Medium
-            color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
+            color: configService ? configService.getEntityStyle(entityId, "textColor", "auto", configService.getThemeProperty("colors", "text") || "#cdd6f4") : "#cdd6f4"
         }
     }
     

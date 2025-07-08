@@ -5,29 +5,31 @@ import QtQuick.Controls
 import "../base"
 
 PopupWindow {
-    id: cpuMenu
+    id: gpuMenu
     
     // Window properties
-    implicitWidth: 320
-    implicitHeight: Math.min(400, menuContent.contentHeight + 32)
+    implicitWidth: 350
+    implicitHeight: Math.min(450, menuContent.contentHeight + 32)
     visible: false
     color: "transparent"
     
     // Services
     property var configService: ConfigService
-    property var systemMonitorService: null
-    property var temperatureService: null
+    property var gpuService: null
     
     // Component hierarchy properties
-    property string componentId: "cpu"
+    property string componentId: "gpu"
     property string parentComponentId: "bar" 
     property var childComponentIds: []
     
     // Live data properties for preview
     property real currentUsage: 0.0
-    property string currentFrequency: ""
-    property real currentTemp: 0.0
-    property string currentTempStatus: "cool"
+    property real currentMemoryUsage: 0.0
+    property real currentMemoryUsed: 0.0
+    property real currentMemoryTotal: 0.0
+    property real currentClockSpeed: 0.0
+    property string currentGpuName: "Unknown"
+    property string currentVendor: "unknown"
     
     // Signals
     signal closed()
@@ -55,7 +57,7 @@ PopupWindow {
     // Focus grab for dismissing when clicking outside
     HyprlandFocusGrab {
         id: focusGrab
-        windows: [cpuMenu]
+        windows: [gpuMenu]
         onCleared: hide()
     }
     
@@ -101,7 +103,7 @@ PopupWindow {
             }
             
             Column {
-                width: Math.max(parent.width - 16, 280)
+                width: Math.max(parent.width - 16, 300)
                 spacing: 12
                 
                 // Navigation Header
@@ -146,7 +148,7 @@ PopupWindow {
                         
                         Text {
                             id: iconText
-                            text: "💻"
+                            text: "🎮"  // Generic GPU icon
                             font.pixelSize: 20
                             anchors.left: parent.left
                             anchors.verticalCenter: parent.verticalCenter
@@ -159,7 +161,7 @@ PopupWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             
                             Text {
-                                text: "CPU Monitor"
+                                text: "GPU Monitor"
                                 font.pixelSize: 14
                                 font.weight: Font.DemiBold
                                 color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
@@ -203,6 +205,68 @@ PopupWindow {
                     }
                 }
                 
+                // GPU Info Section
+                Rectangle {
+                    width: parent.width
+                    height: gpuInfoColumn.implicitHeight + 16
+                    color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+                    radius: 8
+                    border.width: 1
+                    border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    
+                    Column {
+                        id: gpuInfoColumn
+                        anchors.centerIn: parent
+                        width: parent.width - 16
+                        spacing: 4
+                        
+                        Text {
+                            width: parent.width
+                            text: "GPU: " + (currentGpuName || "Unknown")
+                            font.family: "Inter"
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            wrapMode: Text.Wrap
+                        }
+                        
+                        Text {
+                            width: parent.width
+                            text: "Vendor: " + (currentVendor || "Unknown").toUpperCase()
+                            font.family: "Inter"
+                            font.pixelSize: 11
+                            color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                        }
+                        
+                        Row {
+                            width: parent.width
+                            spacing: 16
+                            
+                            Text {
+                                text: "Usage: " + currentUsage.toFixed(1) + "%"
+                                font.family: "Inter"
+                                font.pixelSize: 11
+                                color: {
+                                    if (currentUsage > 80) return "#f38ba8"
+                                    if (currentUsage > 60) return "#f9e2af"
+                                    return "#a6e3a1"
+                                }
+                            }
+                            
+                            Text {
+                                text: "Memory: " + (currentMemoryUsed / (1024 * 1024 * 1024)).toFixed(1) + "GB/" + (currentMemoryTotal / (1024 * 1024 * 1024)).toFixed(1) + "GB (" + currentMemoryUsage.toFixed(1) + "%)"
+                                font.family: "Inter"
+                                font.pixelSize: 11
+                                color: {
+                                    if (currentMemoryUsage > 80) return "#f38ba8"
+                                    if (currentMemoryUsage > 60) return "#f9e2af"
+                                    return "#a6e3a1"
+                                }
+                            }
+                        }
+                    }
+                }
+                
                 // Separator
                 Rectangle {
                     width: parent.width
@@ -210,10 +274,17 @@ PopupWindow {
                     color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
-                // Interactive configuration options
+                // General Configuration
                 Column {
                     width: parent.width
                     spacing: 8
+                    
+                    Text {
+                        text: "General Settings"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    }
                     
                     // Enable/Disable toggle
                     ConfigToggleItem {
@@ -228,7 +299,7 @@ PopupWindow {
                     ConfigToggleItem {
                         width: parent.width
                         label: "Icon"
-                        value: getConfigValue("showIcon", true) ? "💻" : "Hidden"
+                        value: getConfigValue("showIcon", true) ? "🎮" : "Hidden"
                         isActive: getConfigValue("showIcon", true)
                         onClicked: toggleConfig("showIcon")
                     }
@@ -237,151 +308,137 @@ PopupWindow {
                     ConfigToggleItem {
                         width: parent.width
                         label: "Label"
-                        value: getConfigValue("showLabel", false) ? "\"CPU\"" : "Hidden"
+                        value: getConfigValue("showLabel", false) ? "\"GPU\"" : "Hidden"
                         isActive: getConfigValue("showLabel", false)
                         onClicked: toggleConfig("showLabel")
                     }
                     
-                    // Percentage toggle
+                    // Precision
                     ConfigToggleItem {
                         width: parent.width
-                        label: "Percentage"
-                        value: getConfigValue("showPercentage", true) ? (currentUsage.toFixed(getConfigValue("precision", 1)) + "%") : "Hidden"
-                        isActive: getConfigValue("showPercentage", true)
-                        onClicked: toggleConfig("showPercentage")
-                    }
-                    
-                    // Frequency toggle
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Frequency"
-                        value: getConfigValue("showFrequency", false) ? (currentFrequency || "N/A") : "Hidden"
-                        isActive: getConfigValue("showFrequency", false)
-                        onClicked: toggleConfig("showFrequency")
-                    }
-                    
-                    // Temperature toggle
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Temperature"
-                        value: getConfigValue("showTemperature", false) ? (currentTemp > 0 ? Math.round(currentTemp) + "°C" : "--°C") : "Hidden"
-                        isActive: getConfigValue("showTemperature", false)
-                        onClicked: toggleConfig("showTemperature")
-                    }
-                    
-                    // Usage Precision (for percentage)
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Usage Precision"
-                        value: getConfigValue("usagePrecision", 1) + " decimal" + (getConfigValue("usagePrecision", 1) === 1 ? "" : "s")
-                        isActive: getConfigValue("showPercentage", true)
-                        onClicked: getConfigValue("showPercentage", true) ? cycleUsagePrecision() : undefined
-                    }
-                    
-                    // Temperature Precision (disabled - always 0 for integers)
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Temperature Precision"
-                        value: "0 decimals (integer only)"
-                        isActive: false
-                        onClicked: undefined // Disabled for integer-only metric
-                    }
-                    
-                    // Frequency Precision (disabled - always 0 for integers)  
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Frequency Precision"
-                        value: "0 decimals (integer only)"
-                        isActive: false
-                        onClicked: undefined // Disabled for integer-only metric
+                        label: "Precision"
+                        value: getConfigValue("precision", 1) + " decimal" + (getConfigValue("precision", 1) === 1 ? "" : "s")
+                        isActive: true
+                        onClicked: cyclePrecision()
                     }
                     
                     // Polling Rate Control
-                    PollingRateControl {
+                    GpuPollingRateControl {
                         width: parent.width
-                        monitorType: "cpu"
-                        systemMonitorService: cpuMenu.systemMonitorService
-                        configService: cpuMenu.configService
+                        gpuService: gpuMenu.gpuService
+                        configService: gpuMenu.configService
                     }
                 }
                 
-                // Temperature-specific section
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // GPU Processor Section
                 Column {
                     width: parent.width
                     spacing: 8
-                    visible: getConfigValue("showTemperature", false)
                     
-                    // Temperature section header
                     Text {
-                        text: "Temperature Monitor"
+                        text: "GPU Processor"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                         color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                     }
                     
-                    // Current temperature display
-                    Rectangle {
+                    // GPU Usage percentage
+                    ConfigToggleItem {
                         width: parent.width
-                        height: tempDisplay.implicitHeight + 16
-                        color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
-                        radius: 8
-                        border.width: 1
-                        border.color: {
-                            if (!temperatureService) return configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
-                            switch (currentTempStatus) {
-                                case "cool": return configService ? configService.getThemeProperty("colors", "success") || "#a6e3a1" : "#a6e3a1"
-                                case "warm": return configService ? configService.getThemeProperty("colors", "warning") || "#f9e2af" : "#f9e2af"
-                                case "hot": 
-                                case "critical": return configService ? configService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
-                                default: return configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
-                            }
-                        }
-                        
-                        Column {
-                            id: tempDisplay
-                            anchors.centerIn: parent
-                            spacing: 4
-                            
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: currentTemp > 0 ? Math.round(currentTemp) + "°C" : "--°C"
-                                font.family: "Inter"
-                                font.pixelSize: 18
-                                font.weight: Font.Bold
-                                color: {
-                                    switch (currentTempStatus) {
-                                        case "cool": return configService ? configService.getThemeProperty("colors", "success") || "#a6e3a1" : "#a6e3a1"
-                                        case "warm": return configService ? configService.getThemeProperty("colors", "warning") || "#f9e2af" : "#f9e2af"
-                                        case "hot":
-                                        case "critical": return configService ? configService.getThemeProperty("colors", "error") || "#f38ba8" : "#f38ba8"
-                                        default: return configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                                    }
-                                }
-                            }
-                            
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: {
-                                    switch (currentTempStatus) {
-                                        case "cool": return "Status: Cool"
-                                        case "warm": return "Status: Warm"
-                                        case "hot": return "Status: Hot"
-                                        case "critical": return "Status: Critical"
-                                        default: return "Status: Unknown"
-                                    }
-                                }
-                                font.family: "Inter"
-                                font.pixelSize: 11
-                                color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
-                            }
-                        }
+                        label: "Usage %"
+                        value: getConfigValue("showPercentage", true) ? (currentUsage.toFixed(getConfigValue("precision", 1)) + "%") : "Hidden"
+                        isActive: getConfigValue("showPercentage", true)
+                        onClicked: toggleConfig("showPercentage")
                     }
                     
-                    // Temperature polling rate control
-                    TemperaturePollingRateControl {
+                    // GPU Core Clock
+                    ConfigToggleItem {
                         width: parent.width
-                        temperatureService: cpuMenu.temperatureService
-                        configService: cpuMenu.configService
+                        label: "Core Clock"
+                        value: getConfigValue("showClocks", false) ? (currentClockSpeed > 0 ? currentClockSpeed.toFixed(0) + "MHz" : "N/A") : "Hidden"
+                        isActive: getConfigValue("showClocks", false)
+                        onClicked: toggleConfig("showClocks")
+                    }
+                    
+                    // GPU Temperature
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Temperature"
+                        value: getConfigValue("showTemperature", false) ? "39°C" : "Hidden"
+                        isActive: getConfigValue("showTemperature", false)
+                        onClicked: toggleConfig("showTemperature")
+                    }
+                    
+                    // GPU Voltage
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Voltage"
+                        value: getConfigValue("showVoltage", false) ? "1237mV" : "Hidden"
+                        isActive: getConfigValue("showVoltage", false)
+                        onClicked: toggleConfig("showVoltage")
+                    }
+                    
+                    // GPU Power
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Power"
+                        value: getConfigValue("showPower", false) ? "15W" : "Hidden"
+                        isActive: getConfigValue("showPower", false)
+                        onClicked: toggleConfig("showPower")
+                    }
+                }
+                
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // VRAM Section
+                Column {
+                    width: parent.width
+                    spacing: 8
+                    
+                    Text {
+                        text: "VRAM (Memory)"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    }
+                    
+                    // VRAM Usage in GB
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Usage (GB)"
+                        value: getConfigValue("showMemory", false) ? ((currentMemoryUsed / (1024 * 1024 * 1024)).toFixed(1) + "GB/" + (currentMemoryTotal / (1024 * 1024 * 1024)).toFixed(1) + "GB") : "Hidden"
+                        isActive: getConfigValue("showMemory", false)
+                        onClicked: toggleConfig("showMemory")
+                    }
+                    
+                    // VRAM Usage percentage
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Usage %"
+                        value: getConfigValue("showMemoryPercent", false) ? (currentMemoryUsage.toFixed(1) + "%") : "Hidden"
+                        isActive: getConfigValue("showMemoryPercent", false)
+                        onClicked: toggleConfig("showMemoryPercent")
+                    }
+                    
+                    // VRAM Clock
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Memory Clock"
+                        value: getConfigValue("showMemoryClock", false) ? "1333MHz" : "Hidden"
+                        isActive: getConfigValue("showMemoryClock", false)
+                        onClicked: toggleConfig("showMemoryClock")
                     }
                 }
                 
@@ -472,52 +529,87 @@ PopupWindow {
         }
     }
     
+    // GpuPollingRateControl Component
+    component GpuPollingRateControl: Column {
+        property var gpuService: null
+        property var configService: null
+        
+        width: parent.width
+        spacing: 8
+        
+        Text {
+            text: "GPU Polling Rate"
+            font.pixelSize: 12
+            font.weight: Font.DemiBold
+            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+        }
+        
+        Row {
+            width: parent.width
+            spacing: 8
+            
+            Repeater {
+                model: [0.5, 1.0, 2.0, 5.0]
+                
+                Rectangle {
+                    width: 45
+                    height: 24
+                    radius: 4
+                    color: {
+                        const isSelected = gpuService && Math.abs(gpuService.getPollingRate() - modelData) < 0.01
+                        if (isSelected) {
+                            return configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                        }
+                        return rateMouse.containsMouse ? 
+                               (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a") : 
+                               "transparent"
+                    }
+                    border.width: 1
+                    border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData + "s"
+                        font.pixelSize: 9
+                        color: {
+                            const isSelected = gpuService && Math.abs(gpuService.getPollingRate() - modelData) < 0.01
+                            if (isSelected) {
+                                return configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
+                            }
+                            return configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                        }
+                    }
+                    
+                    MouseArea {
+                        id: rateMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (gpuService) {
+                                gpuService.setPollingRate(modelData)
+                            }
+                        }
+                    }
+                    
+                    Behavior on color {
+                        ColorAnimation { duration: 150 }
+                    }
+                }
+            }
+        }
+    }
+    
     // Helper functions
     function getConfigValue(key, defaultValue) {
         if (!configService) return defaultValue
-        
-        // Special handling for showTemperature to match widget logic
-        if (key === "showTemperature") {
-            const entityKey = "entities.cpuWidget.showTemperature"
-            const entityValue = configService.getValue(entityKey, undefined)
-            if (entityValue !== undefined) {
-                return entityValue
-            }
-            return configService.getValue("cpu.showTemperature", false)
-        }
-        
-        // Per-metric precision settings use entity properties
-        if (key.includes("Precision")) {
-            return configService.getEntityProperty("cpuWidget", key, defaultValue)
-        }
-        
-        return configService.getValue("cpu." + key, defaultValue)
+        return configService.getValue("gpu." + key, defaultValue)
     }
     
     function toggleConfig(key) {
         if (!configService) return
         
-        // Special handling for showTemperature to match widget logic
-        if (key === "showTemperature") {
-            const entityKey = "entities.cpuWidget.showTemperature"
-            const entityValue = configService.getValue(entityKey, undefined)
-            
-            if (entityValue !== undefined) {
-                // Toggle entity-specific value
-                const newValue = !entityValue
-                configService.setValue(entityKey, newValue)
-            } else {
-                // Toggle cpu.showTemperature value
-                const currentValue = configService.getValue("cpu.showTemperature", false)
-                const newValue = !currentValue
-                configService.setValue("cpu.showTemperature", newValue)
-            }
-            
-            configService.saveConfig()
-            return
-        }
-        
-        const configKey = "cpu." + key
+        const configKey = "gpu." + key
         const currentValue = configService.getValue(configKey, key === "showLabel" ? false : true)
         const newValue = !currentValue
         
@@ -525,10 +617,10 @@ PopupWindow {
         configService.saveConfig()
     }
     
-    function cycleUsagePrecision() {
+    function cyclePrecision() {
         if (!configService) return
         
-        const configKey = "entities.cpuWidget.usagePrecision"
+        const configKey = "gpu.precision"
         const currentPrecision = configService.getValue(configKey, 1)
         const newPrecision = (currentPrecision + 1) % 4
         
@@ -539,23 +631,27 @@ PopupWindow {
     function generateDisplayPreview() {
         let parts = []
         
-        if (getConfigValue("showIcon", true)) parts.push("💻")
-        if (getConfigValue("showLabel", false)) parts.push("CPU")
+        if (getConfigValue("showIcon", true)) {
+            parts.push("🎮")  // Generic GPU icon
+        }
+        if (getConfigValue("showLabel", false)) parts.push("GPU")
         
-        let cpuParts = []
+        let gpuParts = []
         if (getConfigValue("showPercentage", true)) {
-            cpuParts.push(currentUsage.toFixed(getConfigValue("usagePrecision", 1)) + "%")
+            gpuParts.push(currentUsage.toFixed(getConfigValue("precision", 1)) + "%")
         } else {
-            cpuParts.push(currentUsage.toFixed(getConfigValue("usagePrecision", 1)))
+            gpuParts.push(currentUsage.toFixed(getConfigValue("precision", 1)))
         }
-        if (getConfigValue("showFrequency", false) && currentFrequency) {
-            cpuParts.push(currentFrequency)
+        if (getConfigValue("showMemory", false) && currentMemoryTotal > 0) {
+            const memoryUsedGB = (currentMemoryUsed / (1024 * 1024 * 1024)).toFixed(1)
+            const memoryTotalGB = (currentMemoryTotal / (1024 * 1024 * 1024)).toFixed(1)
+            gpuParts.push(memoryUsedGB + "GB/" + memoryTotalGB + "GB")
         }
-        if (getConfigValue("showTemperature", false) && currentTemp > 0) {
-            cpuParts.push(Math.round(currentTemp) + "°C")  // Always 0 decimals for temperature
+        if (getConfigValue("showClocks", false) && currentClockSpeed > 0) {
+            gpuParts.push(currentClockSpeed.toFixed(0) + "MHz")
         }
-        if (cpuParts.length > 0) {
-            parts.push(cpuParts.join(" | "))
+        if (gpuParts.length > 0) {
+            parts.push(gpuParts.join(" | "))
         }
         
         return parts.length > 0 ? parts.join(" ") : "No display configured"
@@ -591,11 +687,14 @@ PopupWindow {
     }
     
     // Update live data
-    function updateData(usage, frequency, temp, tempStatus) {
+    function updateData(usage, memoryUsage, clockSpeed, gpuName, vendor, memoryUsed, memoryTotal) {
         currentUsage = usage || 0.0
-        currentFrequency = frequency || ""
-        currentTemp = temp || 0.0
-        currentTempStatus = tempStatus || "cool"
+        currentMemoryUsage = memoryUsage || 0.0
+        currentMemoryUsed = memoryUsed || 0.0
+        currentMemoryTotal = memoryTotal || 0.0
+        currentClockSpeed = clockSpeed || 0.0
+        currentGpuName = gpuName || "Unknown"
+        currentVendor = vendor || "unknown"
     }
     
     // Navigation functions
@@ -604,7 +703,7 @@ PopupWindow {
         
         const parentComponent = ComponentRegistry.getComponent(parentComponentId)
         if (parentComponent && typeof parentComponent.menu === 'function') {
-            console.log(`[CpuContextMenu] Navigating to parent: ${parentComponentId}`)
+            console.log(`[GpuContextMenu] Navigating to parent: ${parentComponentId}`)
             
             // Hide this menu first
             hide()
@@ -613,7 +712,7 @@ PopupWindow {
             const currentAnchor = anchor
             parentComponent.menu(currentAnchor.window, currentAnchor.rect.x, currentAnchor.rect.y)
         } else {
-            console.warn(`[CpuContextMenu] Parent component ${parentComponentId} not found or doesn't support menu()`)
+            console.warn(`[GpuContextMenu] Parent component ${parentComponentId} not found or doesn't support menu()`)
         }
     }
     
@@ -622,7 +721,7 @@ PopupWindow {
         
         const childComponent = ComponentRegistry.getComponent(childId)
         if (childComponent && typeof childComponent.menu === 'function') {
-            console.log(`[CpuContextMenu] Navigating to child: ${childId}`)
+            console.log(`[GpuContextMenu] Navigating to child: ${childId}`)
             
             // Hide this menu first
             hide()
@@ -631,7 +730,7 @@ PopupWindow {
             const currentAnchor = anchor
             childComponent.menu(currentAnchor.window, currentAnchor.rect.x, currentAnchor.rect.y)
         } else {
-            console.warn(`[CpuContextMenu] Child component ${childId} not found or doesn't support menu()`)
+            console.warn(`[GpuContextMenu] Child component ${childId} not found or doesn't support menu()`)
         }
     }
 }

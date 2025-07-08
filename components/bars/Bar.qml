@@ -1,7 +1,6 @@
 import Quickshell
 import Quickshell.Hyprland
 import QtQuick
-import "../monitors"
 import "../widgets"
 import "../base"
 import "../../services"
@@ -22,10 +21,13 @@ PanelWindow {
     property var wallpaperService: null
     property var widgetRegistry: null
     
+    // Entity ID for configuration
+    property string entityId: "barWidget"
+    
     // GraphicalComponent interface implementation
     property string componentId: "bar"
     property string parentComponentId: ""
-    property var childComponentIds: ["cpu", "ram", "storage", "clock", "workspaces"]
+    property var childComponentIds: ["cpu", "ram", "storage", "gpu", "clock", "workspaces"]
     property string menuPath: "bar"
     
     // Panel configuration - position determined by config
@@ -55,7 +57,7 @@ PanelWindow {
     Item {
         anchors.fill: parent
         anchors.margins: {
-            const baseMargin = configService ? configService.scaledMarginNormal() : 8
+            const baseMargin = configService ? configService.spacing("md", entityId) : 8
             const parentHeight = parent.height || 0
             // Only apply margins if parent has sufficient height
             return parentHeight > baseMargin * 2 ? baseMargin : Math.max(0, parentHeight / 4)
@@ -65,8 +67,8 @@ PanelWindow {
         Rectangle {
             id: leftSection
             // Dynamic sizing based on content like other widgets
-            implicitWidth: gearIcon.implicitWidth + (configService ? configService.marginNormal() : 8)
-            implicitHeight: gearIcon.implicitHeight + (configService ? configService.scaledMarginSmall() : 4)
+            implicitWidth: gearIcon.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8)
+            implicitHeight: gearIcon.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4)
             color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
             radius: configService ? configService.borderRadius : 8
             border.width: 1
@@ -83,7 +85,7 @@ PanelWindow {
                 anchors.centerIn: parent
                 text: "⚙"  // Settings gear icon as placeholder
                 color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
-                font.pixelSize: configService ? configService.scaledFontLarge() : 14
+                font.pixelSize: configService ? configService.typography(configService.getEntityProperty(entityId, "fontSize", "md"), entityId) : 14
             }
             
             MouseArea {
@@ -116,8 +118,8 @@ PanelWindow {
         Rectangle {
             id: centerSection
             // Dynamic sizing based on workspace content like other widgets
-            implicitWidth: workspaceRow.implicitWidth + (configService ? configService.marginNormal() : 8)
-            implicitHeight: workspaceRow.implicitHeight + (configService ? configService.scaledMarginSmall() : 4)
+            implicitWidth: workspaceRow.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8)
+            implicitHeight: workspaceRow.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4)
             color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
             radius: configService ? configService.borderRadius : 8
             border.width: 1
@@ -131,7 +133,7 @@ PanelWindow {
             
             anchors {
                 left: leftSection.right
-                leftMargin: configService ? configService.scaledMarginLarge() : 12
+                leftMargin: configService ? configService.spacing("lg", entityId) : 12
                 verticalCenter: parent.verticalCenter
             }
             
@@ -144,14 +146,17 @@ PanelWindow {
                     if (!configService) return 4
                     const spacingMode = configService.getValue("workspaces.workspaceSpacing", "normal")
                     return spacingMode === "tight" ? (configService ? configService.marginTiny() : 2) : 
-                           spacingMode === "loose" ? (configService ? configService.scaledMarginNormal() : 8) : 
-                           (configService ? configService.scaledMarginSmall() : 4)
+                           spacingMode === "loose" ? (configService ? configService.spacing("md", entityId) : 8) : 
+                           (configService ? configService.spacing("xs", entityId) : 4)
                 }
                 
                 Repeater {
                     model: Hyprland.workspaces
                     
                     Rectangle {
+                        // Entity ID for workspaces configuration
+                        property string workspaceEntityId: "workspacesWidget"
+                        
                         // Config-dependent properties - direct bindings like performance monitors
                         property string workspaceSizeMode: configService ? configService.getValue("workspaces.workspaceSize", "medium") : "medium"
                         property string workspaceRadiusMode: configService ? configService.getValue("workspaces.cornerRadius", "medium") : "medium"
@@ -290,9 +295,7 @@ PanelWindow {
                                            (configService ? configService.getThemeProperty("colors", "onPrimary") || "#1e1e2e" : "#1e1e2e") :
                                            (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
                                     font.family: "Inter"
-                                    font.pixelSize: parent.parent.parent.workspaceSizeMode === "small" ? (configService ? configService.fontSmall() : 9) : 
-                                                    parent.parent.parent.workspaceSizeMode === "large" ? (configService ? configService.scaledFontLarge() : 14) : 
-                                                    (configService ? configService.fontNormal() : 10)
+                                    font.pixelSize: configService ? configService.typography(configService.getEntityProperty(parent.parent.parent.workspaceEntityId, "fontSize", "xs"), parent.parent.parent.workspaceEntityId) : 10
                                     font.weight: modelData && modelData.focused ? Font.DemiBold : Font.Medium
                                 }
                                 
@@ -337,9 +340,7 @@ PanelWindow {
                                         model: parent.iconData
                                         
                                         Item {
-                                            width: parent.parent.parent.parent.workspaceSizeMode === "small" ? (configService ? configService.scaled(12) : 12) : 
-                                                   parent.parent.parent.parent.workspaceSizeMode === "large" ? (configService ? configService.scaled(18) : 18) : 
-                                                   (configService ? configService.scaled(14) : 14)
+                                            width: configService ? configService.icon(configService.getEntityProperty(parent.parent.parent.parent.workspaceEntityId, "iconSize", "sm"), parent.parent.parent.parent.workspaceEntityId) : 14
                                             height: width
                                             
                                             // Show either image or emoji based on icon type
@@ -523,20 +524,20 @@ PanelWindow {
         // Individual monitoring widgets section
         Row {
             id: monitoringSection
-            spacing: configService ? configService.scaledMarginSmall() : 4
+            spacing: configService ? configService.spacing("xs", entityId) : 4
             visible: cpuMonitor.visible || ramMonitor.visible || storageMonitor.visible
             
             anchors {
                 right: rightSection.left
-                rightMargin: visible ? configService ? configService.scaledMarginSmall() : 4 : 0
+                rightMargin: visible ? configService ? configService.spacing("xs", entityId) : 4 : 0
                 verticalCenter: parent.verticalCenter
             }
             
             // CPU Monitor
             Rectangle {
                 id: cpuContainer
-                implicitWidth: cpuMonitor.visible ? cpuMonitor.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-                implicitHeight: cpuMonitor.visible ? cpuMonitor.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                implicitWidth: cpuMonitor.visible ? cpuMonitor.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: cpuMonitor.visible ? cpuMonitor.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
                 color: cpuMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: cpuMonitor.visible ? 1 : 0
@@ -561,15 +562,14 @@ PanelWindow {
                     showLabel: configService ? configService.getValue("cpu.showLabel", false) : false
                     showPercentage: configService ? configService.getValue("cpu.showPercentage", true) : true
                     showFrequency: configService ? configService.getValue("cpu.showFrequency", false) : false
-                    precisionDigits: configService ? configService.getValue("cpu.precision", 1) : 1
                 }
             }
             
             // RAM Monitor
             Rectangle {
                 id: ramContainer
-                implicitWidth: ramMonitor.visible ? ramMonitor.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-                implicitHeight: ramMonitor.visible ? ramMonitor.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                implicitWidth: ramMonitor.visible ? ramMonitor.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: ramMonitor.visible ? ramMonitor.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
                 color: ramMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: ramMonitor.visible ? 1 : 0
@@ -595,15 +595,14 @@ PanelWindow {
                     showPercentage: configService ? configService.getValue("ram.showPercentage", true) : true
                     showFrequency: configService ? configService.getValue("ram.showFrequency", false) : false
                     showTotal: configService ? configService.getValue("ram.showTotal", true) : true
-                    precisionDigits: configService ? configService.getValue("ram.precision", 0) : 0
                 }
             }
             
             // Storage Monitor
             Rectangle {
                 id: storageContainer
-                implicitWidth: storageMonitor.visible ? storageMonitor.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-                implicitHeight: storageMonitor.visible ? storageMonitor.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                implicitWidth: storageMonitor.visible ? storageMonitor.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: storageMonitor.visible ? storageMonitor.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
                 color: storageMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: storageMonitor.visible ? 1 : 0
@@ -628,7 +627,38 @@ PanelWindow {
                     showLabel: configService ? configService.getValue("storage.showLabel", false) : false
                     showPercentage: configService ? configService.getValue("storage.showPercentage", true) : true
                     showBytes: configService ? configService.getValue("storage.showBytes", false) : false
-                    precisionDigits: configService ? configService.getValue("storage.precision", 0) : 0
+                }
+            }
+            
+            // GPU Monitor
+            Rectangle {
+                id: gpuContainer
+                implicitWidth: gpuMonitor.visible ? gpuMonitor.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: gpuMonitor.visible ? gpuMonitor.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: gpuMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: gpuMonitor.visible ? 1 : 0
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: gpuMonitor.visible
+                
+                GpuMonitor {
+                    id: gpuMonitor
+                    anchors.centerIn: parent
+                    visible: configService ? configService.getValue("gpu.enabled", true) : true
+                    
+                    // Services
+                    systemMonitorService: bar.systemMonitorService
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration
+                    displayMode: "compact"
+                    showIcon: configService ? configService.getValue("gpu.showIcon", true) : true
+                    showText: true
+                    showLabel: configService ? configService.getValue("gpu.showLabel", false) : false
+                    showPercentage: configService ? configService.getValue("gpu.showPercentage", true) : true
+                    showMemory: configService ? configService.getValue("gpu.showMemory", false) : false
+                    showClocks: configService ? configService.getValue("gpu.showClocks", false) : false
                 }
             }
         }
@@ -636,20 +666,20 @@ PanelWindow {
         // Widget section - Audio, Brightness, Temperature, and Battery controls
         Row {
             id: widgetSection
-            spacing: configService ? configService.scaledMarginSmall() : 4
+            spacing: configService ? configService.spacing("xs", entityId) : 4
             visible: audioWidget.visible || brightnessWidget.visible || cpuTempWidget.visible || gpuTempWidget.visible || batteryWidget.visible
             
             anchors {
                 right: monitoringSection.left
-                rightMargin: visible ? configService ? configService.scaledMarginSmall() : 4 : 0
+                rightMargin: visible ? configService ? configService.spacing("xs", entityId) : 4 : 0
                 verticalCenter: parent.verticalCenter
             }
             
             // Audio Widget
             Rectangle {
                 id: audioContainer
-                implicitWidth: audioWidget.visible ? audioWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-                implicitHeight: audioWidget.visible ? audioWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                implicitWidth: audioWidget.visible ? audioWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: audioWidget.visible ? audioWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
                 color: audioWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: audioWidget.visible ? 1 : 0
@@ -676,8 +706,8 @@ PanelWindow {
             // Brightness Widget
             Rectangle {
                 id: brightnessContainer
-                implicitWidth: brightnessWidget.visible ? brightnessWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-                implicitHeight: brightnessWidget.visible ? brightnessWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                implicitWidth: brightnessWidget.visible ? brightnessWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: brightnessWidget.visible ? brightnessWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
                 color: brightnessWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: brightnessWidget.visible ? 1 : 0
@@ -701,67 +731,13 @@ PanelWindow {
                 }
             }
             
-            // CPU Temperature Widget
-            Rectangle {
-                id: cpuTempContainer
-                implicitWidth: cpuTempWidget.visible ? cpuTempWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-                implicitHeight: cpuTempWidget.visible ? cpuTempWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
-                radius: configService ? configService.borderRadius : 8
-                color: cpuTempWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
-                border.width: cpuTempWidget.visible ? 1 : 0
-                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
-                visible: cpuTempWidget.visible
-                
-                CpuTempWidget {
-                    id: cpuTempWidget
-                    anchors.centerIn: parent
-                    visible: configService ? configService.getValue("cpu_temp.enabled", true) : true
-                    
-                    // Services
-                    // themeService removed - now integrated into configService
-                    configService: bar.configService
-                    anchorWindow: bar
-                    
-                    // Display configuration
-                    showIcon: configService ? configService.getValue("cpu_temp.showIcon", true) : true
-                    showValue: configService ? configService.getValue("cpu_temp.showValue", true) : true
-                    showUnit: configService ? configService.getValue("cpu_temp.showUnit", true) : true
-                }
-            }
             
-            // GPU Temperature Widget
-            Rectangle {
-                id: gpuTempContainer
-                implicitWidth: gpuTempWidget.visible ? gpuTempWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-                implicitHeight: gpuTempWidget.visible ? gpuTempWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
-                radius: configService ? configService.borderRadius : 8
-                color: gpuTempWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
-                border.width: gpuTempWidget.visible ? 1 : 0
-                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
-                visible: gpuTempWidget.visible
-                
-                GpuTempWidget {
-                    id: gpuTempWidget
-                    anchors.centerIn: parent
-                    visible: configService ? configService.getValue("gpu_temp.enabled", true) : true
-                    
-                    // Services
-                    // themeService removed - now integrated into configService
-                    configService: bar.configService
-                    anchorWindow: bar
-                    
-                    // Display configuration
-                    showIcon: configService ? configService.getValue("gpu_temp.showIcon", true) : true
-                    showValue: configService ? configService.getValue("gpu_temp.showValue", true) : true
-                    showUnit: configService ? configService.getValue("gpu_temp.showUnit", true) : true
-                }
-            }
             
             // Battery Widget
             Rectangle {
                 id: batteryContainer
-                implicitWidth: batteryWidget.visible ? batteryWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-                implicitHeight: batteryWidget.visible ? batteryWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+                implicitWidth: batteryWidget.visible ? batteryWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: batteryWidget.visible ? batteryWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
                 color: batteryWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
                 border.width: batteryWidget.visible ? 1 : 0
@@ -790,8 +766,8 @@ PanelWindow {
         Rectangle {
             id: rightSection
             // Use same dynamic sizing pattern as other widgets
-            implicitWidth: clockWidget.implicitWidth + (configService ? configService.marginNormal() : 8)
-            implicitHeight: clockWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4)
+            implicitWidth: clockWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8)
+            implicitHeight: clockWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4)
             color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
             radius: configService ? configService.borderRadius : 8
             border.width: 1
@@ -799,7 +775,7 @@ PanelWindow {
             
             anchors {
                 right: systraySection.visible ? systraySection.left : powerSection.left
-                rightMargin: configService ? configService.marginNormal() : 8
+                rightMargin: configService ? configService.spacing("md", entityId) : 8
                 verticalCenter: parent.verticalCenter
             }
             
@@ -814,8 +790,8 @@ PanelWindow {
         // System Tray section - Between clock and power button
         Rectangle {
             id: systraySection
-            implicitWidth: systrayWidget.visible ? systrayWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-            implicitHeight: systrayWidget.visible ? systrayWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+            implicitWidth: systrayWidget.visible ? systrayWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+            implicitHeight: systrayWidget.visible ? systrayWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
             radius: configService ? configService.borderRadius : 8
             color: systrayWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
             border.width: systrayWidget.visible ? 1 : 0
@@ -824,7 +800,7 @@ PanelWindow {
             
             anchors {
                 right: powerSection.left
-                rightMargin: visible ? configService ? configService.marginNormal() : 8 : 0
+                rightMargin: visible ? configService ? configService.spacing("md", entityId) : 8 : 0
                 verticalCenter: parent.verticalCenter
             }
             
@@ -870,8 +846,8 @@ PanelWindow {
         // Power section - Far right power button
         Rectangle {
             id: powerSection
-            implicitWidth: powerSectionWidget.visible ? powerSectionWidget.implicitWidth + (configService ? configService.marginNormal() : 8) : 0
-            implicitHeight: powerSectionWidget.visible ? powerSectionWidget.implicitHeight + (configService ? configService.scaledMarginSmall() : 4) : 0
+            implicitWidth: powerSectionWidget.visible ? powerSectionWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+            implicitHeight: powerSectionWidget.visible ? powerSectionWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
             radius: configService ? configService.borderRadius : 8
             color: powerSectionWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
             border.width: powerSectionWidget.visible ? 1 : 0
@@ -927,8 +903,8 @@ PanelWindow {
             
             Column {
                 anchors.fill: parent
-                anchors.margins: configService ? configService.scaledMarginNormal() : 8
-                spacing: configService ? configService.scaledMarginSmall() : 4
+                anchors.margins: configService ? configService.spacing("md", entityId) : 8
+                spacing: configService ? configService.spacing("xs", entityId) : 4
                 
                 Text {
                     text: "Quick Settings"
@@ -958,7 +934,7 @@ PanelWindow {
                         text: "🌓 Toggle Mode"
                         color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         font.family: "Inter"
-                        font.pixelSize: configService ? configService.fontNormal() : 10
+                        font.pixelSize: configService ? configService.typography("sm", entityId) : 10
                     }
                     
                     MouseArea {
@@ -996,7 +972,7 @@ PanelWindow {
                         text: "🎨 Theme Settings"
                         color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         font.family: "Inter"
-                        font.pixelSize: configService ? configService.fontNormal() : 10
+                        font.pixelSize: configService ? configService.typography("sm", entityId) : 10
                     }
                     
                     MouseArea {

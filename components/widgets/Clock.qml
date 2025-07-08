@@ -10,20 +10,25 @@ Rectangle {
     property var configService: ConfigService
     property var anchorWindow: null  // Should be set to the PanelWindow (bar)
     
+    // Entity ID for configuration
+    property string entityId: "clockWidget"
+    
     // GraphicalComponent interface implementation
     property string componentId: "clock"
     property string parentComponentId: "system"
     property var childComponentIds: []
     property string menuPath: "system.clock"
     
-    implicitWidth: clockText.implicitWidth + (configService ? configService.scaled(12) : 12)
-    implicitHeight: configService ? configService.getWidgetHeight("clock", clockText.implicitHeight) : clockText.implicitHeight
+    implicitWidth: clockText.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12)
+    implicitHeight: configService ? configService.getWidgetHeight(entityId, clockText.implicitHeight) : clockText.implicitHeight
     
-    color: "transparent"
+    color: configService ? configService.getEntityStyle(entityId, "backgroundColor", "auto", "transparent") : "transparent"
     
     // Current time properties
-    property string separator: configService ? configService.getValue("widgets.clock.separator", "|") : "|"
-    property bool showDate: configService ? configService.getValue("widgets.clock.showDate", true) : true
+    property string separator: configService ? configService.getEntityProperty(entityId, "separator", "|") : "|"
+    property bool showDate: configService ? configService.getEntityProperty(entityId, "showDate", true) : true
+    property string timeFormat: configService ? configService.getEntityProperty(entityId, "timeFormat", "HH:mm") : "HH:mm"
+    property string dateFormat: configService ? configService.getEntityProperty(entityId, "dateFormat", "yyyy-MM-dd") : "yyyy-MM-dd"
     
     // System clock for proper time handling
     SystemClock {
@@ -35,10 +40,16 @@ Rectangle {
     Text {
         id: clockText
         anchors.centerIn: parent
-        text: showDate ? (Qt.formatDateTime(systemClock.date, "HH:mm") + " " + separator + " " + Qt.formatDateTime(systemClock.date, "yyyy-MM-dd")) : Qt.formatDateTime(systemClock.date, "HH:mm")
-        font.pixelSize: configService ? configService.scaledFontNormal() : 10
+        text: {
+            if (showDate) {
+                return Qt.formatDateTime(systemClock.date, timeFormat) + " " + separator + " " + Qt.formatDateTime(systemClock.date, dateFormat)
+            } else {
+                return Qt.formatDateTime(systemClock.date, timeFormat)
+            }
+        }
+        font.pixelSize: configService ? configService.typography("xs", entityId) : 9
         font.weight: Font.Medium
-        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+        color: configService ? configService.getEntityStyle(entityId, "textColor", "auto", configService.getThemeProperty("colors", "text") || "#cdd6f4") : "#cdd6f4"
     }
     
     // Clock menu interaction

@@ -4,14 +4,17 @@ import "../overlays"
 import "../base"
 
 Rectangle {
-    id: cpuMonitor
+    id: gpuMonitor
+    
+    // Entity ID for configuration
+    property string entityId: "gpuWidget"
     
     // GraphicalComponent interface implementation
-    property string componentId: "cpu"
+    property string componentId: "gpu"
     property string parentComponentId: "bar"
     property var childComponentIds: []
-    property string menuPath: "cpu"
-    property string contextMenuPath: "../overlays/CpuContextMenu.qml"
+    property string menuPath: "gpu"
+    property string contextMenuPath: "../overlays/GpuContextMenu.qml"
     
     // Services
     property var systemMonitorService: null
@@ -27,8 +30,8 @@ Rectangle {
         active: false
         
         onLoaded: {
-            item.configService = cpuMonitor.configService
-            item.systemMonitorService = cpuMonitor.systemMonitorService
+            item.configService = gpuMonitor.configService
+            item.gpuService = GpuService
             
             item.closed.connect(function() {
                 contextMenuLoader.active = false
@@ -37,32 +40,40 @@ Rectangle {
     }
     
     // Display configuration
-    property bool showIcon: true
-    property bool showText: true
-    property bool showPercentage: true
-    property bool showLabel: true  // Show "CPU" text label
-    property bool showFrequency: false  // Show CPU frequency
-    property string displayMode: "compact" // "compact", "detailed", "minimal"
-    property int precisionDigits: 0  // Decimal precision for CPU percentage
+    property bool showIcon: configService ? configService.getEntityProperty(entityId, "showIcon", true) : true
+    property bool showText: configService ? configService.getEntityProperty(entityId, "showText", true) : true
+    property bool showPercentage: configService ? configService.getEntityProperty(entityId, "showPercentage", true) : true
+    property bool showLabel: configService ? configService.getEntityProperty(entityId, "showLabel", true) : true
+    property bool showMemory: configService ? configService.getEntityProperty(entityId, "showMemory", false) : false
+    property bool showClocks: configService ? configService.getEntityProperty(entityId, "showClocks", false) : false
+    property string displayMode: configService ? configService.getEntityProperty(entityId, "displayMode", "compact") : "compact"
+    // Per-metric precision settings
+    property int usagePrecision: configService ? configService.getEntityProperty(entityId, "usagePrecision", 1) : 1
+    property int memoryPrecision: configService ? configService.getEntityProperty(entityId, "memoryPrecision", 1) : 1
+    property int clockPrecision: configService ? configService.getEntityProperty(entityId, "clockPrecision", 0) : 0
     
-    // Current CPU data - delegate to service
-    property real cpuUsage: CpuService.usage
-    property string cpuDisplay: CpuService.usage.toFixed(precisionDigits) + "%"
-    property string cpuFrequencyDisplay: CpuService.frequencyDisplay
-    property var cpuCores: CpuService.cores
+    // Current GPU data - delegate to service
+    property real gpuUsage: GpuService.usage
+    property string gpuDisplay: GpuService.usage.toFixed(usagePrecision) + "%"
+    property real memoryUsage: GpuService.memoryUsage
+    property string memoryDisplay: (GpuService.memoryUsed / (1024 * 1024 * 1024)).toFixed(memoryPrecision) + "GB/" + (GpuService.memoryTotal / (1024 * 1024 * 1024)).toFixed(memoryPrecision) + "GB"
+    property real clockSpeed: GpuService.clockSpeed
+    property string clockDisplay: GpuService.clockSpeed > 0 ? GpuService.clockSpeed.toFixed(clockPrecision) + "MHz" : "--"
+    property string gpuName: GpuService.gpuName
+    property string vendor: GpuService.vendor
     
     // Visual configuration
-    implicitWidth: contentRow.implicitWidth + (configService ? configService.scaled(12) : 12)
-    implicitHeight: contentRow.implicitHeight
-    radius: configService ? configService.scaled(4) : 4
+    implicitWidth: contentRow.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12)
+    implicitHeight: configService ? configService.getWidgetHeight(entityId, contentRow.implicitHeight) : contentRow.implicitHeight
+    radius: configService ? configService.getEntityStyle(entityId, "borderRadius", "auto", configService.scaled(4)) : 4
     
-    // Dynamic background color based on CPU usage
+    // Dynamic background color based on GPU usage
     color: {
         if (!configService) return "#313244"
         
-        if (cpuUsage > 80) {
+        if (gpuUsage > 80) {
             return configService.getThemeProperty("colors", "error") || "#f38ba8"
-        } else if (cpuUsage > 60) {
+        } else if (gpuUsage > 60) {
             return configService.getThemeProperty("colors", "warning") || "#f9e2af"
         } else {
             return configService.getThemeProperty("colors", "surface") || "#313244"
@@ -78,46 +89,52 @@ Rectangle {
     Row {
         id: contentRow
         anchors.centerIn: parent
-        spacing: configService ? configService.scaled(4) : 4
+        spacing: configService ? configService.spacing("xs", entityId) : 4
         
-        // CPU icon
+        // GPU icon
         Text {
             visible: showIcon
             anchors.verticalCenter: parent.verticalCenter
-            text: "🖥️"  // Computer/processor icon
+            text: "🎮"  // Generic GPU icon
             color: {
                 if (!configService) return "#cdd6f4"
                 
-                // Dynamic icon color based on usage
-                if (cpuUsage > 80) {
+                // Dynamic icon color based on background for proper contrast
+                if (gpuUsage > 80) {
+                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
+                } else if (gpuUsage > 60) {
                     return configService.getThemeProperty("colors", "background") || "#1e1e2e"
                 } else {
                     return configService.getThemeProperty("colors", "text") || "#cdd6f4"
                 }
             }
             font.family: "Inter"
-            font.pixelSize: configService ? configService.scaledFontNormal() : 10
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 9
         }
         
-        // CPU usage text
+        // GPU usage text
         Text {
             visible: showText && displayMode !== "minimal"
             anchors.verticalCenter: parent.verticalCenter
             text: {
                 let parts = []
-                let labelText = showLabel ? "CPU " : ""
+                let labelText = showLabel ? "GPU " : ""
                 
                 if (labelText) parts.push(labelText.trim())
                 
                 let dataParts = []
                 if (showPercentage) {
-                    dataParts.push(cpuUsage.toFixed(precisionDigits) + "%")
+                    dataParts.push(gpuUsage.toFixed(usagePrecision) + "%")
                 } else {
-                    dataParts.push(cpuUsage.toFixed(precisionDigits))
+                    dataParts.push(gpuUsage.toFixed(usagePrecision))
                 }
                 
-                if (showFrequency && cpuFrequencyDisplay) {
-                    dataParts.push(cpuFrequencyDisplay)
+                if (showMemory && memoryUsage > 0) {
+                    dataParts.push(memoryDisplay)
+                }
+                
+                if (showClocks && clockSpeed > 0) {
+                    dataParts.push(clockDisplay)
                 }
                 
                 if (dataParts.length > 0) {
@@ -129,16 +146,18 @@ Rectangle {
             color: {
                 if (!configService) return "#cdd6f4"
                 
-                // Dynamic text color based on usage
-                if (cpuUsage > 80) {
+                // Dynamic text color based on background for proper contrast
+                if (gpuUsage > 80) {
+                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
+                } else if (gpuUsage > 60) {
                     return configService.getThemeProperty("colors", "background") || "#1e1e2e"
                 } else {
                     return configService.getThemeProperty("colors", "text") || "#cdd6f4"
                 }
             }
             font.family: "Inter"
-            font.pixelSize: configService ? configService.scaledFontSmall() : 9
-            font.weight: cpuUsage > 70 ? Font.DemiBold : Font.Medium
+            font.pixelSize: configService ? configService.typography("sm", entityId) : 11
+            font.weight: gpuUsage > 70 ? Font.DemiBold : Font.Medium
         }
     }
     
@@ -154,9 +173,9 @@ Rectangle {
         color: {
             if (!configService) return "#89b4fa"
             
-            if (cpuUsage > 80) {
+            if (gpuUsage > 80) {
                 return configService.getThemeProperty("colors", "error") || "#f38ba8"
-            } else if (cpuUsage > 60) {
+            } else if (gpuUsage > 60) {
                 return configService.getThemeProperty("colors", "warning") || "#f9e2af"
             } else {
                 return configService.getThemeProperty("colors", "primary") || "#89b4fa"
@@ -164,7 +183,7 @@ Rectangle {
         }
         
         // Animated width based on usage
-        width: parent.width * (cpuUsage / 100)
+        width: parent.width * (gpuUsage / 100)
         
         Behavior on width {
             NumberAnimation { duration: 400; easing.type: Easing.OutCubic }
@@ -175,18 +194,9 @@ Rectangle {
         }
     }
     
-    
-    
     // Smooth opacity transitions
     Behavior on opacity {
         NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
-    }
-    
-    // Bind CPU service to system monitor
-    onSystemMonitorServiceChanged: {
-        if (systemMonitorService) {
-            CpuService.bindToSystemMonitor(systemMonitorService)
-        }
     }
     
     // Right-click to show dedicated context menu
@@ -205,7 +215,6 @@ Rectangle {
             }
         }
     }
-    
     
     // GraphicalComponent interface methods
     function menu(anchorWindow, x, y, startPath) {
@@ -226,20 +235,28 @@ Rectangle {
             // Update live data before showing
             updateContextMenuData()
             
-            const windowToUse = anchorWindow || cpuMonitor
-            const globalPos = cpuMonitor.mapToItem(null, x || 0, y || 0)
+            const windowToUse = anchorWindow || gpuMonitor
+            const globalPos = gpuMonitor.mapToItem(null, x || 0, y || 0)
             contextMenuLoader.item.show(windowToUse, globalPos.x, globalPos.y)
         }
     }
     
     function updateContextMenuData() {
         if (contextMenuLoader.item && typeof contextMenuLoader.item.updateData === 'function') {
-            contextMenuLoader.item.updateData(CpuService.usage, CpuService.frequencyDisplay)
+            contextMenuLoader.item.updateData(
+                GpuService.usage,
+                GpuService.memoryUsage,
+                GpuService.clockSpeed,
+                GpuService.gpuName,
+                GpuService.vendor,
+                GpuService.memoryUsed,
+                GpuService.memoryTotal
+            )
         }
     }
     
     function list_children() {
-        return []  // CPU monitor has no children
+        return []  // GPU monitor has no children
     }
     
     function get_parent() {
@@ -248,12 +265,12 @@ Rectangle {
     }
     
     function get_child(id) {
-        return null  // CPU monitor has no children
+        return null  // GPU monitor has no children
     }
     
     function registerComponent() {
         if (componentId) {
-            ComponentRegistry.registerComponent(componentId, cpuMonitor)
+            ComponentRegistry.registerComponent(componentId, gpuMonitor)
             console.log(`[${componentId}] Registered component with hierarchy: parent=${parentComponentId}`)
         }
     }
@@ -268,12 +285,13 @@ Rectangle {
     Component.onCompleted: {
         registerComponent()
         
-        // Initialize service binding if available
-        if (systemMonitorService) {
-            CpuService.bindToSystemMonitor(systemMonitorService)
+        // Connect config service to GpuService if available
+        if (configService && !GpuService.configService) {
+            GpuService.configService = configService
         }
         
-        console.log("[CpuMonitor] Initialized with CpuService singleton")
+        console.log("[GpuMonitor] Initialized with GpuService singleton")
+        console.log("[GpuMonitor] GPU vendor:", GpuService.vendor, "usage:", GpuService.usage + "%")
     }
     
     Component.onDestruction: {
@@ -282,8 +300,9 @@ Rectangle {
     
     // Update context menu when service data changes
     Connections {
-        target: CpuService
+        target: GpuService
         function onUsageChanged() { updateContextMenuData() }
-        function onFrequencyDisplayChanged() { updateContextMenuData() }
+        function onMemoryUsageChanged() { updateContextMenuData() }
+        function onClockSpeedChanged() { updateContextMenuData() }
     }
 }

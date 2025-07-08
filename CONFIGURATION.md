@@ -53,7 +53,7 @@ Alternatively, set paths and UI preferences in your configuration file:
 ## Default Paths
 If no overrides are set, the system uses:
 - **Themes**: `~/.local/share/quickshell/by-shell/<shell-id>/config/theme/data`
-- **Config**: `~/.local/share/quickshell/by-shell/<shell-id>/config/settings/main-config.json`
+- **Config**: `~/.local/share/quickshell/by-shell/<shell-id>/config/settings/config.json`
 
 ## Priority Order
 1. Environment variables (highest priority)

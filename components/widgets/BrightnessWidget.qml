@@ -6,11 +6,14 @@ import "../overlays"
 Rectangle {
     id: brightnessWidget
     
+    // Entity ID for configuration
+    property string entityId: "brightnessWidget"
+    
     // Widget properties
-    property bool enabled: true
-    property bool showIcon: true
-    property bool showPercentage: true
-    property bool showSlider: false
+    property bool enabled: configService ? configService.getEntityProperty(entityId, "enabled", true) : true
+    property bool showIcon: configService ? configService.getEntityProperty(entityId, "showIcon", true) : true
+    property bool showPercentage: configService ? configService.getEntityProperty(entityId, "showPercentage", true) : true
+    property bool showSlider: configService ? configService.getEntityProperty(entityId, "showSlider", false) : false
     
     // Services
     property var configService: ConfigService
@@ -23,7 +26,7 @@ Rectangle {
     property string menuPath: "brightness"
     
     // Dynamic sizing based on content
-    implicitWidth: brightnessContent.implicitWidth + (configService ? configService.scaled(12) : 12)
+    implicitWidth: brightnessContent.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12)
     implicitHeight: brightnessContent.implicitHeight
     color: "transparent"
     
@@ -69,7 +72,7 @@ Rectangle {
     Row {
         id: brightnessContent
         anchors.centerIn: parent
-        spacing: configService ? configService.scaledMarginSmall() : 4
+        spacing: configService ? configService.spacing("xs", entityId) : 4
         
         Text {
             visible: showIcon
@@ -80,7 +83,7 @@ Rectangle {
                 if (BrightnessService.brightness > 0.2) return "🔅"   // Low brightness - dim
                 return "🌙"  // Very low brightness - moon
             }
-            font.pixelSize: configService ? configService.scaledFontMedium() : 12
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 10
             color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
         }
         
@@ -89,7 +92,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: `${Math.round(BrightnessService.brightness * 100)}%`
             font.family: "Inter"
-            font.pixelSize: configService ? configService.scaledFontSmall() : 9
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 9
             font.weight: Font.Medium
             color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
         }

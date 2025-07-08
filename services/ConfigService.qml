@@ -18,6 +18,11 @@ Singleton {
     property bool initialized: false
     property var config: ({})
     
+    // Hybrid config management
+    property bool autoSave: true       // UI changes save immediately to config file
+    property bool immediateUpdate: true // Config changes update UI immediately
+    // Note: File watching not available in Quickshell - restart required for external config edits
+    
     // System type - can be auto-detected or manually set in config
     property string systemType: getValue("system.type", "auto")
     property bool isLaptop: systemType === "laptop" || (systemType === "auto" && autoDetectLaptop())
@@ -36,9 +41,9 @@ Singleton {
         const envPath = Quickshell.env("QUICKSHELL_CONFIG_PATH")
         if (envPath) return envPath
         
-        // Default: ~/.config/quickshell/config/settings/main-config.json (follows XDG standards)
+        // Default: ~/.config/quickshell/config/settings/config.json (follows XDG standards)
         const configDir = Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")
-        return configDir + "/quickshell/config/settings/main-config.json"
+        return configDir + "/quickshell/config/settings/config.json"
     }
     
     // Theme file path
@@ -51,7 +56,7 @@ Singleton {
     readonly property var defaultConfig: ({
         "paths": {
             "themesPath": null,  // null = use default dataDir + "/config/theme/data"
-            "configPath": null   // null = use default dataDir + "/config/settings/main-config.json"
+            "configPath": null   // null = use default dataDir + "/config/settings/config.json"
         },
         "ui": {
             "panels": {
@@ -359,6 +364,9 @@ Singleton {
         }
     }
     
+    // Note: FileSystemWatcher not available in Quickshell
+    // File watching can be implemented later with a polling mechanism if needed
+    
     function saveConfig() {
         console.log(logCategory, "Saving configuration to", configPath)
         
@@ -427,10 +435,18 @@ Singleton {
             // Force config to be reassigned to trigger property change
             config = config
             
-            // Explicitly emit the configChanged signal
-            configChanged()
+            // Emit the configChanged signal if immediateUpdate is enabled
+            if (immediateUpdate) {
+                configChanged()
+            }
             
-            console.log(logCategory, `Set '${keyPath}' to:`, value)
+            console.log(logCategory, `Set '${keyPath}' from '${oldValue}' to:`, value)
+            
+            // Auto-save to file if enabled (hybrid approach)
+            if (autoSave) {
+                console.log(logCategory, `Auto-saving config due to change in '${keyPath}'`)
+                saveConfig()
+            }
             
             return true
         } catch (error) {
@@ -593,15 +609,7 @@ Singleton {
     function fontSize2xl() { return fontSize("2xl") }
     function fontSize3xl() { return fontSize("3xl") }
     
-    // Spacing helpers (scaled)
-    function spacing(size) { return marginScale(spacingScale[size] || spacingScale.md) }
-    function spacingXs() { return spacing("xs") }
-    function spacingSm() { return spacing("sm") }
-    function spacingMd() { return spacing("md") }
-    function spacingLg() { return spacing("lg") }
-    function spacingXl() { return spacing("xl") }
-    function spacing2xl() { return spacing("2xl") }
-    function spacing3xl() { return spacing("3xl") }
+    // Removed legacy spacing functions - use spacing(size, entityId) instead
     
     // Touch target helpers (scaled, accessibility compliant)
     function touchTarget(size) { return scaled(touchTargetScale[size] || touchTargetScale.standard) }
@@ -609,40 +617,129 @@ Singleton {
     function touchTargetStandard() { return touchTarget("standard") }
     function touchTargetLarge() { return touchTarget("large") }
     
-    // Icon size helpers (following spacing scale)
-    function iconSize(size) { return iconScale(spacingScale[size] || spacingScale.md) }
-    function iconSizeXs() { return iconSize("xs") }
-    function iconSizeSm() { return iconSize("sm") }
-    function iconSizeMd() { return iconSize("md") }
-    function iconSizeLg() { return iconSize("lg") }
-    function iconSizeXl() { return iconSize("xl") }
+    // Removed legacy icon functions - use icon(size, entityId) instead
     
-    // Widget helper functions (updated to use ISO-compliant sizing)
-    function widgetSpacing() { return spacingSm() }  // 8px spacing
-    function badgeSize() { return spacingMd() }      // 16px (readable badge size)
-    function badgeRadius() { return spacingSm() }     // 8px radius
-    function badgePadding() { return spacingXs() }    // 4px padding
+    // Widget helper functions (updated to use new entity system)
+    function widgetSpacing(entityId) { return spacing("sm", entityId) }  // 8px spacing
+    function badgeSize(entityId) { return spacing("md", entityId) }      // 16px (readable badge size)
+    function badgeRadius(entityId) { return spacing("sm", entityId) }     // 8px radius
+    function badgePadding(entityId) { return spacing("xs", entityId) }    // 4px padding
     
-    // Widget height helper - supports global and per-widget height configuration
-    function getWidgetHeight(widgetName, contentHeight) {
-        const globalHeight = getValue("widgets.global.height", "auto")
-        const widgetHeight = getValue("widgets." + widgetName + ".height", globalHeight)
+    // Entity-based configuration API
+    function getEntityProperty(entityId, property, defaultValue) {
+        if (!entityId) return defaultValue
+        return getValue("entities." + entityId + "." + property, defaultValue)
+    }
+    
+    function getEntityStyle(entityId, styleProperty, defaultValue, contentValue) {
+        if (!entityId) return contentValue || defaultValue
         
-        if (widgetHeight === "auto") {
-            return contentHeight
+        const entityValue = getValue("entities." + entityId + "." + styleProperty, "auto")
+        
+        if (entityValue === "auto") {
+            return contentValue || defaultValue
+        } else if (typeof entityValue === "string" && isSemanticSize(entityValue)) {
+            // Handle semantic sizes (sm, md, lg, etc.)
+            return getSemanticValue(styleProperty, entityValue)
+        } else if (typeof entityValue === "number") {
+            // Handle numerical overrides
+            return scaled(entityValue)
         } else {
-            return scaled(widgetHeight)
+            return entityValue
         }
+    }
+    
+    function isSemanticSize(value) {
+        const semanticSizes = ["xs", "sm", "md", "lg", "xl", "2xl", "3xl"]
+        return semanticSizes.includes(value)
+    }
+    
+    function getSemanticValue(styleProperty, semanticSize) {
+        // Map style properties to appropriate scale types
+        if (styleProperty === "fontSize" || styleProperty.includes("font")) {
+            return fontSize(semanticSize)
+        } else if (styleProperty === "iconSize" || styleProperty.includes("icon")) {
+            return iconSize(semanticSize)
+        } else {
+            // Default to spacing scale for padding, margin, etc.
+            return spacing(semanticSize)
+        }
+    }
+    
+    // Entity-aware semantic scaling functions with four-tier resolution
+    function typography(requestedSize, entityId) {
+        if (entityId) {
+            // Check for entity-specific override
+            const entityOverride = getEntityProperty(entityId, "fontSize", null)
+            if (entityOverride !== null) {
+                if (entityOverride === "auto") {
+                    // Use global default
+                    requestedSize = getValue("scaling.defaults.typography", "md")
+                } else if (typeof entityOverride === "string") {
+                    // Use entity's semantic choice
+                    requestedSize = entityOverride
+                } else if (typeof entityOverride === "number") {
+                    // Numerical override - bypass semantic system
+                    return scaled(entityOverride, "font")
+                }
+            }
+        }
+        
+        // Apply semantic scaling
+        const baseValue = typographyScale[requestedSize] || typographyScale.md
+        return fontScale(baseValue)
+    }
+    
+    function spacing(requestedSize, entityId) {
+        if (entityId) {
+            // Check for entity-specific override
+            const entityOverride = getEntityProperty(entityId, "spacing", null)
+            if (entityOverride !== null) {
+                if (entityOverride === "auto") {
+                    requestedSize = getValue("scaling.defaults.spacing", "md")
+                } else if (typeof entityOverride === "string") {
+                    requestedSize = entityOverride
+                } else if (typeof entityOverride === "number") {
+                    return scaled(entityOverride, "spacing")
+                }
+            }
+        }
+        
+        const baseValue = spacingScale[requestedSize] || spacingScale.md
+        return marginScale(baseValue)
+    }
+    
+    function icon(requestedSize, entityId) {
+        if (entityId) {
+            const entityOverride = getEntityProperty(entityId, "iconSize", null)
+            if (entityOverride !== null) {
+                if (entityOverride === "auto") {
+                    requestedSize = getValue("scaling.defaults.icon", "md")
+                } else if (typeof entityOverride === "string") {
+                    requestedSize = entityOverride
+                } else if (typeof entityOverride === "number") {
+                    return scaled(entityOverride, "icon")
+                }
+            }
+        }
+        
+        const baseValue = spacingScale[requestedSize] || spacingScale.md
+        return iconScale(baseValue)
+    }
+    
+    // Simplified widget height helper using entity system
+    function getWidgetHeight(entityId, contentHeight) {
+        return getEntityStyle(entityId, "height", "auto", contentHeight)
     }
     
     // Workspace helper functions (ISO-compliant sizing with accessibility)
     function workspaceSize(mode) {
         const sizes = {
-            "xs": { width: spacingLg(), height: spacingMd() },      // 24x16px (compact)
-            "sm": { width: touchTargetMinimum(), height: spacingMd() }, // 24x16px (WCAG minimum)
-            "md": { width: spacingXl(), height: spacingLg() },      // 32x24px (default)
-            "lg": { width: spacing2xl(), height: spacingXl() },     // 48x32px (large)
-            "xl": { width: touchTargetStandard(), height: spacingXl() } // 44x32px (touch-friendly)
+            "xs": { width: spacingScale.lg, height: spacingScale.md },      // 24x16px (compact)
+            "sm": { width: touchTargetMinimum(), height: spacingScale.md }, // 24x16px (WCAG minimum)
+            "md": { width: spacingScale.xl, height: spacingScale.lg },      // 32x24px (default)
+            "lg": { width: spacingScale["2xl"], height: spacingScale.xl },  // 48x32px (large)
+            "xl": { width: touchTargetStandard(), height: spacingScale.xl } // 44x32px (touch-friendly)
         }
         return sizes[mode] || sizes["md"]
     }

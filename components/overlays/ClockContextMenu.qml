@@ -278,10 +278,19 @@ PopupWindow {
                     // Date format style
                     ConfigToggleItem {
                         width: parent.width
-                        label: "Date Style"
-                        value: getConfigValue("dateFormat", "short") // "short", "medium", "long"
+                        label: "Date Format"
+                        value: getConfigValue("dateFormat", "yyyy-MM-dd")
                         isActive: true
                         onClicked: cycleDateFormat()
+                    }
+                    
+                    // Time format style
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Time Format"
+                        value: getConfigValue("timeFormat", "HH:mm")
+                        isActive: true
+                        onClicked: cycleTimeFormat()
                     }
                     
                     // Date position
@@ -391,13 +400,13 @@ PopupWindow {
     // Helper functions
     function getConfigValue(key, defaultValue) {
         if (!configService) return defaultValue
-        return configService.getValue("widgets.clock." + key, defaultValue)
+        return configService.getEntityProperty("clockWidget", key, defaultValue)
     }
     
     function toggleConfig(key) {
         if (!configService) return
         
-        const configKey = "widgets.clock." + key
+        const configKey = "entities.clockWidget." + key
         const currentValue = configService.getValue(configKey, key === "format24Hour" ? true : (key === "showDate" ? true : false))
         const newValue = !currentValue
         
@@ -408,9 +417,22 @@ PopupWindow {
     function cycleDateFormat() {
         if (!configService) return
         
-        const configKey = "widgets.clock.dateFormat"
-        const currentFormat = configService.getValue(configKey, "short")
-        const formats = ["short", "medium", "long"]
+        const configKey = "entities.clockWidget.dateFormat"
+        const currentFormat = configService.getValue(configKey, "yyyy-MM-dd")
+        const formats = ["yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy", "MMMM dd, yyyy", "MMM dd", "dd MMM yyyy"]
+        const currentIndex = formats.indexOf(currentFormat)
+        const newIndex = (currentIndex + 1) % formats.length
+        
+        configService.setValue(configKey, formats[newIndex])
+        configService.saveConfig()
+    }
+    
+    function cycleTimeFormat() {
+        if (!configService) return
+        
+        const configKey = "entities.clockWidget.timeFormat"
+        const currentFormat = configService.getValue(configKey, "HH:mm")
+        const formats = ["HH:mm", "HH:mm:ss", "h:mm AP", "h:mm:ss AP"]
         const currentIndex = formats.indexOf(currentFormat)
         const newIndex = (currentIndex + 1) % formats.length
         

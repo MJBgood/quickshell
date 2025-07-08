@@ -16,7 +16,9 @@
       "Bash(qmlformat:*)",
       "Bash(qml:*)",
       "Bash(rm:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(rm:*)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }

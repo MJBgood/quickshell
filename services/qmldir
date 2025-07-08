@@ -5,9 +5,12 @@ singleton AudioService AudioService.qml
 singleton BatteryService BatteryService.qml
 singleton BrightnessService BrightnessService.qml
 singleton CpuService CpuService.qml
+singleton GpuService GpuService.qml
 singleton RamService RamService.qml
 singleton StorageService StorageService.qml
 singleton TemperatureService TemperatureService.qml
 singleton PowerManagementService PowerManagementService.qml
 singleton WallpaperService WallpaperService.qml
 singleton WidgetRegistry WidgetRegistry.qml
+HyprlandWindowTracker 1.0 HyprlandWindowTracker.qml
+ApplicationIconResolver 1.0 ApplicationIconResolver.qml

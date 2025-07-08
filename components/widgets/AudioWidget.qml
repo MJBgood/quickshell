@@ -7,11 +7,14 @@ import "../overlays"
 Rectangle {
     id: audioWidget
     
+    // Entity ID for configuration
+    property string entityId: "audioWidget"
+    
     // Widget properties
-    property bool enabled: true
-    property bool showIcon: true
-    property bool showPercentage: true
-    property bool showSlider: false
+    property bool enabled: configService ? configService.getEntityProperty(entityId, "enabled", true) : true
+    property bool showIcon: configService ? configService.getEntityProperty(entityId, "showIcon", true) : true
+    property bool showPercentage: configService ? configService.getEntityProperty(entityId, "showPercentage", true) : true
+    property bool showSlider: configService ? configService.getEntityProperty(entityId, "showSlider", false) : false
     
     // Services
     property var configService: ConfigService
@@ -52,7 +55,7 @@ Rectangle {
     Row {
         id: audioContent
         anchors.centerIn: parent
-        spacing: configService ? configService.scaledMarginSmall() : 4
+        spacing: configService ? configService.spacing("xs", entityId) : 4
         
         Text {
             visible: showIcon
@@ -64,7 +67,7 @@ Rectangle {
                 if (AudioService.volume > 0.0) return "🔈"
                 return "🔇"
             }
-            font.pixelSize: configService ? configService.scaledFontLarge() : 14
+            font.pixelSize: configService ? configService.typography("md", entityId) : 14
             color: {
                 return AudioService.muted ? 
                     (configService?.getThemeProperty("colors", "warning") || "#f9e2af"): 
@@ -77,7 +80,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             text: `${Math.round(AudioService.volume * 100)}%`
             font.family: "Inter"
-            font.pixelSize: configService ? configService.scaledFontSmall() : 9
+            font.pixelSize: configService ? configService.typography("xs", entityId) : 9
             font.weight: Font.Medium
             color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
         }
