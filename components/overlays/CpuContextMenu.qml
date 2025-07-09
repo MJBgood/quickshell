@@ -210,10 +210,78 @@ PopupWindow {
                     color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                 }
                 
-                // Interactive configuration options
+                // CPU Info Section
+                Rectangle {
+                    width: parent.width
+                    height: cpuInfoColumn.implicitHeight + 16
+                    color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+                    radius: 8
+                    border.width: 1
+                    border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    
+                    Column {
+                        id: cpuInfoColumn
+                        anchors.centerIn: parent
+                        width: parent.width - 16
+                        spacing: 4
+                        
+                        Text {
+                            width: parent.width
+                            text: "CPU: " + (currentFrequency ? "Running at " + currentFrequency : "Unknown")
+                            font.family: "Inter"
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            wrapMode: Text.Wrap
+                        }
+                        
+                        Row {
+                            width: parent.width
+                            spacing: 16
+                            
+                            Text {
+                                text: "Usage: " + currentUsage.toFixed(1) + "%"
+                                font.family: "Inter"
+                                font.pixelSize: 11
+                                color: {
+                                    if (currentUsage > 80) return "#f38ba8"
+                                    if (currentUsage > 60) return "#f9e2af"
+                                    return "#a6e3a1"
+                                }
+                            }
+                            
+                            Text {
+                                text: "Temperature: " + (currentTemp > 0 ? Math.round(currentTemp) + "°C" : "--°C")
+                                font.family: "Inter"
+                                font.pixelSize: 11
+                                color: {
+                                    if (currentTemp > 80) return "#f38ba8"
+                                    if (currentTemp > 70) return "#f9e2af"
+                                    return "#a6e3a1"
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // General Configuration
                 Column {
                     width: parent.width
                     spacing: 8
+                    
+                    Text {
+                        text: "General Settings"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    }
                     
                     // Enable/Disable toggle
                     ConfigToggleItem {
@@ -242,31 +310,41 @@ PopupWindow {
                         onClicked: toggleConfig("showLabel")
                     }
                     
+                    // Polling Rate Control
+                    PollingRateControl {
+                        width: parent.width
+                        monitorType: "cpu"
+                        systemMonitorService: cpuMenu.systemMonitorService
+                        configService: cpuMenu.configService
+                    }
+                }
+                
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // CPU Performance Section
+                Column {
+                    width: parent.width
+                    spacing: 8
+                    
+                    Text {
+                        text: "CPU Performance"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    }
+                    
                     // Percentage toggle
                     ConfigToggleItem {
                         width: parent.width
-                        label: "Percentage"
-                        value: getConfigValue("showPercentage", true) ? (currentUsage.toFixed(getConfigValue("precision", 1)) + "%") : "Hidden"
+                        label: "Usage Percentage"
+                        value: getConfigValue("showPercentage", true) ? (currentUsage.toFixed(getConfigValue("usagePrecision", 1)) + "%") : "Hidden"
                         isActive: getConfigValue("showPercentage", true)
                         onClicked: toggleConfig("showPercentage")
-                    }
-                    
-                    // Frequency toggle
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Frequency"
-                        value: getConfigValue("showFrequency", false) ? (currentFrequency || "N/A") : "Hidden"
-                        isActive: getConfigValue("showFrequency", false)
-                        onClicked: toggleConfig("showFrequency")
-                    }
-                    
-                    // Temperature toggle
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Temperature"
-                        value: getConfigValue("showTemperature", false) ? (currentTemp > 0 ? Math.round(currentTemp) + "°C" : "--°C") : "Hidden"
-                        isActive: getConfigValue("showTemperature", false)
-                        onClicked: toggleConfig("showTemperature")
                     }
                     
                     // Usage Precision (for percentage)
@@ -278,6 +356,53 @@ PopupWindow {
                         onClicked: getConfigValue("showPercentage", true) ? cycleUsagePrecision() : undefined
                     }
                     
+                    // Frequency toggle
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Clock Speed"
+                        value: getConfigValue("showFrequency", false) ? (currentFrequency || "N/A") : "Hidden"
+                        isActive: getConfigValue("showFrequency", false)
+                        onClicked: toggleConfig("showFrequency")
+                    }
+                    
+                    // Frequency Precision (disabled - always 0 for integers)  
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Clock Speed Precision"
+                        value: "0 decimals (integer only)"
+                        isActive: false
+                        onClicked: undefined // Disabled for integer-only metric
+                    }
+                }
+                
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // Temperature Section
+                Column {
+                    width: parent.width
+                    spacing: 8
+                    
+                    Text {
+                        text: "Temperature Monitoring"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    }
+                    
+                    // Temperature toggle
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Show Temperature"
+                        value: getConfigValue("showTemperature", false) ? (currentTemp > 0 ? Math.round(currentTemp) + "°C" : "--°C") : "Hidden"
+                        isActive: getConfigValue("showTemperature", false)
+                        onClicked: toggleConfig("showTemperature")
+                    }
+                    
                     // Temperature Precision (disabled - always 0 for integers)
                     ConfigToggleItem {
                         width: parent.width
@@ -285,23 +410,6 @@ PopupWindow {
                         value: "0 decimals (integer only)"
                         isActive: false
                         onClicked: undefined // Disabled for integer-only metric
-                    }
-                    
-                    // Frequency Precision (disabled - always 0 for integers)  
-                    ConfigToggleItem {
-                        width: parent.width
-                        label: "Frequency Precision"
-                        value: "0 decimals (integer only)"
-                        isActive: false
-                        onClicked: undefined // Disabled for integer-only metric
-                    }
-                    
-                    // Polling Rate Control
-                    PollingRateControl {
-                        width: parent.width
-                        monitorType: "cpu"
-                        systemMonitorService: cpuMenu.systemMonitorService
-                        configService: cpuMenu.configService
                     }
                 }
                 

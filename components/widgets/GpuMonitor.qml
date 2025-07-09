@@ -46,6 +46,7 @@ Rectangle {
     property bool showLabel: configService ? configService.getEntityProperty(entityId, "showLabel", true) : true
     property bool showMemory: configService ? configService.getEntityProperty(entityId, "showMemory", false) : false
     property bool showClocks: configService ? configService.getEntityProperty(entityId, "showClocks", false) : false
+    property bool showTemperature: configService ? configService.getValue("gpu.showTemperature", false) : false
     property string displayMode: configService ? configService.getEntityProperty(entityId, "displayMode", "compact") : "compact"
     // Per-metric precision settings
     property int usagePrecision: configService ? configService.getEntityProperty(entityId, "usagePrecision", 1) : 1
@@ -59,6 +60,8 @@ Rectangle {
     property string memoryDisplay: (GpuService.memoryUsed / (1024 * 1024 * 1024)).toFixed(memoryPrecision) + "GB/" + (GpuService.memoryTotal / (1024 * 1024 * 1024)).toFixed(memoryPrecision) + "GB"
     property real clockSpeed: GpuService.clockSpeed
     property string clockDisplay: GpuService.clockSpeed > 0 ? GpuService.clockSpeed.toFixed(clockPrecision) + "MHz" : "--"
+    property real temperature: GpuService.temperature
+    property string temperatureDisplay: GpuService.temperature > 0 ? Math.round(GpuService.temperature) + "°C" : "--°C"
     property string gpuName: GpuService.gpuName
     property string vendor: GpuService.vendor
     
@@ -135,6 +138,10 @@ Rectangle {
                 
                 if (showClocks && clockSpeed > 0) {
                     dataParts.push(clockDisplay)
+                }
+                
+                if (showTemperature && temperature > 0) {
+                    dataParts.push(temperatureDisplay)
                 }
                 
                 if (dataParts.length > 0) {
@@ -247,6 +254,7 @@ Rectangle {
                 GpuService.usage,
                 GpuService.memoryUsage,
                 GpuService.clockSpeed,
+                GpuService.temperature,
                 GpuService.gpuName,
                 GpuService.vendor,
                 GpuService.memoryUsed,
@@ -304,5 +312,6 @@ Rectangle {
         function onUsageChanged() { updateContextMenuData() }
         function onMemoryUsageChanged() { updateContextMenuData() }
         function onClockSpeedChanged() { updateContextMenuData() }
+        function onTemperatureChanged() { updateContextMenuData() }
     }
 }

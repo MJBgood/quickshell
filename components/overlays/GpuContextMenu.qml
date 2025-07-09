@@ -28,6 +28,7 @@ PopupWindow {
     property real currentMemoryUsed: 0.0
     property real currentMemoryTotal: 0.0
     property real currentClockSpeed: 0.0
+    property real currentTemperature: 0.0
     property string currentGpuName: "Unknown"
     property string currentVendor: "unknown"
     
@@ -687,12 +688,13 @@ PopupWindow {
     }
     
     // Update live data
-    function updateData(usage, memoryUsage, clockSpeed, gpuName, vendor, memoryUsed, memoryTotal) {
+    function updateData(usage, memoryUsage, clockSpeed, temperature, gpuName, vendor, memoryUsed, memoryTotal) {
         currentUsage = usage || 0.0
         currentMemoryUsage = memoryUsage || 0.0
         currentMemoryUsed = memoryUsed || 0.0
         currentMemoryTotal = memoryTotal || 0.0
         currentClockSpeed = clockSpeed || 0.0
+        currentTemperature = temperature || 0.0
         currentGpuName = gpuName || "Unknown"
         currentVendor = vendor || "unknown"
     }

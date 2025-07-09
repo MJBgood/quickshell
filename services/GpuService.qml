@@ -16,6 +16,7 @@ Singleton {
     property real memoryUsage: 0.0  // percentage
     property real clockSpeed: 0.0
     property real memoryClockSpeed: 0.0
+    property real temperature: 0.0  // GPU temperature in Celsius
     property string gpuName: "Unknown"
     property string driverVersion: "Unknown"
     property bool ready: false
@@ -55,7 +56,7 @@ Singleton {
     // GPU monitoring processes
     Process {
         id: nvidiaProcess
-        command: ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total,clocks.gr,clocks.mem,name,driver_version", "--format=csv,noheader,nounits"]
+        command: ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total,clocks.gr,clocks.mem,temperature.gpu,name,driver_version", "--format=csv,noheader,nounits"]
         running: false
         
         stdout: StdioCollector {
@@ -120,6 +121,28 @@ Singleton {
     }
     
     Process {
+        id: amdTemperatureProcess
+        command: ["python3", "/opt/rocm/libexec/rocm_smi/rocm_smi.py", "--showtemp", "--json"]
+        running: false
+        
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (this.text.trim().length > 0) {
+                    gpuService.parseAmdTemperatureOutput(this.text)
+                }
+            }
+        }
+        
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if (this.text.trim().length > 0) {
+                    console.warn("[GpuService] rocm-smi temperature stderr:", this.text.trim())
+                }
+            }
+        }
+    }
+    
+    Process {
         id: intelProcess
         command: ["intel_gpu_top", "-l", "-s", "1000"]
         running: false
@@ -171,15 +194,16 @@ Singleton {
             const lines = output.trim().split('\n')
             if (lines.length > 0) {
                 const parts = lines[0].split(', ')
-                if (parts.length >= 7) {
+                if (parts.length >= 8) {
                     usage = parseFloat(parts[0]) || 0
                     memoryUsed = parseFloat(parts[1]) || 0
                     memoryTotal = parseFloat(parts[2]) || 0
                     memoryUsage = memoryTotal > 0 ? (memoryUsed / memoryTotal) * 100 : 0
                     clockSpeed = parseFloat(parts[3]) || 0
                     memoryClockSpeed = parseFloat(parts[4]) || 0
-                    gpuName = parts[5] || "Unknown"
-                    driverVersion = parts[6] || "Unknown"
+                    temperature = parseFloat(parts[5]) || 0
+                    gpuName = parts[6] || "Unknown"
+                    driverVersion = parts[7] || "Unknown"
                     ready = true
                 }
             }
@@ -226,6 +250,25 @@ Singleton {
             }
         } catch (error) {
             console.error("[GpuService] Failed to parse rocm-smi memory output:", error)
+        }
+    }
+    
+    // Parse rocm-smi temperature output (JSON)
+    function parseAmdTemperatureOutput(output) {
+        try {
+            const data = JSON.parse(output)
+            const cardKeys = Object.keys(data)
+            
+            if (cardKeys.length > 0) {
+                const cardData = data[cardKeys[0]]
+                const tempData = cardData["Temperature (Sensor edge) (C)"]
+                
+                if (tempData) {
+                    temperature = parseFloat(tempData) || 0
+                }
+            }
+        } catch (error) {
+            console.error("[GpuService] Failed to parse rocm-smi temperature output:", error)
         }
     }
     
@@ -298,6 +341,9 @@ Singleton {
                 if (!amdMemoryProcess.running) {
                     amdMemoryProcess.running = true
                 }
+                if (!amdTemperatureProcess.running) {
+                    amdTemperatureProcess.running = true
+                }
                 break
             case "intel":
                 if (!intelProcess.running) {
@@ -315,6 +361,7 @@ Singleton {
             memoryUsage: memoryUsage,
             clockSpeed: clockSpeed,
             memoryClockSpeed: memoryClockSpeed,
+            temperature: temperature,
             gpuName: gpuName,
             driverVersion: driverVersion,
             vendor: vendor

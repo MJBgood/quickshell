@@ -291,7 +291,8 @@
   },
   "ram": {
     "showLabel": true,
-    "showIcon": false
+    "showIcon": false,
+    "showPercentage": false
   },
   "storage": {
     "showLabel": true,
@@ -302,6 +303,7 @@
     "showLabel": true,
     "showMemory": false,
     "showClocks": false,
-    "showIcon": false
+    "showIcon": false,
+    "showTemperature": true
   }
 }

@@ -90,7 +90,7 @@ Item {
     // Signals for components to subscribe to
     signal cpuUpdated(real percentage)
     signal cpuFrequencyUpdated(real frequency, string display)
-    signal ramUpdated(real used, real total, real percentage)
+    signal ramUpdated(real used, real total, real available, real percentage)
     signal storageUpdated(real used, real total, real percentage)
     signal errorOccurred(string component, string error)
     
@@ -186,10 +186,11 @@ Item {
                             ramTotal = totalKb / 1024 / 1024  // Convert to GB
                             const usedKb = totalKb - availableKb
                             ramUsed = usedKb / 1024 / 1024    // Convert to GB
+                            const availableGb = availableKb / 1024 / 1024  // Convert to GB
                             ramUsagePercent = (usedKb / totalKb) * 100
                             
                             ramDisplay = ramUsed.toFixed(1) + "/" + ramTotal.toFixed(1) + " GB"
-                            ramUpdated(ramUsed, ramTotal, ramUsagePercent)
+                            ramUpdated(ramUsed, ramTotal, availableGb, ramUsagePercent)
                         }
                     } catch (error) {
                         console.warn(logCategory, "Failed to parse RAM usage:", error)
