@@ -132,7 +132,7 @@ PanelWindow {
             Item {
                 id: headerSection
                 width: parent.width
-                height: configService ? configService.scaled(40) : 40
+                height: 40  // Fixed height for header
                 
                 Row {
                     width: parent.width
@@ -195,7 +195,7 @@ PanelWindow {
             Rectangle {
                 id: searchBox
                 width: parent.width
-                height: configService ? configService.scaled(36) : 36
+                height: 36  // Fixed height for search box
                 color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
                 border.color: searchInput.activeFocus ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70")
                 border.width: configService ? configService.scaled(1) : 1
@@ -203,22 +203,22 @@ PanelWindow {
                 
                 Row {
                     anchors.fill: parent
-                    anchors.margins: configService ? configService.scaledMarginSmall() : 4
-                    spacing: configService ? configService.scaledMarginSmall() : 4
+                    anchors.margins: 8  // Fixed margins
+                    spacing: 8  // Fixed spacing
                     
                     Text {
                         text: "🔍"
-                        font.pixelSize: configService ? configService.scaledFontSmall() : 9
+                        font.pixelSize: 14
                         anchors.verticalCenter: parent.verticalCenter
                         color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                     }
                     
                     TextInput {
                         id: searchInput
-                        width: parent.width - configService ? configService.scaled(24) : 24
+                        width: parent.width - 24
                         height: parent.height
                         anchors.verticalCenter: parent.verticalCenter
-                        font.pixelSize: configService ? configService.scaledFontSmall() : 9
+                        font.pixelSize: 14
                         color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
                         selectByMouse: true
                         
@@ -248,7 +248,7 @@ PanelWindow {
             // Wallpaper grid
             ScrollView {
                 width: parent.width
-                height: parent.height - headerSection.height - searchBox.height - configService ? configService.scaled(32) : 32
+                height: parent.height - headerSection.height - searchBox.height - 48  // Fixed bottom spacing
                 clip: true
                 
                 Component.onCompleted: {
@@ -278,8 +278,8 @@ PanelWindow {
                 GridView {
                     id: wallpaperGrid
                     width: parent.width
-                    cellWidth: configService ? configService.scaled(160) : 160
-                    cellHeight: configService ? configService.scaled(120) : 120
+                    cellWidth: 160  // Fixed size for wallpaper previews
+                    cellHeight: 120  // Fixed size for wallpaper previews
                     model: filteredWallpapers
                     currentIndex: wallpaperSelector.currentIndex
                     
@@ -291,8 +291,8 @@ PanelWindow {
                     }
                     
                     delegate: Rectangle {
-                        width: wallpaperGrid.cellWidth - configService ? configService.scaledMarginSmall() : 4
-                        height: wallpaperGrid.cellHeight - configService ? configService.scaledMarginSmall() : 4
+                        width: wallpaperGrid.cellWidth - 4
+                        height: wallpaperGrid.cellHeight - 4
                         color: wallpaperMouse.containsMouse || GridView.isCurrentItem ? 
                                (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"):  
                                "transparent"
@@ -311,13 +311,13 @@ PanelWindow {
                         
                         Column {
                             anchors.fill: parent
-                            anchors.margins: configService ? configService.scaledMarginSmall() : 4
-                            spacing: configService ? configService.scaledMarginSmall() : 4
+                            anchors.margins: 4  // Fixed margins
+                            spacing: 4  // Fixed spacing
                             
                             // Wallpaper preview
                             Rectangle {
                                 width: parent.width
-                                height: parent.height - nameText.height - configService ? configService.scaledMarginSmall() : 4
+                                height: parent.height - nameText.height - 4  // Fixed spacing
                                 color: configService ? configService.getThemeProperty("colors", "background") || "#1e1e2e" : "#1e1e2e"
                                 radius: configService ? configService.scaled(4) : 4
                                 clip: true
@@ -333,8 +333,8 @@ PanelWindow {
                                     asynchronous: true
                                     
                                     // Load as small thumbnail instead of full resolution
-                                    sourceSize.width: configService ? configService.scaled(160) : 160
-                                    sourceSize.height: configService ? configService.scaled(120) : 120
+                                    sourceSize.width: 160  // Fixed thumbnail size
+                                    sourceSize.height: 120  // Fixed thumbnail size
                                     
                                     onStatusChanged: {
                                         if (status === Image.Error) {

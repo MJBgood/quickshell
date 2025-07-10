@@ -303,6 +303,15 @@ PopupWindow {
                         systemMonitorService: cpuMenu.systemMonitorService
                         configService: cpuMenu.configService
                     }
+                    
+                    // Fixed Width toggle
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Fixed Width"
+                        value: getConfigValue("useFixedWidth", true) ? "Enabled" : "Disabled"
+                        isActive: getConfigValue("useFixedWidth", true)
+                        onClicked: toggleConfig("useFixedWidth")
+                    }
                 }
                 
                 // Temperature-specific section

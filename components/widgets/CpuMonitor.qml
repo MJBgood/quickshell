@@ -64,10 +64,62 @@ Rectangle {
     property string cpuTempDisplay: TemperatureService.cpuTemp > 0 ? TemperatureService.cpuTemp.toFixed(temperaturePrecision) + "°C" : "--"
     property string cpuTempStatus: TemperatureService.getCpuStatus()
     
+    // Fixed width configuration
+    property bool useFixedWidth: configService ? configService.getValue("cpu.useFixedWidth", true) : true
+    
     // Visual configuration
-    implicitWidth: contentRow.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12)
+    implicitWidth: useFixedWidth ? getFixedWidth() : (contentRow.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12))
     implicitHeight: configService ? configService.getWidgetHeight(entityId, contentRow.implicitHeight) : contentRow.implicitHeight
     radius: configService ? configService.getEntityStyle(entityId, "borderRadius", "auto", configService.scaled(4)) : 4
+    
+    // Calculate fixed width based on maximum possible content
+    function getFixedWidth() {
+        if (!configService) return 120
+        
+        // Base spacing and padding
+        const spacing = configService.spacing("xs", entityId)
+        const padding = configService.spacing("sm", entityId)
+        const fontSize = configService.typography("xs", entityId)
+        
+        let maxWidth = 0
+        
+        // Icon width (if shown)
+        if (showIcon) {
+            maxWidth += fontSize + spacing
+        }
+        
+        // Calculate maximum text width based on configuration
+        let maxTextWidth = 0
+        
+        // Label width
+        if (showLabel) {
+            maxTextWidth += fontSize * 3.5 // "CPU " width estimate
+        }
+        
+        // Maximum percentage: "100.0%" (7 chars) or "100%" (4 chars)
+        if (showPercentage) {
+            const maxPercentageChars = usagePrecision > 0 ? 6 : 4 // "100.x%" or "100%"
+            maxTextWidth += fontSize * 0.6 * maxPercentageChars
+            if (showFrequency || showTemperature) maxTextWidth += fontSize * 0.6 * 3 // " | "
+        }
+        
+        // Frequency: "4.2GHz" (6 chars max)
+        if (showFrequency) {
+            maxTextWidth += fontSize * 0.6 * 6
+            if (showTemperature) maxTextWidth += fontSize * 0.6 * 3 // " | "
+        }
+        
+        // Temperature: "100°C" (5 chars max)
+        if (showTemperature) {
+            maxTextWidth += fontSize * 0.6 * 5
+        }
+        
+        if (showText && displayMode !== "minimal") {
+            maxWidth += maxTextWidth
+        }
+        
+        return Math.max(80, maxWidth + padding)
+    }
     
     // Dynamic background color based on CPU usage and temperature
     color: {

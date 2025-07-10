@@ -51,6 +51,9 @@ Rectangle {
     property int usagePrecision: configService ? configService.getEntityProperty(entityId, "usagePrecision", 0) : 0
     property int memoryPrecision: configService ? configService.getEntityProperty(entityId, "memoryPrecision", 1) : 1
     
+    // Fixed width configuration
+    property bool useFixedWidth: configService ? configService.getValue("ram.useFixedWidth", true) : true
+    
     // Current RAM data - delegate to service
     property real ramUsed: RamService.usedBytes
     property real ramTotal: RamService.totalBytes
@@ -59,9 +62,53 @@ Rectangle {
     property string ramFrequencyDisplay: ""
     
     // Visual configuration
-    implicitWidth: contentRow.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12)
+    implicitWidth: useFixedWidth ? getFixedWidth() : (contentRow.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12))
     implicitHeight: configService ? configService.getWidgetHeight(entityId, contentRow.implicitHeight) : contentRow.implicitHeight
     radius: configService ? configService.getEntityStyle(entityId, "borderRadius", "auto", configService.scaled(4)) : 4
+    
+    // Calculate fixed width based on maximum possible content
+    function getFixedWidth() {
+        if (!configService) return 120
+        
+        // Base spacing and padding
+        const spacing = configService.spacing("xs", entityId)
+        const padding = configService.spacing("sm", entityId)
+        const fontSize = configService.typography("xs", entityId)
+        
+        let maxWidth = 0
+        
+        // Icon width (if shown)
+        if (showIcon) {
+            maxWidth += fontSize + spacing
+        }
+        
+        // Calculate maximum text width based on configuration
+        let maxTextWidth = 0
+        
+        // Label width
+        if (showLabel) {
+            maxTextWidth += fontSize * 0.6 * 4 // "RAM " width estimate
+        }
+        
+        // Maximum percentage: "100%" (4 chars)
+        if (showPercentage) {
+            const maxPercentageChars = usagePrecision > 0 ? 6 : 4 // "100.x%" or "100%"
+            maxTextWidth += fontSize * 0.6 * maxPercentageChars
+            if (showTotal) maxTextWidth += fontSize * 0.6 * 3 // " | "
+        }
+        
+        // Memory display: "99.9/99.9 GB" (12 chars max)
+        if (showTotal) {
+            const maxMemoryChars = memoryPrecision > 0 ? 15 : 12 // "99.x/99.x GB" or "99/99 GB"
+            maxTextWidth += fontSize * 0.6 * maxMemoryChars
+        }
+        
+        if (showText && displayMode !== "minimal") {
+            maxWidth += maxTextWidth
+        }
+        
+        return Math.max(80, maxWidth + padding)
+    }
     
     // Dynamic background color based on RAM usage
     color: {

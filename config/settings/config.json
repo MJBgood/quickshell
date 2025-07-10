@@ -24,7 +24,7 @@
       "animationDuration": 300
     },
     "scaling": {
-      "globalScale": 0.6,
+      "globalScale": 1,
       "useCustomScaling": true,
       "customScales": {
         "padding": 0.7,
@@ -188,10 +188,15 @@
     "clockWidget": {
       "showDate": true,
       "separator": "|",
-      "timeFormat": "HH:mm:ss",
+      "timeFormat": "HH:mm",
       "dateFormat": "MMM dd",
       "fontSize": "xs",
-      "spacing": "auto"
+      "spacing": "auto",
+      "showSeconds": false
+    },
+    "wallpaperSelector": {
+      "fontSize": "sm",
+      "spacing": "sm"
     },
     "powerWidget": {
       "showIcon": true,
@@ -291,12 +296,18 @@
   },
   "ram": {
     "showLabel": true,
-    "showIcon": false
+    "showIcon": false,
+    "showPercentage": false
   },
   "storage": {
-    "showLabel": true,
-    "showIcon": false,
-    "showBytes": true
+    "showLabel": false,
+    "showIcon": true,
+    "showBytes": true,
+    "showPercentage": false,
+    "precision": 0,
+    "labelText": "Storage",
+    "units": "TB",
+    "storagePrecision": 1
   },
   "gpu": {
     "showLabel": true,
