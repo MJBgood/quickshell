@@ -35,6 +35,7 @@ Item {
     // Cache state
     property var wallpaperCache: ({})
     property string lastDirectoryHash: ""
+    property string currentDirectoryHash: ""
     
     // Wallpaper directories to monitor
     property var wallpaperDirs: [defaultWallpaperDir]
@@ -165,14 +166,16 @@ Item {
             onStreamFinished: {
                 const newHash = this.text.trim()
                 console.log("WallpaperService: Directory hash:", newHash)
+                currentDirectoryHash = newHash
                 
                 if (newHash !== lastDirectoryHash) {
                     console.log("WallpaperService: Directory changed, clearing cache")
                     wallpaperCache = {}
-                    lastDirectoryHash = newHash
+                    // Don't set lastDirectoryHash here - set it after successful discovery
                     
                     // Proceed with wallpaper discovery
-                    wallpaperDiscovery.running = true
+                    console.log("WallpaperService: Starting wallpaper discovery process")
+                    forceDiscoverWallpapers()
                 } else {
                     console.log("WallpaperService: Directory unchanged, using cache")
                     // Use cached wallpapers if available
@@ -181,7 +184,8 @@ Item {
                         wallpapersDiscovered(wallpapers)
                     } else {
                         // Cache empty, need to discover
-                        wallpaperDiscovery.running = true
+                        console.log("WallpaperService: Cache empty, starting discovery")
+                        forceDiscoverWallpapers()
                     }
                 }
             }
@@ -205,6 +209,9 @@ Item {
         onRunningChanged: {
             if (running) {
                 console.log(logCategory, "Discovering wallpapers in:", wallpaperDirs)
+                console.log(logCategory, "Discovery command:", command)
+            } else {
+                console.log(logCategory, "Wallpaper discovery process finished")
             }
         }
         
@@ -244,6 +251,11 @@ Item {
                     wallpapers = newWallpapers
                 }
                 
+                // Update hash after successful discovery
+                lastDirectoryHash = currentDirectoryHash
+                
+                // Save state with updated cache
+                saveStateToFile()
                 wallpapersDiscovered(wallpapers)
             }
         }
@@ -251,6 +263,7 @@ Item {
         stderr: StdioCollector {
             onStreamFinished: {
                 const errorText = this.text.trim()
+                console.log(logCategory, "Discovery stderr:", errorText || "(empty)")
                 if (errorText.length > 0) {
                     // Check if it's a "directory not found" error
                     if (errorText.includes("No such file or directory")) {

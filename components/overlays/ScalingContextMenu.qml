@@ -333,32 +333,48 @@ PopupWindow {
     
     // Functions
     function show(anchorWindow, x, y) {
-        if (anchorWindow && anchorWindow.hasOwnProperty("screen")) {
-            anchor.window = anchorWindow
-            
-            const screenWidth = anchorWindow.screen ? anchorWindow.screen.width : 1920
-            const screenHeight = anchorWindow.screen ? anchorWindow.screen.height : 1080
-            
-            // Ensure we have valid dimensions
-            const menuWidth = Math.max(280, implicitWidth)
-            const menuHeight = Math.max(100, implicitHeight)
-            
-            let popupX = Math.min(x || 0, screenWidth - menuWidth - 20)
-            let popupY = Math.min(y || 0, screenHeight - menuHeight - 20)
-            
-            popupX = Math.max(20, popupX)
-            popupY = Math.max(20, popupY)
-            
-            anchor.rect.x = popupX
-            anchor.rect.y = popupY
-            anchor.rect.width = 1
-            anchor.rect.height = 1
-            
-            visible = true
-            focusGrab.active = true
-        } else {
-            console.error("ScalingContextMenu: Invalid anchor window provided")
+        if (!anchorWindow) {
+            console.error("ScalingContextMenu: No anchor window provided")
+            return
         }
+        
+        // Set anchor window first
+        anchor.window = anchorWindow
+        
+        // Get screen dimensions safely
+        let screenWidth = 1920
+        let screenHeight = 1080
+        
+        try {
+            if (anchorWindow.screen) {
+                screenWidth = anchorWindow.screen.width || 1920
+                screenHeight = anchorWindow.screen.height || 1080
+            } else if (Quickshell.screens && Quickshell.screens.length > 0) {
+                const primaryScreen = Quickshell.screens[0]
+                screenWidth = primaryScreen.width || 1920
+                screenHeight = primaryScreen.height || 1080
+            }
+        } catch (e) {
+            console.warn("ScalingContextMenu: Error accessing screen properties, using defaults:", e)
+        }
+        
+        // Ensure we have valid dimensions
+        const menuWidth = Math.max(280, implicitWidth)
+        const menuHeight = Math.max(100, implicitHeight)
+        
+        let popupX = Math.min(x || 0, screenWidth - menuWidth - 20)
+        let popupY = Math.min(y || 0, screenHeight - menuHeight - 20)
+        
+        popupX = Math.max(20, popupX)
+        popupY = Math.max(20, popupY)
+        
+        anchor.rect.x = popupX
+        anchor.rect.y = popupY
+        anchor.rect.width = 1
+        anchor.rect.height = 1
+        
+        visible = true
+        focusGrab.active = true
     }
     
     function hide() {

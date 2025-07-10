@@ -413,6 +413,35 @@ PopupWindow {
                     }
                 }
                 
+                // Separator
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                }
+                
+                // Widget Layout Section
+                Column {
+                    width: parent.width
+                    spacing: 8
+                    
+                    Text {
+                        text: "Widget Layout"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                    }
+                    
+                    // Fixed Width toggle
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Fixed Width"
+                        value: getConfigValue("useFixedWidth", true) ? "Enabled" : "Disabled"
+                        isActive: getConfigValue("useFixedWidth", true)
+                        onClicked: toggleConfig("useFixedWidth")
+                    }
+                }
+                
                 // Temperature-specific section
                 Column {
                     width: parent.width

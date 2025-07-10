@@ -202,16 +202,25 @@ PopupWindow {
                     ConfigToggleItem {
                         width: parent.width
                         label: "Label"
-                        value: getConfigValue("showLabel", false) ? "\"Storage\"" : "Hidden"
+                        value: getConfigValue("showLabel", false) ? "\"" + getConfigValue("labelText", "Storage") + "\"" : "Hidden"
                         isActive: getConfigValue("showLabel", false)
                         onClicked: toggleConfig("showLabel")
+                    }
+                    
+                    // Label Text
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Label Text"
+                        value: getConfigValue("labelText", "Storage")
+                        isActive: getConfigValue("showLabel", false)
+                        onClicked: cycleLabelText()
                     }
                     
                     // Percentage toggle
                     ConfigToggleItem {
                         width: parent.width
                         label: "Percentage"
-                        value: getConfigValue("showPercentage", true) ? (usagePercent.toFixed(getConfigValue("precision", 0)) + "%") : "Hidden"
+                        value: getConfigValue("showPercentage", true) ? (usagePercent.toFixed(getConfigValue("usagePrecision", 0)) + "%") : "Hidden"
                         isActive: getConfigValue("showPercentage", true)
                         onClicked: toggleConfig("showPercentage")
                     }
@@ -220,18 +229,47 @@ PopupWindow {
                     ConfigToggleItem {
                         width: parent.width
                         label: "Bytes Format"
-                        value: getConfigValue("showBytes", false) ? (currentUsage.toFixed(1) + "/" + totalAvailable.toFixed(1) + " GB") : "Hidden"
+                        value: getConfigValue("showBytes", false) ? (getConfigValue("showRemaining", false) ? 
+                                (getConvertedTotal() - getConvertedUsage()).toFixed(getConfigValue("storagePrecision", 1)) + "/" + getConvertedTotal().toFixed(getConfigValue("storagePrecision", 1)) + " " + getConfigValue("units", "GB") + " free" :
+                                getConvertedUsage().toFixed(getConfigValue("storagePrecision", 1)) + "/" + getConvertedTotal().toFixed(getConfigValue("storagePrecision", 1)) + " " + getConfigValue("units", "GB")) : "Hidden"
                         isActive: getConfigValue("showBytes", false)
                         onClicked: toggleConfig("showBytes")
                     }
                     
-                    // Precision
+                    // Usage Precision
                     ConfigToggleItem {
                         width: parent.width
-                        label: "Precision"
-                        value: getConfigValue("precision", 0) + " decimal" + (getConfigValue("precision", 0) === 1 ? "" : "s")
+                        label: "Usage Precision"
+                        value: getConfigValue("usagePrecision", 0) + " decimal" + (getConfigValue("usagePrecision", 0) === 1 ? "" : "s")
                         isActive: true
-                        onClicked: cyclePrecision()
+                        onClicked: cycleUsagePrecision()
+                    }
+                    
+                    // Storage Precision
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Storage Precision"
+                        value: getConfigValue("storagePrecision", 1) + " decimal" + (getConfigValue("storagePrecision", 1) === 1 ? "" : "s")
+                        isActive: true
+                        onClicked: cycleStoragePrecision()
+                    }
+                    
+                    // Units
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Units"
+                        value: getConfigValue("units", "GB")
+                        isActive: true
+                        onClicked: cycleUnits()
+                    }
+                    
+                    // Display Mode (Used vs Remaining)
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Display Mode"
+                        value: getConfigValue("showRemaining", false) ? "Remaining Space" : "Used Space"
+                        isActive: true
+                        onClicked: toggleConfig("showRemaining")
                     }
                     
                     // Polling Rate Control
@@ -240,6 +278,15 @@ PopupWindow {
                         monitorType: "storage"
                         systemMonitorService: storageMenu.systemMonitorService
                         configService: storageMenu.configService
+                    }
+                    
+                    // Fixed Width toggle
+                    ConfigToggleItem {
+                        width: parent.width
+                        label: "Fixed Width"
+                        value: getConfigValue("useFixedWidth", true) ? "Enabled" : "Disabled"
+                        isActive: getConfigValue("useFixedWidth", true)
+                        onClicked: toggleConfig("useFixedWidth")
                     }
                 }
                 
@@ -336,6 +383,27 @@ PopupWindow {
         return configService.getValue("storage." + key, defaultValue)
     }
     
+    // Unit conversion functions
+    function convertFromBytes(bytes, targetUnit) {
+        const conversions = {
+            "B": 1,
+            "KB": 1024,
+            "MB": 1024 * 1024,
+            "GB": 1024 * 1024 * 1024,
+            "TB": 1024 * 1024 * 1024 * 1024
+        }
+        
+        return bytes / (conversions[targetUnit] || conversions["GB"])
+    }
+    
+    function getConvertedUsage() {
+        return convertFromBytes(currentUsage, getConfigValue("units", "GB"))
+    }
+    
+    function getConvertedTotal() {
+        return convertFromBytes(totalAvailable, getConfigValue("units", "GB"))
+    }
+    
     function toggleConfig(key) {
         if (!configService) return
         
@@ -347,10 +415,10 @@ PopupWindow {
         configService.saveConfig()
     }
     
-    function cyclePrecision() {
+    function cycleUsagePrecision() {
         if (!configService) return
         
-        const configKey = "storage.precision"
+        const configKey = "storage.usagePrecision"
         const currentPrecision = configService.getValue(configKey, 0)
         const newPrecision = (currentPrecision + 1) % 4
         
@@ -358,20 +426,71 @@ PopupWindow {
         configService.saveConfig()
     }
     
+    function cycleStoragePrecision() {
+        if (!configService) return
+        
+        const configKey = "storage.storagePrecision"
+        const currentPrecision = configService.getValue(configKey, 1)
+        const newPrecision = (currentPrecision + 1) % 4
+        
+        configService.setValue(configKey, newPrecision)
+        configService.saveConfig()
+    }
+    
+    function cycleUnits() {
+        if (!configService) return
+        
+        const configKey = "storage.units"
+        const units = ["MB", "GB", "TB"]
+        const currentUnits = configService.getValue(configKey, "GB")
+        const currentIndex = units.indexOf(currentUnits)
+        const newIndex = (currentIndex + 1) % units.length
+        
+        configService.setValue(configKey, units[newIndex])
+        configService.saveConfig()
+    }
+    
+    function cycleLabelText() {
+        if (!configService) return
+        
+        const configKey = "storage.labelText"
+        const labels = ["Storage", "Disk", "HDD", "SSD"]
+        const currentLabel = configService.getValue(configKey, "Storage")
+        const currentIndex = labels.indexOf(currentLabel)
+        const newIndex = (currentIndex + 1) % labels.length
+        
+        configService.setValue(configKey, labels[newIndex])
+        configService.saveConfig()
+    }
+    
     function generateDisplayPreview() {
         let parts = []
         
         if (getConfigValue("showIcon", true)) parts.push("💾")
-        if (getConfigValue("showLabel", false)) parts.push("Storage")
+        if (getConfigValue("showLabel", false)) parts.push(getConfigValue("labelText", "Storage"))
         
         let storageParts = []
         if (getConfigValue("showPercentage", true)) {
-            storageParts.push(usagePercent.toFixed(getConfigValue("precision", 0)) + "%")
+            storageParts.push(usagePercent.toFixed(getConfigValue("usagePrecision", 0)) + "%")
         }
         if (getConfigValue("showBytes", false)) {
-            storageParts.push(currentUsage.toFixed(1) + "/" + totalAvailable.toFixed(1) + " GB")
+            const units = getConfigValue("units", "GB")
+            const showRemaining = getConfigValue("showRemaining", false)
+            if (showRemaining) {
+                const remaining = getConvertedTotal() - getConvertedUsage()
+                storageParts.push(remaining.toFixed(getConfigValue("storagePrecision", 1)) + "/" + getConvertedTotal().toFixed(getConfigValue("storagePrecision", 1)) + " " + units + " free")
+            } else {
+                storageParts.push(getConvertedUsage().toFixed(getConfigValue("storagePrecision", 1)) + "/" + getConvertedTotal().toFixed(getConfigValue("storagePrecision", 1)) + " " + units)
+            }
         } else if (!getConfigValue("showPercentage", true)) {
-            storageParts.push(currentUsage.toFixed(1) + " GB")
+            const units = getConfigValue("units", "GB")
+            const showRemaining = getConfigValue("showRemaining", false)
+            if (showRemaining) {
+                const remaining = getConvertedTotal() - getConvertedUsage()
+                storageParts.push(remaining.toFixed(getConfigValue("storagePrecision", 1)) + " " + units + " free")
+            } else {
+                storageParts.push(getConvertedUsage().toFixed(getConfigValue("storagePrecision", 1)) + " " + units)
+            }
         }
         if (storageParts.length > 0) {
             parts.push(storageParts.join(" | "))

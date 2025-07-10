@@ -26,17 +26,18 @@ Singleton {
         enabled: storageService.systemMonitor !== null
         
         function onStorageUpdated(used, total, available, percentage, mount) {
-            storageService.usedBytes = used || 0
-            storageService.totalBytes = total || 0
-            storageService.availableBytes = available || 0
+            // Convert GB to bytes (SystemMonitorService provides data in GB)
+            storageService.usedBytes = (used || 0) * 1024 * 1024 * 1024
+            storageService.totalBytes = (total || 0) * 1024 * 1024 * 1024
+            storageService.availableBytes = (available || 0) * 1024 * 1024 * 1024
             storageService.usagePercentage = percentage || 0
             storageService.mountPoint = mount || "/"
             
             // Update display strings with safe values
             storageService.usageDisplay = (percentage || 0).toFixed(1) + "%"
-            storageService.usedDisplay = formatBytes(used || 0)
-            storageService.totalDisplay = formatBytes(total || 0)
-            storageService.availableDisplay = formatBytes(available || 0)
+            storageService.usedDisplay = formatBytes(storageService.usedBytes)
+            storageService.totalDisplay = formatBytes(storageService.totalBytes)
+            storageService.availableDisplay = formatBytes(storageService.availableBytes)
         }
     }
     
@@ -45,17 +46,18 @@ Singleton {
         if (systemMonitor) {
             const stats = systemMonitor.getCurrentStats()
             if (stats && stats.storage) {
-                usedBytes = stats.storage.used || 0
-                totalBytes = stats.storage.total || 0
-                availableBytes = stats.storage.available || 0
+                // Convert GB to bytes (SystemMonitorService provides data in GB)
+                usedBytes = (stats.storage.used || 0) * 1024 * 1024 * 1024
+                totalBytes = (stats.storage.total || 0) * 1024 * 1024 * 1024
+                availableBytes = (stats.storage.available || 0) * 1024 * 1024 * 1024
                 usagePercentage = stats.storage.percentage || stats.storage.percent || 0
                 mountPoint = stats.storage.mountPoint || "/"
                 
                 // Update display strings with safe values
                 usageDisplay = (usagePercentage || 0).toFixed(1) + "%"
-                usedDisplay = formatBytes(usedBytes || 0)
-                totalDisplay = formatBytes(totalBytes || 0)
-                availableDisplay = formatBytes(availableBytes || 0)
+                usedDisplay = formatBytes(usedBytes)
+                totalDisplay = formatBytes(totalBytes)
+                availableDisplay = formatBytes(availableBytes)
                 ready = true
             }
         }
