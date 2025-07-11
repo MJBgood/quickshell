@@ -1,0 +1,7 @@
+Bar 1.0 Bar.qml
+BarContextMenu 1.0 BarContextMenu.qml
+SettingsOverlay 1.0 SettingsOverlay.qml
+SessionOverlay 1.0 SessionOverlay.qml
+ThemeDropdown 1.0 ThemeDropdown.qml
+TopCenterMenu 1.0 TopCenterMenu.qml
+ScreenBorder 1.0 ScreenBorder.qml

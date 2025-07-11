@@ -1,0 +1,3 @@
+singleton BrightnessService BrightnessService.qml
+BrightnessWidget 1.0 BrightnessWidget.qml
+BrightnessContextMenu 1.0 BrightnessContextMenu.qml

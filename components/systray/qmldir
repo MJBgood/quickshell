@@ -1,0 +1,3 @@
+singleton SystemTrayService SystemTrayService.qml
+SystemTrayWidget 1.0 SystemTrayWidget.qml
+SystemTrayContextMenu 1.0 SystemTrayContextMenu.qml

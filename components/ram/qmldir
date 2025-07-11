@@ -1,0 +1,3 @@
+singleton RamService RamService.qml
+RamWidget 1.0 RamWidget.qml
+RamContextMenu 1.0 RamContextMenu.qml

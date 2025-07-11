@@ -1,0 +1,3 @@
+singleton StorageService StorageService.qml
+StorageWidget 1.0 StorageWidget.qml
+StorageContextMenu 1.0 StorageContextMenu.qml

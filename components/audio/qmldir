@@ -1,0 +1,3 @@
+singleton AudioService AudioService.qml
+AudioWidget 1.0 AudioWidget.qml
+AudioContextMenu 1.0 AudioContextMenu.qml

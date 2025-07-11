@@ -1,0 +1,6 @@
+singleton NotificationService NotificationService.qml
+singleton NotificationPopupManager NotificationPopupManager.qml
+NotificationWidget 1.0 NotificationWidget.qml
+NotificationContextMenu 1.0 NotificationContextMenu.qml
+NotificationCenter 1.0 NotificationCenter.qml
+NotificationPopup 1.0 NotificationPopup.qml

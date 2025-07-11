@@ -1,0 +1,17 @@
+singleton ConfigService ConfigService.qml
+singleton Icons Icons.qml
+singleton WidgetRegistry WidgetRegistry.qml
+singleton DisplayScalingService DisplayScalingService.qml
+singleton MouseInteractionService MouseInteractionService.qml
+singleton BorderOverlayService BorderOverlayService.qml
+singleton TemperatureService TemperatureService.qml
+singleton SystemMonitorService SystemMonitorService.qml
+ApplicationIconResolver 1.0 ApplicationIconResolver.qml
+ComponentRegistry 1.0 ComponentRegistry.qml
+WidgetContainer 1.0 WidgetContainer.qml
+ContextMenuSection 1.0 ContextMenuSection.qml
+MenuItem 1.0 MenuItem.qml
+MonitorMenuItem 1.0 MonitorMenuItem.qml
+ScalingContextMenu 1.0 ScalingContextMenu.qml
+PollingRateControl 1.0 PollingRateControl.qml
+TemperaturePollingRateControl 1.0 TemperaturePollingRateControl.qml

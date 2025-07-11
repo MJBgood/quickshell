@@ -1,0 +1,3 @@
+singleton WallpaperService WallpaperService.qml
+WallpaperSelector 1.0 WallpaperSelector.qml
+WallpaperBackground 1.0 WallpaperBackground.qml

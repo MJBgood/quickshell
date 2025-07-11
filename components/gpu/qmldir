@@ -1,0 +1,5 @@
+singleton GpuService GpuService.qml
+GpuWidget 1.0 GpuWidget.qml
+GpuTempWidget 1.0 GpuTempWidget.qml
+GpuContextMenu 1.0 GpuContextMenu.qml
+GpuTempContextMenu 1.0 GpuTempContextMenu.qml

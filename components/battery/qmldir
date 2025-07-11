@@ -1,0 +1,3 @@
+singleton BatteryService BatteryService.qml
+BatteryWidget 1.0 BatteryWidget.qml
+BatteryContextMenu 1.0 BatteryContextMenu.qml

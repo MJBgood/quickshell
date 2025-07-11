@@ -3,7 +3,8 @@ import Quickshell.Hyprland
 import Quickshell.Wayland
 import QtQuick
 import QtCore
-import "./services"
+import "./components/shared"
+import "./components/notification"
 
 ShellRoot {
     id: root
@@ -39,33 +40,9 @@ ShellRoot {
         }
     }
     
-    // Initialize stores using loaders
-    Loader {
-        id: windowStoreLoader
-        source: "./stores/WindowStore.qml"
-    }
+    // Stores removed - were unused
     
-    Loader {
-        id: workspaceStoreLoader
-        source: "./stores/WorkspaceStore.qml"
-    }
-    
-    Loader {
-        id: systemMonitorServiceLoader
-        source: "./services/SystemMonitorService.qml"
-        onLoaded: {
-            console.log("SystemMonitorService loaded successfully")
-            console.log("SystemMonitorService initialized:", item.initialized)
-            // Connect config service directly
-            console.log("Connecting ConfigService to SystemMonitorService")
-            item.configService = ConfigService
-        }
-        onStatusChanged: {
-            if (status === Loader.Error) {
-                console.error("Failed to load SystemMonitorService:", sourceComponent.errorString)
-            }
-        }
-    }
+    // SystemMonitorService is now a singleton - no loader needed
     
     Loader {
         id: windowTrackerLoader
@@ -83,7 +60,7 @@ ShellRoot {
     
     Loader {
         id: iconResolverLoader
-        source: "./services/ApplicationIconResolver.qml"
+        source: "./components/shared/ApplicationIconResolver.qml"
         onLoaded: {
             console.log("ApplicationIconResolver loaded successfully")
             console.log("IconResolver initialized:", item.initialized)
@@ -97,7 +74,7 @@ ShellRoot {
     
     Loader {
         id: wallpaperServiceLoader
-        source: "./services/WallpaperService.qml"
+        source: "./components/wallpaper/WallpaperService.qml"
         onLoaded: {
             console.log("WallpaperService loaded successfully")
             console.log("WallpaperService initialized:", item.initialized)
@@ -111,7 +88,7 @@ ShellRoot {
     
     Loader {
         id: widgetRegistryLoader
-        source: "./services/WidgetRegistry.qml"
+        source: "./components/shared/WidgetRegistry.qml"
         onLoaded: {
             console.log("WidgetRegistry loaded successfully")
             console.log("WidgetRegistry initialized:", item.initialized)
@@ -133,9 +110,8 @@ ShellRoot {
     // themeService removed - theme functionality integrated into configService
     property var configService: ConfigService
     property alias hyprlandService: hyprlandServiceLoader.item
-    property alias windowStore: windowStoreLoader.item
-    property alias workspaceStore: workspaceStoreLoader.item
-    property alias systemMonitorService: systemMonitorServiceLoader.item
+    // Store aliases removed - stores were unused
+    property var systemMonitorService: SystemMonitorService
     property alias windowTracker: windowTrackerLoader.item
     property alias iconResolver: iconResolverLoader.item
     property alias wallpaperService: wallpaperServiceLoader.item
@@ -169,7 +145,7 @@ ShellRoot {
         // Only load when all services are initialized AND theme is loaded
         active: ConfigService && 
                 hyprlandServiceLoader.item &&
-                systemMonitorServiceLoader.item &&
+                SystemMonitorService &&
                 windowTrackerLoader.item &&
                 iconResolverLoader.item &&
                 wallpaperServiceLoader.item &&
@@ -183,7 +159,7 @@ ShellRoot {
             item.modelData = Quickshell.screens[0] || null
             // themeService removed - theme functionality integrated into configService
             item.configService = ConfigService
-            item.systemMonitorService = systemMonitorServiceLoader.item
+            item.systemMonitorService = SystemMonitorService
             item.windowTracker = windowTrackerLoader.item
             item.iconResolver = iconResolverLoader.item
             item.sessionOverlay = sessionWindow.sessionOverlay  // Pass session overlay
@@ -204,7 +180,7 @@ ShellRoot {
     // Settings Overlay - Lazy loaded only when needed
     Loader {
         id: settingsOverlayLoader
-        source: "./components/overlays/SettingsOverlay.qml"
+        source: "./components/shell/SettingsOverlay.qml"
         active: false  // Only load when settings is requested
         
         onLoaded: {
@@ -272,7 +248,7 @@ ShellRoot {
         
         Loader {
             id: sessionOverlayLoader
-            source: "./components/overlays/SessionOverlay.qml"
+            source: "./components/shell/SessionOverlay.qml"
             active: true
             
             anchors {
@@ -298,7 +274,7 @@ ShellRoot {
     // Theme Dropdown - Global overlay
     Loader {
         id: globalThemeDropdownLoader
-        source: "./components/overlays/ThemeDropdown.qml"
+        source: "./components/shell/ThemeDropdown.qml"
         active: false
         
         onLoaded: {
@@ -380,7 +356,7 @@ ShellRoot {
     // Scaling Menu - Global overlay (same pattern as theme dropdown and wallpaper selector)
     Loader {
         id: globalScalingMenuLoader
-        source: "./components/overlays/ScalingContextMenu.qml"
+        source: "./components/shared/ScalingContextMenu.qml"
         active: false
         
         onLoaded: {
@@ -432,7 +408,7 @@ ShellRoot {
         // Screen border visual
         Loader {
             id: screenBorderLoader
-            source: "./components/overlays/ScreenBorder.qml"
+            source: "./components/shell/ScreenBorder.qml"
             active: true
             anchors.fill: parent
             
@@ -445,7 +421,7 @@ ShellRoot {
     }
     
     
-    // Mouse interaction window (caelestia pattern - no click blocking)
+    // Mouse interaction window using caelestia's exact approach
     PanelWindow {
         id: mouseInteractionWindow
         screen: Quickshell.screens[0]
@@ -463,16 +439,41 @@ ShellRoot {
             bottom: true
         }
         
-        // Mouse detection that doesn't block clicks
+        // Mask to make everything click-through EXCEPT the top activation zone
+        mask: Region {
+            x: 0
+            y: 0
+            width: mouseInteractionWindow.width
+            height: mouseInteractionWindow.height
+            intersection: Intersection.Xor
+            
+            regions: [
+                Region {
+                    x: (mouseInteractionWindow.width - 200) / 2
+                    y: 0
+                    width: 200
+                    height: 32
+                    intersection: Intersection.Subtract
+                }
+            ]
+        }
+        
+        // Only the top-center activation zone can receive mouse events
         MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.NoButton // CRITICAL: Don't block clicks!
+            x: (parent.width - 200) / 2
+            y: 0
+            width: 200
+            height: 32
             hoverEnabled: true
             
-            onPositionChanged: mouse => {
-                if (mouseInteractionService) {
-                    mouseInteractionService.updateMousePosition(mouse.x, mouse.y)
-                }
+            onEntered: {
+                console.log("[MouseInteraction] Top-center zone entered")
+                dashboardState.visible = true
+            }
+            
+            onExited: {
+                console.log("[MouseInteraction] Top-center zone exited")
+                // Keep dashboard open briefly, let focus grab handle closing
             }
         }
     }
@@ -495,10 +496,27 @@ ShellRoot {
             bottom: true
         }
         
-        // Dashboard state
-        PersistentProperties {
-            id: dashboardState
-            property bool visible: false
+        // Focus management
+        HyprlandFocusGrab {
+            active: dashboardState.visible
+            windows: [dashboardWindow]
+            onCleared: dashboardState.visible = false
+        }
+        
+        // Semi-transparent background
+        Rectangle {
+            anchors.fill: parent
+            color: "#80000000"
+            opacity: dashboardState.visible ? 0.3 : 0
+            
+            Behavior on opacity {
+                NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+            }
+            
+            MouseArea {
+                anchors.fill: parent
+                onClicked: dashboardState.visible = false
+            }
         }
         
         // Dashboard wrapper with height animation (like caelestia)
@@ -509,42 +527,18 @@ ShellRoot {
             anchors.topMargin: 8 // Border thickness offset
             
             width: 600
-            implicitHeight: 0 // Start collapsed
-            
-            // Height animation states (caelestia pattern)
-            states: State {
-                name: "visible"
-                when: dashboardState.visible
-                PropertyChanges {
-                    dashboardWrapper.implicitHeight: dashboardContent.implicitHeight
-                }
-            }
+            implicitHeight: dashboardState.visible ? dashboardContent.implicitHeight : 0
             
             // Caelestia-style transitions with custom curves
-            transitions: [
-                Transition {
-                    from: ""
-                    to: "visible"
-                    NumberAnimation {
-                        target: dashboardWrapper
-                        property: "implicitHeight"
-                        duration: 500 // expressiveDefaultSpatial timing
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: [0.38, 1.21, 0.22, 1, 1, 1] // Caelestia's expressive curve
-                    }
-                },
-                Transition {
-                    from: "visible"
-                    to: ""
-                    NumberAnimation {
-                        target: dashboardWrapper
-                        property: "implicitHeight"
-                        duration: 400 // normal timing
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1] // Emphasized curve
-                    }
+            Behavior on implicitHeight {
+                NumberAnimation {
+                    duration: dashboardState.visible ? 500 : 400
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: dashboardState.visible ? 
+                        [0.38, 1.21, 0.22, 1, 1, 1] : // Opening - expressive
+                        [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1] // Closing - emphasized
                 }
-            ]
+            }
             
             // Background shape that integrates with border
             Rectangle {
@@ -564,7 +558,7 @@ ShellRoot {
             // Dashboard content
             Loader {
                 id: dashboardContent
-                source: "./components/overlays/TopCenterMenu.qml"
+                source: "./components/shell/TopCenterMenu.qml"
                 active: true // Always active for height calculation
                 
                 anchors.fill: parent
@@ -590,51 +584,10 @@ ShellRoot {
         }
     }
     
-    // Mouse interaction detection window (Caelestia pattern)
-    PanelWindow {
-        id: mouseInteractionWindow
-        screen: Quickshell.screens[0]
-        color: "transparent"
-        visible: true
-        
-        WlrLayershell.exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-        WlrLayershell.layer: WlrLayer.Top // Above other windows but below overlays
-        WlrLayershell.namespace: "quickshell-interactions"
-        
-        anchors {
-            top: true
-            left: true
-            right: true
-            bottom: true
-        }
-        
-        // Caelestia-style mouse interaction detection
-        MouseArea {
-            id: globalMouseArea
-            anchors.fill: parent
-            hoverEnabled: true
-            acceptedButtons: Qt.NoButton // Don't block any clicks!
-            
-            onContainsMouseChanged: {
-                if (!containsMouse) {
-                    // Hide dashboard when mouse leaves screen area
-                    if (!dashboardState.visible) return
-                    
-                    // Only hide if not in shortcut mode
-                    if (!mouseInteractionService.shortcutModeActive) {
-                        dashboardState.visible = false
-                    }
-                }
-            }
-            
-            onPositionChanged: mouse => {
-                // Update mouse position in service
-                if (mouseInteractionService) {
-                    mouseInteractionService.updateMousePosition(mouse.x, mouse.y)
-                }
-            }
-        }
+    // Dashboard state (global)
+    PersistentProperties {
+        id: dashboardState
+        property bool visible: false
     }
     
     Component.onCompleted: {
@@ -677,9 +630,9 @@ ShellRoot {
         
         // Connect to SystemMonitorService when it's ready
         Qt.callLater(() => {
-            if (systemMonitorServiceLoader.item) {
+            if (SystemMonitorService) {
                 console.log("Connecting ConfigService to SystemMonitorService")
-                systemMonitorServiceLoader.item.configService = ConfigService
+                SystemMonitorService.configService = ConfigService
             }
         })
         

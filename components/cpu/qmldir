@@ -1,0 +1,3 @@
+singleton CpuService CpuService.qml
+CpuWidget 1.0 CpuWidget.qml
+CpuContextMenu 1.0 CpuContextMenu.qml
