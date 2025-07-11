@@ -774,7 +774,7 @@ PanelWindow {
             border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
             
             anchors {
-                right: systraySection.visible ? systraySection.left : powerSection.left
+                right: notificationSection.visible ? notificationSection.left : (systraySection.visible ? systraySection.left : powerSection.left)
                 rightMargin: configService ? configService.spacing("md", entityId) : 8
                 verticalCenter: parent.verticalCenter
             }
@@ -787,7 +787,42 @@ PanelWindow {
             }
         }
         
-        // System Tray section - Between clock and power button
+        // Notification section - Between clock and system tray
+        Rectangle {
+            id: notificationSection
+            implicitWidth: notificationWidget.visible ? notificationWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+            implicitHeight: notificationWidget.visible ? notificationWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
+            radius: configService ? configService.borderRadius : 8
+            color: notificationWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+            border.width: notificationWidget.visible ? 1 : 0
+            border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+            visible: notificationWidget.visible
+            
+            anchors {
+                right: systraySection.left
+                rightMargin: visible ? configService ? configService.spacing("md", entityId) : 8 : 0
+                verticalCenter: parent.verticalCenter
+            }
+            
+            NotificationWidget {
+                id: notificationWidget
+                anchors.centerIn: parent
+                
+                // Services
+                configService: bar.configService
+                notificationService: NotificationService
+                anchorWindow: bar
+                
+                // Widget configuration from config service
+                enabled: configService ? configService.getEntityProperty("notificationWidget", "enabled", true) : true
+                showIcon: configService ? configService.getEntityProperty("notificationWidget", "showIcon", true) : true
+                showCount: configService ? configService.getEntityProperty("notificationWidget", "showCount", true) : true
+                showUnreadOnly: configService ? configService.getEntityProperty("notificationWidget", "showUnreadOnly", true) : true
+                animateChanges: configService ? configService.getEntityProperty("notificationWidget", "animateChanges", true) : true
+            }
+        }
+        
+        // System Tray section - Between notifications and power button
         Rectangle {
             id: systraySection
             implicitWidth: systrayWidget.visible ? systrayWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
@@ -1001,9 +1036,10 @@ PanelWindow {
     // Right-click context menu for bar configuration (lower z-order so monitors can override)
     MouseArea {
         anchors.fill: parent
-        acceptedButtons: Qt.RightButton
+        acceptedButtons: Qt.RightButton | Qt.LeftButton
         z: -1  // Lower z-order so monitor MouseAreas can override
         onClicked: mouse => {
+            console.log(`[${componentId}] Mouse click detected - button:`, mouse.button, "at:", mouse.x, mouse.y)
             if (mouse.button === Qt.RightButton) {
                 console.log(`[${componentId}] Right-click detected, showing bar context menu`)
                 menu(bar, mouse.x, mouse.y)

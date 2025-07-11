@@ -5,21 +5,22 @@ import QtQuick.Controls
 import "../../services"
 
 PopupWindow {
-    id: systrayMenu
-    
-    // Window properties
-    implicitWidth: 280
-    implicitHeight: Math.min(350, systrayContent.contentHeight + 32)
-    visible: false
-    color: "transparent"
+    id: contextMenu
     
     // Services
     property var configService: ConfigService
+    property string entityId: "systemTrayWidget"
+    
+    // Window properties
+    implicitWidth: 280
+    implicitHeight: Math.min(350, menuContent.contentHeight + 32)
+    visible: false
+    color: "transparent"
     
     // Signals
     signal closed()
     
-    // Anchor configuration
+    // Anchor configuration (EXACTLY as working examples)
     anchor {
         window: null
         rect { x: 0; y: 0; width: 1; height: 1 }
@@ -29,16 +30,15 @@ PopupWindow {
         margins { left: 8; right: 8; top: 8; bottom: 8 }
     }
     
-    // Focus grab for dismissal
+    // Focus grab for dismissal (CRITICAL)
     HyprlandFocusGrab {
         id: focusGrab
-        windows: [systrayMenu]
+        windows: [contextMenu]
         onCleared: hide()
     }
     
     // Main container
     Rectangle {
-        id: menuContent
         anchors.fill: parent
         color: configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244"
         border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
@@ -46,7 +46,6 @@ PopupWindow {
         radius: 12
         
         ScrollView {
-            id: scrollView
             anchors.fill: parent
             anchors.margins: 16
             clip: true
@@ -57,7 +56,7 @@ PopupWindow {
             }
             
             Column {
-                id: systrayContent
+                id: menuContent
                 width: Math.max(parent.width - 16, 240)
                 spacing: 12
                 
@@ -67,10 +66,29 @@ PopupWindow {
                     height: 32
                     spacing: 8
                     
-                    Text {
-                        text: "📱"
-                        font.pixelSize: 20
+                    // System tray settings icon (geometric)
+                    Item {
+                        width: 20
+                        height: 20
                         anchors.verticalCenter: parent.verticalCenter
+                        
+                        // Grid icon representing system tray
+                        Grid {
+                            anchors.centerIn: parent
+                            columns: 2
+                            rows: 2
+                            spacing: 2
+                            
+                            Repeater {
+                                model: 4
+                                Rectangle {
+                                    width: 6
+                                    height: 6
+                                    color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
+                                    radius: 1
+                                }
+                            }
+                        }
                     }
                     
                     Column {
@@ -142,7 +160,7 @@ PopupWindow {
                             width: 40
                             height: 20
                             radius: 10
-                            color: getSystrayEnabled() ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70")
+                            color: getEnabled() ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70")
                             border.width: 1
                             border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                             
@@ -152,7 +170,7 @@ PopupWindow {
                                 radius: 8
                                 color: "#ffffff"
                                 anchors.verticalCenter: parent.verticalCenter
-                                x: getSystrayEnabled() ? parent.width - width - 2 : 2
+                                x: getEnabled() ? parent.width - width - 2 : 2
                                 
                                 Behavior on x {
                                     NumberAnimation { duration: 150 }
@@ -162,7 +180,7 @@ PopupWindow {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: toggleSystrayEnabled()
+                                onClicked: toggleEnabled()
                             }
                         }
                     }
@@ -174,7 +192,7 @@ PopupWindow {
                     spacing: 8
                     
                     Text {
-                        text: "Icon Size: " + getSystrayIconSize() + "px"
+                        text: "Icon Size: " + getIconSize() + "px"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                         color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
@@ -206,12 +224,12 @@ PopupWindow {
                                 from: 16
                                 to: 32
                                 stepSize: 2
-                                value: getSystrayIconSize()
+                                value: getIconSize()
                                 anchors.verticalCenter: parent.verticalCenter
                                 
                                 onValueChanged: {
-                                    if (configService && Math.abs(value - getSystrayIconSize()) > 0.1) {
-                                        Qt.callLater(() => setSystrayIconSize(Math.round(value)))
+                                    if (configService && Math.abs(value - getIconSize()) > 0.1) {
+                                        Qt.callLater(() => setIconSize(Math.round(value)))
                                     }
                                 }
                                 
@@ -260,7 +278,7 @@ PopupWindow {
                     spacing: 8
                     
                     Text {
-                        text: "Icon Spacing: " + getSystraySpacing() + "px"
+                        text: "Icon Spacing: " + getSpacing() + "px"
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                         color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
@@ -292,12 +310,12 @@ PopupWindow {
                                 from: 2
                                 to: 12
                                 stepSize: 1
-                                value: getSystraySpacing()
+                                value: getSpacing()
                                 anchors.verticalCenter: parent.verticalCenter
                                 
                                 onValueChanged: {
-                                    if (configService && Math.abs(value - getSystraySpacing()) > 0.1) {
-                                        Qt.callLater(() => setSystraySpacing(Math.round(value)))
+                                    if (configService && Math.abs(value - getSpacing()) > 0.1) {
+                                        Qt.callLater(() => setSpacing(Math.round(value)))
                                     }
                                 }
                                 
@@ -340,6 +358,58 @@ PopupWindow {
                     }
                 }
                 
+                // Show Passive Items toggle
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    color: configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a"
+                    border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                    border.width: 1
+                    radius: 8
+                    
+                    Row {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 12
+                        
+                        Text {
+                            text: "Show Passive Items"
+                            anchors.verticalCenter: parent.verticalCenter
+                            font.pixelSize: 12
+                            color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            width: parent.width - 60
+                        }
+                        
+                        Rectangle {
+                            width: 40
+                            height: 20
+                            radius: 10
+                            color: getShowPassive() ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70")
+                            border.width: 1
+                            border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+                            
+                            Rectangle {
+                                width: 16
+                                height: 16
+                                radius: 8
+                                color: "#ffffff"
+                                anchors.verticalCenter: parent.verticalCenter
+                                x: getShowPassive() ? parent.width - width - 2 : 2
+                                
+                                Behavior on x {
+                                    NumberAnimation { duration: 150 }
+                                }
+                            }
+                            
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: toggleShowPassive()
+                            }
+                        }
+                    }
+                }
+                
                 // Tooltips toggle
                 Rectangle {
                     width: parent.width
@@ -366,7 +436,7 @@ PopupWindow {
                             width: 40
                             height: 20
                             radius: 10
-                            color: getSystrayTooltips() ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70")
+                            color: getTooltips() ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70")
                             border.width: 1
                             border.color: configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
                             
@@ -376,7 +446,7 @@ PopupWindow {
                                 radius: 8
                                 color: "#ffffff"
                                 anchors.verticalCenter: parent.verticalCenter
-                                x: getSystrayTooltips() ? parent.width - width - 2 : 2
+                                x: getTooltips() ? parent.width - width - 2 : 2
                                 
                                 Behavior on x {
                                     NumberAnimation { duration: 150 }
@@ -386,7 +456,7 @@ PopupWindow {
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: toggleSystrayTooltips()
+                                onClicked: toggleTooltips()
                             }
                         }
                     }
@@ -395,13 +465,13 @@ PopupWindow {
         }
     }
     
-    // Functions
+    // Standard show/hide functions (EXACTLY as working examples)
     function show(anchorWindow, x, y) {
-        if (anchorWindow) {
-            anchor.window = anchorWindow
-            
-            const screenWidth = anchorWindow.screen ? anchorWindow.screen.width : 1920
-            const screenHeight = anchorWindow.screen ? anchorWindow.screen.height : 1080
+        anchor.window = anchorWindow
+        
+        if (anchorWindow && anchorWindow.screen) {
+            const screenWidth = anchorWindow.screen.width
+            const screenHeight = anchorWindow.screen.height
             
             let popupX = Math.min(x || 0, screenWidth - implicitWidth - 20)
             let popupY = Math.min(y || 0, screenHeight - implicitHeight - 20)
@@ -411,6 +481,11 @@ PopupWindow {
             
             anchor.rect.x = popupX
             anchor.rect.y = popupY
+            anchor.rect.width = 1
+            anchor.rect.height = 1
+        } else {
+            anchor.rect.x = x || 0
+            anchor.rect.y = y || 0
             anchor.rect.width = 1
             anchor.rect.height = 1
         }
@@ -425,49 +500,61 @@ PopupWindow {
         closed()
     }
     
-    // Configuration helpers
-    function getSystrayEnabled() {
-        return configService ? configService.getValue("widgets.systray.enabled", true) : true
+    // Entity-aware configuration helpers
+    function getEnabled() {
+        return configService ? configService.getEntityProperty(entityId, "enabled", true) : true
     }
     
-    function toggleSystrayEnabled() {
+    function toggleEnabled() {
         if (configService) {
-            const newValue = !getSystrayEnabled()
-            configService.setValue("widgets.systray.enabled", newValue)
+            const newValue = !getEnabled()
+            configService.setEntityProperty(entityId, "enabled", newValue)
             configService.saveConfig()
         }
     }
     
-    function getSystrayIconSize() {
-        return configService ? configService.getValue("widgets.systray.iconSize", 20) : 20
+    function getIconSize() {
+        return configService ? configService.getEntityStyle(entityId, "iconSize", "auto", 20) : 20
     }
     
-    function setSystrayIconSize(size) {
+    function setIconSize(size) {
         if (configService) {
-            configService.setValue("widgets.systray.iconSize", size)
+            configService.setEntityStyle(entityId, "iconSize", size)
             configService.saveConfig()
         }
     }
     
-    function getSystraySpacing() {
-        return configService ? configService.getValue("widgets.systray.spacing", 4) : 4
+    function getSpacing() {
+        return configService ? configService.getEntityStyle(entityId, "spacing", "auto", 4) : 4
     }
     
-    function setSystraySpacing(spacing) {
+    function setSpacing(spacing) {
         if (configService) {
-            configService.setValue("widgets.systray.spacing", spacing)
+            configService.setEntityStyle(entityId, "spacing", spacing)
             configService.saveConfig()
         }
     }
     
-    function getSystrayTooltips() {
-        return configService ? configService.getValue("widgets.systray.showTooltips", true) : true
+    function getShowPassive() {
+        return configService ? configService.getEntityProperty(entityId, "showPassive", true) : true
     }
     
-    function toggleSystrayTooltips() {
+    function toggleShowPassive() {
         if (configService) {
-            const newValue = !getSystrayTooltips()
-            configService.setValue("widgets.systray.showTooltips", newValue)
+            const newValue = !getShowPassive()
+            configService.setEntityProperty(entityId, "showPassive", newValue)
+            configService.saveConfig()
+        }
+    }
+    
+    function getTooltips() {
+        return configService ? configService.getEntityProperty(entityId, "showTooltips", true) : true
+    }
+    
+    function toggleTooltips() {
+        if (configService) {
+            const newValue = !getTooltips()
+            configService.setEntityProperty(entityId, "showTooltips", newValue)
             configService.saveConfig()
         }
     }

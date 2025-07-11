@@ -19,7 +19,8 @@
       "Bash(sed:*)",
       "Bash(rm:*)",
       "Bash(python3:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(notify-send:*)"
     ],
     "deny": []
   }

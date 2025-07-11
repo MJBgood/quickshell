@@ -156,6 +156,13 @@ PanelWindow {
                             font.pixelSize: configService ? configService.scaledFontSmall() : 9
                             color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                         }
+                        
+                        Text {
+                            text: getCurrentWallpaperInfo()
+                            font.pixelSize: configService ? configService.scaledFontSmall() : 9
+                            color: wallpaperService && wallpaperService.currentWallpaper ? "#a6e3a1" : "#f38ba8"
+                            visible: text.length > 0
+                        }
                     }
                     
                     // Close button
@@ -391,20 +398,33 @@ PanelWindow {
                                 // Current wallpaper indicator
                                 Rectangle {
                                     visible: isCurrentWallpaper(modelData.path)
-                                    width: configService ? configService.scaledIconSmall() : 16
-                                    height: configService ? configService.scaledIconSmall() : 16
-                                    radius: configService ? configService.scaledIconSmall() : 16 / 2
+                                    width: currentLabel.implicitWidth + 8
+                                    height: currentLabel.implicitHeight + 4
+                                    radius: 4
                                     color: "#a6e3a1"
                                     anchors.top: parent.top
                                     anchors.right: parent.right
-                                    anchors.margins: configService ? configService.scaledMarginSmall() : 4
+                                    anchors.margins: 4
                                     
                                     Text {
+                                        id: currentLabel
                                         anchors.centerIn: parent
-                                        text: "✓"
-                                        font.pixelSize: configService ? configService.scaledMarginSmall() : 10
+                                        text: "CURRENT"
+                                        font.pixelSize: 8
                                         font.weight: Font.Bold
                                         color: "#1e1e2e"
+                                    }
+                                    
+                                    // Subtle glow effect
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        anchors.margins: -1
+                                        radius: parent.radius + 1
+                                        color: "transparent"
+                                        border.color: "#a6e3a1"
+                                        border.width: 1
+                                        opacity: 0.6
+                                        z: -1
                                     }
                                 }
                                 
@@ -610,6 +630,21 @@ PanelWindow {
         }
         
         return `${total} wallpaper${total === 1 ? '' : 's'} available`
+    }
+    
+    function getCurrentWallpaperInfo() {
+        if (!wallpaperService) return ""
+        
+        if (wallpaperService.currentWallpaper) {
+            const wallpaperInfo = wallpaperService.getWallpaperInfo(wallpaperService.currentWallpaper)
+            if (wallpaperInfo) {
+                return `● Active: ${wallpaperInfo.name}`
+            } else {
+                return `● Active: ${wallpaperService.currentWallpaper.split('/').pop().split('.')[0]}`
+            }
+        } else {
+            return "○ No wallpaper set"
+        }
     }
     
     function openWallpaperFolder() {

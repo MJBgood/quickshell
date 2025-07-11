@@ -52,7 +52,7 @@ Rectangle {
     property int memoryPrecision: configService ? configService.getEntityProperty(entityId, "memoryPrecision", 1) : 1
     
     // Fixed width configuration
-    property bool useFixedWidth: configService ? configService.getValue("ram.useFixedWidth", true) : true
+    property bool useFixedWidth: configService ? configService.getValue("ram.useFixedWidth", false) : false
     
     // Current RAM data - delegate to service
     property real ramUsed: RamService.usedBytes

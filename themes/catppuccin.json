@@ -28,6 +28,7 @@
     "error": "#f38ba8",
     "text": "#cdd6f4",
     "textAlt": "#bac2de",
+    "textSecondary": "#a6adc8",
     "textDisabled": "#a6adc8",
     "onPrimary": "#1e1e2e",
     "onSecondary": "#1e1e2e",
@@ -35,7 +36,8 @@
     "onBackground": "#cdd6f4",
     "onError": "#1e1e2e",
     "border": "#585b70",
-    "divider": "#45475a"
+    "divider": "#45475a",
+    "shadow": "#11111b"
   },
   "fonts": {
     "display": {
@@ -113,6 +115,7 @@
       "error": "#d20f39",
       "text": "#4c4f69",
       "textAlt": "#5c5f77",
+      "textSecondary": "#6c6f85",
       "textDisabled": "#6c6f85",
       "onPrimary": "#eff1f5",
       "onSecondary": "#eff1f5",
@@ -120,7 +123,8 @@
       "onBackground": "#4c4f69",
       "onError": "#eff1f5",
       "border": "#acb0be",
-      "divider": "#dce0e8"
+      "divider": "#dce0e8",
+      "shadow": "#dc8a78"
     },
     "fonts": {
       "display": {

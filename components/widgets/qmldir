@@ -9,6 +9,7 @@ PowerWidget 1.0 PowerWidget.qml
 RamMonitor 1.0 RamMonitor.qml
 StorageMonitor 1.0 StorageMonitor.qml
 SystemTrayWidget 1.0 SystemTrayWidget.qml
+NotificationWidget 1.0 NotificationWidget.qml
 WallpaperSelector 1.0 WallpaperSelector.qml
 WallpaperBackground 1.0 WallpaperBackground.qml
 WidgetContainer 1.0 WidgetContainer.qml

@@ -322,6 +322,17 @@ Item {
         }
     }
     
+    // Wallpaper verification timer - checks if current wallpaper is still active
+    Timer {
+        id: wallpaperVerificationTimer
+        interval: 60000  // 1 minute
+        running: monitoring && currentWallpaper.length > 0
+        repeat: true
+        onTriggered: {
+            verifyCurrentWallpaper()
+        }
+    }
+    
     // Public API Functions
     
     /**
@@ -641,6 +652,27 @@ Item {
         
         const extension = wallpaperPath.split('.').pop().toLowerCase()
         return supportedExtensions.includes(extension)
+    }
+    
+    /**
+     * Verify if the current wallpaper is still actually set
+     */
+    function verifyCurrentWallpaper() {
+        if (!currentWallpaper || currentWallpaper.length === 0) return
+        
+        console.log(logCategory, "Verifying current wallpaper:", currentWallpaper)
+        
+        // Check if the wallpaper file still exists
+        if (!isValidWallpaper(currentWallpaper)) {
+            console.warn(logCategory, "Current wallpaper file no longer valid:", currentWallpaper)
+            currentWallpaper = ""
+            saveStateToFile()
+            return
+        }
+        
+        // For more robust detection, we could check if swaybg is still running with our image
+        // This would require examining running processes, which is more complex
+        // For now, we just verify file existence and validity
     }
     
     

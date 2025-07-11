@@ -606,10 +606,18 @@ PopupWindow {
     }
     
     function openScalingOptions() {
-        console.log("Opening scaling options...")
+        console.log("BarContextMenu: Opening scaling options...")
         
-        // Load the scaling context menu on demand
-        scalingMenuLoader.active = true
+        // Hide this menu first
+        hide()
+        
+        // Call global function (same as wallpaper selector and theme dropdown)
+        if (shellRoot) {
+            console.log("Calling shellRoot.showScalingMenu()")
+            shellRoot.showScalingMenu()
+        } else {
+            console.error("Cannot call showScalingMenu - shellRoot is null")
+        }
     }
     
     function show(anchorWindow, x, y) {
@@ -678,27 +686,5 @@ PopupWindow {
         }
     }
     
-    // Wallpaper selector is now handled globally by shell.qml
-    
-    // Scaling context menu - lazy loaded
-    Loader {
-        id: scalingMenuLoader
-        source: "ScalingContextMenu.qml"
-        active: false
-        
-        onLoaded: {
-            console.log("ScalingContextMenu loaded on demand")
-            item.configService = barMenu.configService
-            
-            // Auto-hide when closed
-            item.closed.connect(function() {
-                scalingMenuLoader.active = false
-            })
-            
-            // Show immediately after loading - pass the correct Quickshell window, not Rectangle
-            if (anchor.window) {
-                item.show(anchor.window, anchor.rect.x, anchor.rect.y)
-            }
-        }
-    }
+    // Wallpaper selector and scaling menu are now handled globally by shell.qml
 }

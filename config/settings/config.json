@@ -24,8 +24,8 @@
       "animationDuration": 300
     },
     "scaling": {
-      "globalScale": 1,
-      "useCustomScaling": true,
+      "globalScale": 0.625,
+      "useCustomScaling": false,
       "customScales": {
         "padding": 0.7,
         "margin": 0.7,
@@ -283,14 +283,24 @@
       "fontSize": "sm",
       "iconSize": "sm",
       "spacing": "auto"
+    },
+    "topCenterMenu": {
+      "gridColumns": 4,
+      "fontSize": "md",
+      "spacing": "lg",
+      "padding": "xl"
+    },
+    "screenBorder": {
+      "enabled": true,
+      "visible": true
     }
   },
   "clock": {
     "showDate": true
   },
   "cpu": {
-    "showLabel": true,
-    "showIcon": false,
+    "showLabel": false,
+    "showIcon": true,
     "showFrequency": false,
     "showTemperature": true
   },
@@ -306,8 +316,9 @@
     "showPercentage": false,
     "precision": 0,
     "labelText": "Storage",
-    "units": "TB",
-    "storagePrecision": 1
+    "units": "GB",
+    "storagePrecision": 1,
+    "showRemaining": true
   },
   "gpu": {
     "showLabel": true,
@@ -315,5 +326,19 @@
     "showClocks": false,
     "showIcon": false,
     "showTemperature": true
+  },
+  "border": {
+    "thickness": 8,
+    "rounding": 12,
+    "opacity": 0.3,
+    "animationDuration": 300,
+    "easingType": "OutCubic",
+    "showDebug": false
+  },
+  "topMenu": {
+    "activationZoneHeight": 32,
+    "activationZoneWidth": 200,
+    "gridColumns": 4,
+    "enabled": true
   }
 }

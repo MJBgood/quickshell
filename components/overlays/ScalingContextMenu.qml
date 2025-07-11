@@ -7,14 +7,14 @@ import "../../services"
 PopupWindow {
     id: scalingMenu
     
-    // Window properties
     implicitWidth: 280
-    implicitHeight: Math.max(100, Math.min(400, scalingContent.contentHeight + 32))
+    implicitHeight: 350
     visible: false
     color: "transparent"
     
     // Services
     property var configService: ConfigService
+    property var displayScalingService: DisplayScalingService
     
     // Signals
     signal closed()
@@ -22,11 +22,21 @@ PopupWindow {
     // Anchor configuration
     anchor {
         window: null
-        rect { x: 0; y: 0; width: 1; height: 1 }
+        rect {
+            x: 0
+            y: 0
+            width: 1
+            height: 1
+        }
         edges: Edges.Top | Edges.Left
         gravity: Edges.Bottom | Edges.Right
         adjustment: PopupAdjustment.All
-        margins { left: 8; right: 8; top: 8; bottom: 8 }
+        margins {
+            left: 8
+            right: 8
+            top: 8
+            bottom: 8
+        }
     }
     
     // Focus grab for dismissal
@@ -130,7 +140,7 @@ PopupWindow {
                         spacing: 4
                         
                         Text {
-                            text: "Current Scale: " + (configService ? (configService.globalScale * 100).toFixed(0) + "%" : "100%")
+                            text: "Current Scale: " + getCurrentScale()
                             font.pixelSize: 12
                             font.weight: Font.Medium
                             color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
@@ -138,10 +148,74 @@ PopupWindow {
                         }
                         
                         Text {
-                            text: getScreenInfo()
+                            text: getDisplayInfo()
                             font.pixelSize: 10
                             color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
                             anchors.horizontalCenter: parent.horizontalCenter
+                        }
+                    }
+                }
+                
+                // DPI recommendation and explanation
+                Rectangle {
+                    visible: displayScalingService && displayScalingService.ready
+                    width: parent.width
+                    height: explanationColumn.implicitHeight + 16
+                    color: "transparent"
+                    border.color: "#a6e3a1"
+                    border.width: 1
+                    radius: 6
+                    
+                    Column {
+                        id: explanationColumn
+                        anchors.centerIn: parent
+                        width: parent.width - 16
+                        spacing: 4
+                        
+                        Text {
+                            text: "💡 Smart Scaling Analysis"
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                            color: "#a6e3a1"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
+                        
+                        Text {
+                            visible: displayScalingService && displayScalingService.ready
+                            text: getScalingExplanation()
+                            font.pixelSize: 9
+                            color: configService ? configService.getThemeProperty("colors", "textAlt") || "#bac2de" : "#bac2de"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            width: parent.width
+                        }
+                        
+                        Rectangle {
+                            visible: displayScalingService && displayScalingService.ready && getRecommendedUserScale() !== getCurrentUserScale()
+                            width: parent.width * 0.8
+                            height: 24
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            color: "#a6e3a1"
+                            radius: 4
+                            
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Apply " + (getRecommendedUserScale() * 100).toFixed(0) + "%"
+                                font.pixelSize: 10
+                                font.weight: Font.Medium
+                                color: "#1e1e2e"
+                            }
+                            
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (displayScalingService && displayScalingService.ready) {
+                                        setGlobalScale(getRecommendedUserScale())
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -162,6 +236,7 @@ PopupWindow {
                         width: (parent.width - 16) / 3
                         label: "Small\n75%"
                         scale: 0.75
+                        isRecommended: displayScalingService && displayScalingService.ready && Math.abs(displayScalingService.recommendedScale - 0.75) < 0.1
                         onClicked: setGlobalScale(0.75)
                     }
                     
@@ -169,6 +244,7 @@ PopupWindow {
                         width: (parent.width - 16) / 3
                         label: "Normal\n100%"
                         scale: 1.0
+                        isRecommended: displayScalingService && displayScalingService.ready && Math.abs(displayScalingService.recommendedScale - 1.0) < 0.1
                         onClicked: setGlobalScale(1.0)
                     }
                     
@@ -176,6 +252,7 @@ PopupWindow {
                         width: (parent.width - 16) / 3
                         label: "Large\n125%"
                         scale: 1.25
+                        isRecommended: displayScalingService && displayScalingService.ready && Math.abs(displayScalingService.recommendedScale - 1.25) < 0.1
                         onClicked: setGlobalScale(1.25)
                     }
                 }
@@ -214,12 +291,26 @@ PopupWindow {
                             from: 0.5
                             to: 2.0
                             stepSize: 0.05
-                            value: configService ? configService.getValue("ui.scaling.globalScale", 1.0) : 1.0
+                            value: configService ? configService.getUISetting("scaling", "globalScale", 1.0) : 1.0
                             anchors.verticalCenter: parent.verticalCenter
                             
                             onValueChanged: {
-                                if (configService && Math.abs(value - configService.getValue("ui.scaling.globalScale", 1.0)) > 0.01) {
-                                    Qt.callLater(() => setGlobalScale(value))
+                                if (configService && Math.abs(value - configService.getUISetting("scaling", "globalScale", 1.0)) > 0.01) {
+                                    // Update the scale without hiding the menu
+                                    updateGlobalScale(value)
+                                }
+                            }
+                            
+                            // Update the slider value when config changes
+                            Connections {
+                                target: configService
+                                function onConfigChanged() {
+                                    if (configService) {
+                                        const userScale = configService.getUISetting("scaling", "globalScale", 1.0)
+                                        if (Math.abs(scaleSlider.value - userScale) > 0.01) {
+                                            scaleSlider.value = userScale
+                                        }
+                                    }
                                 }
                             }
                             
@@ -297,21 +388,44 @@ PopupWindow {
     component ScalingButton: Rectangle {
         property string label: ""
         property real scale: 1.0
+        property bool isRecommended: false
         signal clicked()
         
         height: 50
         radius: 6
         color: buttonMouse.containsMouse ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "surfaceAlt") || "#45475a" : "#45475a")
-        border.color: Math.abs(scale - (configService ? configService.getValue("ui.scaling.globalScale", 1.0) : 1.0)) < 0.01 ? "#a6e3a1" : (configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70")
-        border.width: Math.abs(scale - (configService ? configService.getValue("ui.scaling.globalScale", 1.0) : 1.0)) < 0.01 ? 2 : 1
+        border.color: {
+            const userScale = configService ? configService.getUISetting("scaling", "globalScale", 1.0) : 1.0
+            const isCurrent = Math.abs(scale - userScale) < 0.01
+            if (isCurrent) return "#a6e3a1"
+            if (isRecommended) return "#fab387"  // Orange for recommended
+            return configService ? configService.getThemeProperty("colors", "border") || "#585b70" : "#585b70"
+        }
+        border.width: {
+            const userScale = configService ? configService.getUISetting("scaling", "globalScale", 1.0) : 1.0
+            const isCurrent = Math.abs(scale - userScale) < 0.01
+            return (isCurrent || isRecommended) ? 2 : 1
+        }
         
-        Text {
+        Column {
             anchors.centerIn: parent
-            text: label
-            font.pixelSize: 11
-            font.weight: Font.Medium
-            color: buttonMouse.containsMouse ? "#1e1e2e" : (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
-            horizontalAlignment: Text.AlignHCenter
+            spacing: 2
+            
+            Text {
+                text: label
+                font.pixelSize: 11
+                font.weight: Font.Medium
+                color: buttonMouse.containsMouse ? "#1e1e2e" : (configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4")
+                horizontalAlignment: Text.AlignHCenter
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+            
+            Text {
+                visible: isRecommended
+                text: "💡"
+                font.pixelSize: 10
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
         }
         
         MouseArea {
@@ -333,46 +447,9 @@ PopupWindow {
     
     // Functions
     function show(anchorWindow, x, y) {
-        if (!anchorWindow) {
-            console.error("ScalingContextMenu: No anchor window provided")
-            return
-        }
-        
-        // Set anchor window first
         anchor.window = anchorWindow
-        
-        // Get screen dimensions safely
-        let screenWidth = 1920
-        let screenHeight = 1080
-        
-        try {
-            if (anchorWindow.screen) {
-                screenWidth = anchorWindow.screen.width || 1920
-                screenHeight = anchorWindow.screen.height || 1080
-            } else if (Quickshell.screens && Quickshell.screens.length > 0) {
-                const primaryScreen = Quickshell.screens[0]
-                screenWidth = primaryScreen.width || 1920
-                screenHeight = primaryScreen.height || 1080
-            }
-        } catch (e) {
-            console.warn("ScalingContextMenu: Error accessing screen properties, using defaults:", e)
-        }
-        
-        // Ensure we have valid dimensions
-        const menuWidth = Math.max(280, implicitWidth)
-        const menuHeight = Math.max(100, implicitHeight)
-        
-        let popupX = Math.min(x || 0, screenWidth - menuWidth - 20)
-        let popupY = Math.min(y || 0, screenHeight - menuHeight - 20)
-        
-        popupX = Math.max(20, popupX)
-        popupY = Math.max(20, popupY)
-        
-        anchor.rect.x = popupX
-        anchor.rect.y = popupY
-        anchor.rect.width = 1
-        anchor.rect.height = 1
-        
+        anchor.rect.x = x || 0
+        anchor.rect.y = y || 0
         visible = true
         focusGrab.active = true
     }
@@ -384,30 +461,94 @@ PopupWindow {
     }
     
     function setGlobalScale(scale) {
-        if (configService) {
-            console.log("Setting global scale to:", scale)
-            configService.setValue("ui.scaling.globalScale", scale)
-            configService.saveConfig()
-        }
+        updateGlobalScale(scale)
+        // Hide menu immediately
+        hide()
+    }
+    
+    function updateGlobalScale(scale) {
+        if (!configService) return
+        
+        // Clamp scale to safe bounds
+        const clampedScale = Math.max(0.5, Math.min(2.0, scale))
+        
+        console.log("Setting global scale to:", clampedScale)
+        
+        // Set the new scale using the UI settings method
+        configService.setUISetting("scaling", "globalScale", clampedScale)
+        configService.saveConfig()
     }
     
     function resetScaling() {
         if (configService) {
             console.log("Resetting scaling to auto-detect")
-            configService.setValue("ui.scaling.globalScale", 1.0)
-            configService.setValue("ui.scaling.useCustomScaling", false)
+            
+            // Calculate user scale needed to achieve the recommended effective scale
+            // Since globalScale = devicePixelRatio * userScale, we need:
+            // userScale = recommendedScale / devicePixelRatio
+            const primaryScreen = Quickshell.screens[0]
+            const devicePixelRatio = primaryScreen ? primaryScreen.devicePixelRatio : 1.0
+            const recommendedEffectiveScale = displayScalingService && displayScalingService.ready ? displayScalingService.recommendedScale : 1.0
+            const userScale = recommendedEffectiveScale / devicePixelRatio
+            
+            console.log(`Auto-detect: devicePixelRatio=${devicePixelRatio}, recommendedEffectiveScale=${recommendedEffectiveScale}, calculated userScale=${userScale}`)
+            
+            configService.setUISetting("scaling", "globalScale", userScale)
+            configService.setUISetting("scaling", "useCustomScaling", false)
             configService.saveConfig()
+            
+            hide()
         }
     }
     
-    function getScreenInfo() {
+    function getDisplayInfo() {
         const primaryScreen = Quickshell.screens[0]
         if (!primaryScreen) return "No screen detected"
         
-        const width = primaryScreen.width
-        const height = primaryScreen.height
-        const dpr = primaryScreen.devicePixelRatio
+        if (!displayScalingService || !displayScalingService.ready) {
+            return `${primaryScreen.width}×${primaryScreen.height} (DPR: ${primaryScreen.devicePixelRatio.toFixed(2)})`
+        }
         
-        return `${width}×${height} (DPR: ${dpr.toFixed(2)})`
+        const dpi = displayScalingService.physicalDpi.toFixed(0)
+        const category = displayScalingService.scaleReason
+        const dpr = primaryScreen.devicePixelRatio.toFixed(2)
+        return `${dpi} DPI • DPR: ${dpr} • ${category}`
+    }
+    
+    function getCurrentScale() {
+        if (!configService) return "100%"
+        // Show the user scale (what they set), not the effective scale
+        const userScale = configService.getUISetting("scaling", "globalScale", 1.0)
+        return (userScale * 100).toFixed(0) + "%"
+    }
+    
+    function getCurrentUserScale() {
+        if (!configService) return 1.0
+        return configService.getUISetting("scaling", "globalScale", 1.0)
+    }
+    
+    function getRecommendedUserScale() {
+        if (!displayScalingService || !displayScalingService.ready) return 1.0
+        const primaryScreen = Quickshell.screens[0]
+        const devicePixelRatio = primaryScreen ? primaryScreen.devicePixelRatio : 1.0
+        return displayScalingService.recommendedScale / devicePixelRatio
+    }
+    
+    function getScalingExplanation() {
+        if (!displayScalingService || !displayScalingService.ready) return ""
+        
+        const primaryScreen = Quickshell.screens[0]
+        if (!primaryScreen) return ""
+        
+        const dpi = displayScalingService.physicalDpi.toFixed(0)
+        const dpr = primaryScreen.devicePixelRatio.toFixed(1)
+        const recommendedEffective = displayScalingService.recommendedScale.toFixed(2)
+        const recommendedUser = getRecommendedUserScale().toFixed(2)
+        const currentUser = getCurrentUserScale().toFixed(2)
+        const currentEffective = (getCurrentUserScale() * primaryScreen.devicePixelRatio).toFixed(2)
+        
+        return `${dpi} DPI screen needs ${recommendedEffective}x scaling\n` +
+               `System DPR: ${dpr}x • User scale: ${recommendedUser}x = ${recommendedEffective}x effective\n` +
+               `Current: ${currentUser}x user • ${currentEffective}x effective`
     }
 }

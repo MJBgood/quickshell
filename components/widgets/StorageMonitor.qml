@@ -55,7 +55,7 @@ Rectangle {
     property bool showRemaining: configService ? configService.getValue("storage.showRemaining", false) : false
     
     // Fixed width configuration
-    property bool useFixedWidth: configService ? configService.getValue("storage.useFixedWidth", true) : true
+    property bool useFixedWidth: configService ? configService.getValue("storage.useFixedWidth", false) : false
     
     
     // Current storage data - delegate to service
@@ -214,13 +214,13 @@ Rectangle {
                 }
                 if (showBytes) {
                     if (showRemaining) {
-                        dataParts.push(getConvertedRemaining().toFixed(storagePrecision) + "/" + getConvertedTotal().toFixed(storagePrecision) + " " + units + " free")
+                        dataParts.push(getConvertedRemaining().toFixed(storagePrecision) + " " + units)
                     } else {
                         dataParts.push(getConvertedUsed().toFixed(storagePrecision) + "/" + getConvertedTotal().toFixed(storagePrecision) + " " + units)
                     }
                 } else if (!showPercentage) {
                     if (showRemaining) {
-                        dataParts.push(getConvertedRemaining().toFixed(storagePrecision) + " " + units + " free")
+                        dataParts.push(getConvertedRemaining().toFixed(storagePrecision) + " " + units)
                     } else {
                         dataParts.push(getConvertedUsed().toFixed(storagePrecision) + " " + units)
                     }

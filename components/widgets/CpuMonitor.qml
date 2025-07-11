@@ -64,8 +64,8 @@ Rectangle {
     property string cpuTempDisplay: TemperatureService.cpuTemp > 0 ? TemperatureService.cpuTemp.toFixed(temperaturePrecision) + "°C" : "--"
     property string cpuTempStatus: TemperatureService.getCpuStatus()
     
-    // Fixed width configuration
-    property bool useFixedWidth: configService ? configService.getValue("cpu.useFixedWidth", true) : true
+    // Fixed width configuration  
+    property bool useFixedWidth: configService ? configService.getValue("cpu.useFixedWidth", false) : false
     
     // Visual configuration
     implicitWidth: useFixedWidth ? getFixedWidth() : (contentRow.implicitWidth + (configService ? configService.spacing("sm", entityId) : 12))
@@ -150,29 +150,13 @@ Rectangle {
         anchors.centerIn: parent
         spacing: configService ? configService.spacing("xs", entityId) : 4
         
-        // CPU icon
-        Text {
+        // CPU icon using MaterialIcon (caelestia pattern)
+        MaterialIcon {
             visible: showIcon
             anchors.verticalCenter: parent.verticalCenter
-            text: "🖥️"  // Computer/processor icon
-            color: {
-                if (!configService) return "#cdd6f4"
-                
-                // Dynamic icon color based on background for proper contrast
-                if (showTemperature && cpuTempStatus === "critical") {
-                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
-                } else if (showTemperature && cpuTempStatus === "hot") {
-                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
-                } else if (cpuUsage > 80) {
-                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
-                } else if (cpuUsage > 60 || (showTemperature && cpuTempStatus === "warm")) {
-                    return configService.getThemeProperty("colors", "background") || "#1e1e2e"
-                } else {
-                    return configService.getThemeProperty("colors", "text") || "#cdd6f4"
-                }
-            }
-            font.family: "Inter"
-            font.pixelSize: configService ? configService.typography("xs", entityId) : 9
+            text: Icons.getCpuIcon()
+            color: getCpuIconColor()
+            font.pointSize: configService ? configService.typography("xs", entityId) : 9
         }
         
         // CPU usage text
@@ -262,6 +246,23 @@ Rectangle {
     }
     
     
+    
+    function getCpuIconColor() {
+        if (!configService) return "#cdd6f4"
+        
+        // Dynamic icon color based on status and background for proper contrast
+        if (showTemperature && cpuTempStatus === "critical") {
+            return configService.getThemeProperty("colors", "background") || "#1e1e2e"
+        } else if (showTemperature && cpuTempStatus === "hot") {
+            return configService.getThemeProperty("colors", "background") || "#1e1e2e"
+        } else if (cpuUsage > 80) {
+            return configService.getThemeProperty("colors", "background") || "#1e1e2e"
+        } else if (cpuUsage > 60 || (showTemperature && cpuTempStatus === "warm")) {
+            return configService.getThemeProperty("colors", "background") || "#1e1e2e"
+        } else {
+            return configService.getThemeProperty("colors", "text") || "#cdd6f4"
+        }
+    }
     
     // Smooth opacity transitions
     Behavior on opacity {
