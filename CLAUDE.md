@@ -1,17 +1,14 @@
-# LLM Development Directives for Quickshell Project
-
-## 🔍 Always Start Here
-
-**Before any development work:**
-1. Check Context7 MCP server for latest Quickshell documentation
-2. Review project's `.docs/` folder for relevant info
-3. Ground all solutions in official documentation first (1st party -> 2nd party -> 3rd party)
+## Core Philosophies
+- Do NOT be sicophantic
+- utilize best practices
+- separation of concerns
+- ground decisions in official documentation
 
 ## 🧠 Core Thinking Patterns
 
 ### Documentation-First Mindset
-- **Question**: "Does Quickshell already provide this functionality?"
-- **Action**: Research first-party solutions before implementing custom code
+- **Question**: "Does the documentation already expose a solution for this?"
+- **Action**: Research documentation before implementing
 - **Principle**: Prefer platform-native approaches over custom implementations
 
 ### Resource Efficiency Mindset  
@@ -25,7 +22,7 @@
 - **Principle**: Reduce friction in user workflows
 
 ### Architecture Mindset
-- **Question**: "How does this fit into our separation of concerns?"
+- **Question**: "Does this effectively and efficiently separate concerns?"
 - **Action**: Maintain clear boundaries between presentation, logic, data, and configuration
 - **Principle**: Each component should have a single, well-defined responsibility
 
@@ -50,67 +47,18 @@ If you find yourself doing any of these, reconsider:
 
 ## 🧩 Entity ID Configuration System
 
-**Core Concept**: All configurable components (bars, widgets, menus, overlays) use unique entity IDs for unified configuration access. This provides four-tier scaling resolution and future-proof architecture for any shell component type.
+**Core Concept**: All configurable components use unique entity IDs for unified configuration access. This provides four-tier scaling resolution and future-proof architecture for any shell component type.
 
-### Entity ID Architecture Principles
+### Architecture Principles
 
 1. **Unified Configuration**: Single flat namespace for all customizable components
 2. **Future-Proof Design**: Any component type uses the same entity-based configuration API
 3. **Four-Tier Resolution**: Global scale → global defaults → entity overrides → numerical overrides
 4. **Semantic Scaling**: Use meaningful size names (sm, md, lg) instead of pixel values
 
-### Required Entity Configuration Interface
+### Component Naming Convention
 
-Every configurable component MUST implement:
-
-```qml
-Rectangle {
-    // Entity identification
-    property string entityId: "clockWidget"  // Unique identifier for configuration
-    
-    // Use entity-aware configuration
-    implicitHeight: configService.getEntityStyle(entityId, "height", "auto", contentHeight)
-    color: configService.getEntityStyle(entityId, "backgroundColor", "auto", "transparent")
-    
-    Text {
-        font.pixelSize: configService.typography("md", entityId)
-        color: configService.getEntityStyle(entityId, "textColor", "auto", themeColor)
-    }
-}
-```
-
-### Configuration Structure
-
-```yaml
-scaling:
-  globalScale: 1.0
-  defaults:
-    typography: "md"
-    spacing: "md"
-    icon: "md"
-
-entities:
-  topBar:
-    height: "auto"
-    backgroundColor: "surface"
-    
-  clockWidget:
-    fontSize: "lg"        # Semantic override
-    spacing: "sm"         # Semantic override
-    showDate: true        # Functional property
-    
-  customWidget:
-    fontSize: 13          # Numerical override (escape hatch)
-    spacing: "auto"       # Use global default
-```
-
-### Entity ID Naming Convention
-
-- **Bars**: topBar, bottomBar, leftSidebar
-- **Widgets**: clockWidget, cpuWidget, batteryWidget, systrayWidget
-- **Menus**: launcherMenu, contextMenu, settingsMenu
-- **Overlays**: workspaceOverlay, notificationOverlay
-- **Custom**: Descriptive names like "workClock", "gamingBar"
+Entity files should be named according to their purpose. For example, a widget to track information about the system's CPU should be called CpuWidget with an entityId of `cpu.widget`. Similarily, the file that outlines the service pattern and exposes the functionality we seek from without GUI representation should be called CpuService with an entityId of `cpu.service`.
 
 ### ConfigService Entity API
 
@@ -130,73 +78,23 @@ configService.getWidgetHeight(entityId, contentHeight)
 
 ## 🧩 Singleton Service Pattern
 
-**Core Concept**: All backend logic is abstracted into reusable singleton services that provide reactive properties and clean APIs, following Quickshell's recommended patterns for efficient resource usage and consistent state management.
+**Core Concept**: All logic is abstracted into reusable singleton services that provide reactive properties and clean APIs, following Quickshell's recommended patterns for efficient resource usage and consistent state management.
 
 ### Service Architecture Principles
 
-1. **Backend-Frontend Separation**: UI components (widgets/monitors) only handle presentation, while services handle all business logic
+1. **Backend-Frontend Separation**: UI components only handle presentation, while accompanying files like the service file handle all logic
 2. **Singleton Pattern**: Use `pragma Singleton` with `Singleton` root type for global state management
 3. **Reactive Properties**: Services expose reactive properties that automatically update UI components
-4. **Clean APIs**: Services provide simple functions for state manipulation (e.g., `setVolume()`, `setBrightness()`)
+4. **Clean APIs**: Services provide simple functions for state manipulation (e.g., `setVolume()`, `setBrightness()`, `getVolume()`, `getBrightness()`)
 5. **Resource Efficiency**: Services lazy-load and bind to system resources only when needed
 
 ### Required Service Interface
 
-Every service MUST implement:
+This needs rethinking.
 
-```qml
-pragma Singleton
-import QtQuick
-import Quickshell
+### Service Integration
 
-Singleton {
-    // Public reactive properties
-    property bool ready: false
-    
-    // Internal state management
-    property var systemReference: null
-    
-    // Public API functions
-    function bindToSystem(system) { /* Bind to system resource */ }
-    function getCurrentState() { /* Return current state */ }
-    function refreshData() { /* Force refresh */ }
-    
-    // Internal reactivity
-    Connections {
-        target: systemReference
-        function onDataChanged() { /* Update reactive properties */ }
-    }
-}
-```
-
-### Service Registration
-
-Register all singletons in `services/qmldir`:
-
-```
-singleton ServiceName ServiceName.qml
-```
-
-### Widget-Service Integration
-
-Widgets delegate all data access to services:
-
-```qml
-import "../../services"
-
-Rectangle {
-    // Delegate properties to service
-    property real value: ServiceName.currentValue
-    property bool ready: ServiceName.ready
-    
-    // Initialize service binding
-    Component.onCompleted: {
-        if (systemService) {
-            ServiceName.bindToSystem(systemService)
-        }
-    }
-}
-```
+Components must use the exposed methods of the service.
 
 ## 🧩 Graphical Component Interface Pattern
 
