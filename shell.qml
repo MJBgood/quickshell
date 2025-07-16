@@ -5,6 +5,7 @@ import QtQuick
 import QtCore
 import "./components/shared"
 import "./components/notification"
+import "./components/media"
 
 ShellRoot {
     id: root

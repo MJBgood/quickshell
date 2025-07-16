@@ -345,12 +345,25 @@ Item {
             name: "Audio Control",
             description: "Shows and controls audio volume",
             category: "media",
-            icon: "🎵",
+            icon: "🔊",
             component: "AudioWidget",
             contextMenu: "AudioContextMenu",
             configKeys: ["audio.enabled"],
             defaultEnabled: false,
             position: 10
+        })
+        
+        registerWidget({
+            id: "media",
+            name: "Media Player",
+            description: "Controls music and media playback",
+            category: "media",
+            icon: "🎵",
+            component: "MediaWidget",
+            contextMenu: "MediaContextMenu",
+            configKeys: ["media.enabled"],
+            defaultEnabled: false,
+            position: 20
         })
         
         registerWidget({

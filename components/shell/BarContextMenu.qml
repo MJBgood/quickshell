@@ -22,7 +22,7 @@ PopupWindow {
     // Component hierarchy properties
     property string componentId: "bar"
     property string parentComponentId: ""
-    property var childComponentIds: ["cpu", "ram", "storage", "clock", "workspaces"]
+    property var childComponentIds: ["cpu", "ram", "storage", "gpu", "media", "clock", "workspaces"]
     
     // Signals
     signal closed()

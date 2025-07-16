@@ -1,0 +1,5 @@
+module media
+
+singleton MediaService 1.0 MediaService.qml
+MediaWidget 1.0 MediaWidget.qml
+MediaContextMenu 1.0 MediaContextMenu.qml

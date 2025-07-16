@@ -8,6 +8,7 @@ import "../ram"
 import "../storage"
 import "../gpu"
 import "../audio"
+import "../media"
 import "../battery"
 import "../brightness"
 import "../systray"
@@ -37,7 +38,7 @@ PanelWindow {
     // GraphicalComponent interface implementation
     property string componentId: "bar"
     property string parentComponentId: ""
-    property var childComponentIds: ["cpu", "ram", "storage", "gpu", "clock", "workspaces"]
+    property var childComponentIds: ["cpu", "ram", "storage", "gpu", "media", "clock", "workspaces"]
     property string menuPath: "bar"
     
     // Panel configuration - position determined by config
@@ -768,6 +769,37 @@ PanelWindow {
                     showIcon: configService ? configService.getValue("battery.showIcon", true) : true
                     showPercentage: configService ? configService.getValue("battery.showPercentage", true) : true
                     showTime: configService ? configService.getValue("battery.showTime", false) : false
+                }
+            }
+            
+            // Media Widget
+            Rectangle {
+                id: mediaContainer
+                // Give minimum size and let MediaWidget control visibility
+                implicitWidth: mediaWidget.enabled ? Math.max(mediaWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8), 100) : 0
+                implicitHeight: mediaWidget.enabled ? Math.max(mediaWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4), 24) : 0
+                radius: configService ? configService.borderRadius : 8
+                color: mediaWidget.enabled ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: mediaWidget.enabled ? 1 : 0
+                border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
+                visible: mediaWidget.enabled
+                
+                MediaWidget {
+                    id: mediaWidget
+                    anchors.centerIn: parent
+                    // Let the MediaWidget control its own visibility based on enabled state and active players
+                    
+                    // Services
+                    configService: bar.configService
+                    anchorWindow: bar
+                    
+                    // Display configuration - more compact by default
+                    showAlbumArt: configService ? configService.getValue("media.showAlbumArt", false) : false
+                    showTrackInfo: configService ? configService.getValue("media.showTrackInfo", true) : true
+                    showControls: configService ? configService.getValue("media.showControls", false) : false
+                    showVolumeSlider: configService ? configService.getValue("media.showVolumeSlider", false) : false
+                    showProgress: configService ? configService.getValue("media.showProgress", false) : false
+                    compactMode: configService ? configService.getValue("media.compactMode", true) : true
                 }
             }
         }

@@ -80,7 +80,7 @@
     }
   },
   "theme": {
-    "activeTheme": "catppuccin",
+    "activeTheme": "black-widgets",
     "activeMode": "dark",
     "followSystemTheme": false,
     "autoSwitchTimes": {
@@ -122,6 +122,15 @@
       "showTime": false,
       "autoHideOnDesktop": true,
       "autoShowOnLaptop": true
+    },
+    "media": {
+      "enabled": true,
+      "showAlbumArt": true,
+      "showTrackInfo": true,
+      "showControls": true,
+      "showVolumeSlider": false,
+      "showProgress": false,
+      "compactMode": false
     }
   },
   "shortcuts": {
@@ -261,6 +270,18 @@
       "showSlider": false,
       "fontSize": "xs"
     },
+    "media.widget": {
+      "enabled": true,
+      "showAlbumArt": true,
+      "showTrackInfo": true,
+      "showControls": true,
+      "showVolumeSlider": false,
+      "showProgress": false,
+      "compactMode": true,
+      "albumArtSize": 32,
+      "maxTrackWidth": 150,
+      "fontSize": "xs"
+    },
     "gpuWidget": {
       "showIcon": true,
       "showPercentage": true,
@@ -293,6 +314,11 @@
     "screenBorder": {
       "enabled": true,
       "visible": true
+    },
+    "media": {
+      "widget": {
+        "compactMode": false
+      }
     }
   },
   "clock": {
@@ -343,5 +369,20 @@
   },
   "workspaces": {
     "showApplicationIcons": true
+  },
+  "audio": {
+    "enabled": true,
+    "widget": {
+      "enabled": true
+    }
+  },
+  "media": {
+    "enabled": true
+  },
+  "brightness": {
+    "enabled": true,
+    "widget": {
+      "enabled": true
+    }
   }
 }
