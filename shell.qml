@@ -25,18 +25,12 @@ ShellRoot {
     property var mouseInteractionService: MouseInteractionService
     property var borderOverlayService: BorderOverlayService
     
-    Loader {
-        id: hyprlandServiceLoader
-        source: "./services/HyprlandService.qml"
-        onLoaded: {
+    HyprlandService {
+        id: hyprlandService
+        Component.onCompleted: {
             console.log("HyprlandService loaded successfully")
-            console.log("HyprlandService initialized:", item.initialized)
-            console.log("HyprlandService connected:", item.isConnected)
-        }
-        onStatusChanged: {
-            if (status === Loader.Error) {
-                console.error("Failed to load HyprlandService:", sourceComponent.errorString)
-            }
+            console.log("HyprlandService initialized:", initialized)
+            console.log("HyprlandService connected:", isConnected)
         }
     }
     
@@ -44,17 +38,11 @@ ShellRoot {
     
     // SystemMonitorService is now a singleton - no loader needed
     
-    Loader {
-        id: windowTrackerLoader
-        source: "./services/HyprlandWindowTracker.qml"
-        onLoaded: {
+    HyprlandWindowTracker {
+        id: windowTracker
+        Component.onCompleted: {
             console.log("HyprlandWindowTracker loaded successfully")
-            console.log("WindowTracker initialized:", item.initialized)
-        }
-        onStatusChanged: {
-            if (status === Loader.Error) {
-                console.error("Failed to load HyprlandWindowTracker:", sourceComponent.errorString)
-            }
+            console.log("WindowTracker initialized:", initialized)
         }
     }
     
@@ -109,10 +97,7 @@ ShellRoot {
     // Convenience aliases
     // themeService removed - theme functionality integrated into configService
     property var configService: ConfigService
-    property alias hyprlandService: hyprlandServiceLoader.item
-    // Store aliases removed - stores were unused
     property var systemMonitorService: SystemMonitorService
-    property alias windowTracker: windowTrackerLoader.item
     property alias iconResolver: iconResolverLoader.item
     property alias wallpaperService: wallpaperServiceLoader.item
     property alias widgetRegistry: widgetRegistryLoader.item
@@ -140,13 +125,11 @@ ShellRoot {
     // Main UI components - Single bar for primary screen
     Loader {
         id: mainBarLoader
-        source: "./components/bars/Bar.qml"
+        source: "./components/shell/Bar.qml"
         
         // Only load when all services are initialized AND theme is loaded
-        active: ConfigService && 
-                hyprlandServiceLoader.item &&
+        active: ConfigService &&
                 SystemMonitorService &&
-                windowTrackerLoader.item &&
                 iconResolverLoader.item &&
                 wallpaperServiceLoader.item &&
                 widgetRegistryLoader.item &&
@@ -160,7 +143,6 @@ ShellRoot {
             // themeService removed - theme functionality integrated into configService
             item.configService = ConfigService
             item.systemMonitorService = SystemMonitorService
-            item.windowTracker = windowTrackerLoader.item
             item.iconResolver = iconResolverLoader.item
             item.sessionOverlay = sessionWindow.sessionOverlay  // Pass session overlay
             item.shellRoot = root  // Pass reference to shell for global functions
@@ -302,7 +284,7 @@ ShellRoot {
     // Wallpaper Selector - Global overlay (same pattern as theme dropdown)
     Loader {
         id: globalWallpaperSelectorLoader
-        source: "./components/widgets/WallpaperSelector.qml"
+        source: "./components/wallpaper/WallpaperSelector.qml"
         active: false
         
         onLoaded: {

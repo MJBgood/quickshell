@@ -1,9 +1,19 @@
 import Quickshell
 import Quickshell.Hyprland
 import QtQuick
-import "../widgets"
 import "../shared"
-import "../shared"
+import "../clock"
+import "../cpu"
+import "../ram"
+import "../storage"
+import "../gpu"
+import "../audio"
+import "../battery"
+import "../brightness"
+import "../systray"
+import "../power"
+import "../workspaces"
+import "../notification"
 
 PanelWindow {
     id: bar
@@ -484,7 +494,7 @@ PanelWindow {
             // Dedicated loader for WorkspacesContextMenu
             Loader {
                 id: workspacesMenuLoader
-                source: "../overlays/WorkspacesContextMenu.qml"
+                source: "../workspaces/WorkspacesContextMenu.qml"
                 active: false
                 
                 onLoaded: {
@@ -525,7 +535,7 @@ PanelWindow {
         Row {
             id: monitoringSection
             spacing: configService ? configService.spacing("xs", entityId) : 4
-            visible: cpuMonitor.visible || ramMonitor.visible || storageMonitor.visible
+            visible: cpuWidget.visible || ramWidget.visible || storageWidget.visible
             
             anchors {
                 right: rightSection.left
@@ -536,16 +546,16 @@ PanelWindow {
             // CPU Monitor
             Rectangle {
                 id: cpuContainer
-                implicitWidth: cpuMonitor.visible ? cpuMonitor.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
-                implicitHeight: cpuMonitor.visible ? cpuMonitor.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
+                implicitWidth: cpuWidget.visible ? cpuWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: cpuWidget.visible ? cpuWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
-                color: cpuMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
-                border.width: cpuMonitor.visible ? 1 : 0
+                color: cpuWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: cpuWidget.visible ? 1 : 0
                 border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
-                visible: cpuMonitor.visible
+                visible: cpuWidget.visible
                 
-                CpuMonitor {
-                    id: cpuMonitor
+                CpuWidget {
+                    id: cpuWidget
                     anchors.centerIn: parent
                     visible: configService ? configService.getValue("cpu.enabled", true) : true
                     
@@ -568,16 +578,16 @@ PanelWindow {
             // RAM Monitor
             Rectangle {
                 id: ramContainer
-                implicitWidth: ramMonitor.visible ? ramMonitor.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
-                implicitHeight: ramMonitor.visible ? ramMonitor.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
+                implicitWidth: ramWidget.visible ? ramWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: ramWidget.visible ? ramWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
-                color: ramMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
-                border.width: ramMonitor.visible ? 1 : 0
+                color: ramWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: ramWidget.visible ? 1 : 0
                 border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
-                visible: ramMonitor.visible
+                visible: ramWidget.visible
                 
-                RamMonitor {
-                    id: ramMonitor
+                RamWidget {
+                    id: ramWidget
                     anchors.centerIn: parent
                     visible: configService ? configService.getValue("ram.enabled", true) : true
                     
@@ -601,16 +611,16 @@ PanelWindow {
             // Storage Monitor
             Rectangle {
                 id: storageContainer
-                implicitWidth: storageMonitor.visible ? storageMonitor.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
-                implicitHeight: storageMonitor.visible ? storageMonitor.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
+                implicitWidth: storageWidget.visible ? storageWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: storageWidget.visible ? storageWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
-                color: storageMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
-                border.width: storageMonitor.visible ? 1 : 0
+                color: storageWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: storageWidget.visible ? 1 : 0
                 border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
-                visible: storageMonitor.visible
+                visible: storageWidget.visible
                 
-                StorageMonitor {
-                    id: storageMonitor
+                StorageWidget {
+                    id: storageWidget
                     anchors.centerIn: parent
                     visible: configService ? configService.getValue("storage.enabled", true) : true
                     
@@ -633,16 +643,16 @@ PanelWindow {
             // GPU Monitor
             Rectangle {
                 id: gpuContainer
-                implicitWidth: gpuMonitor.visible ? gpuMonitor.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
-                implicitHeight: gpuMonitor.visible ? gpuMonitor.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
+                implicitWidth: gpuWidget.visible ? gpuWidget.implicitWidth + (configService ? configService.spacing("sm", entityId) : 8) : 0
+                implicitHeight: gpuWidget.visible ? gpuWidget.implicitHeight + (configService ? configService.spacing("xs", entityId) : 4) : 0
                 radius: configService ? configService.borderRadius : 8
-                color: gpuMonitor.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
-                border.width: gpuMonitor.visible ? 1 : 0
+                color: gpuWidget.visible ? (configService ? configService.getThemeProperty("colors", "surface") || "#313244" : "#313244") : "transparent"
+                border.width: gpuWidget.visible ? 1 : 0
                 border.color: configService ? configService.getThemeProperty("colors", "border") || "#6c7086" : "#6c7086"
-                visible: gpuMonitor.visible
+                visible: gpuWidget.visible
                 
-                GpuMonitor {
-                    id: gpuMonitor
+                GpuWidget {
+                    id: gpuWidget
                     anchors.centerIn: parent
                     visible: configService ? configService.getValue("gpu.enabled", true) : true
                     
@@ -779,7 +789,7 @@ PanelWindow {
                 verticalCenter: parent.verticalCenter
             }
             
-            Clock {
+            ClockWidget {
                 id: clockWidget
                 anchors.centerIn: parent
                 configService: bar.configService
@@ -1066,7 +1076,7 @@ PanelWindow {
     // Dedicated loader for BarContextMenu
     Loader {
         id: barMenuLoader
-        source: "../overlays/BarContextMenu.qml"
+        source: "./BarContextMenu.qml"
         active: false
         
         onLoaded: {

@@ -1,4 +1,5 @@
 import QtQuick
+import Qt5Compat.GraphicalEffects
 import "../shared"
 import "../shared"
 import "../shared"
@@ -14,7 +15,7 @@ Rectangle {
     property string parentComponentId: "bar"
     property var childComponentIds: []
     property string menuPath: "cpu"
-    property string contextMenuPath: "../overlays/CpuContextMenu.qml"
+    property string contextMenuPath: "./CpuContextMenu.qml"
     
     // Services
     property var systemMonitorService: null
@@ -150,12 +151,31 @@ Rectangle {
         anchors.centerIn: parent
         spacing: configService ? configService.spacing("xs", entityId) : 4
         
-        // CPU icon (simple emoji)
-        Text {
+        // CPU icon (SVG with ColorOverlay)
+        Item {
+            id: cpuIconContainer
             visible: showIcon
-            text: "🖥️"
-            font.pixelSize: configService ? configService.icon("xs", entityId) : 16
+            width: iconSize
+            height: iconSize
             anchors.verticalCenter: parent.verticalCenter
+            
+            property int iconSize: configService ? configService.icon("md", entityId) : 24
+            
+            Image {
+                id: cpuIconImage
+                anchors.fill: parent
+                source: "../../assets/icons/cpu.svg"
+                sourceSize: Qt.size(cpuIconContainer.iconSize, cpuIconContainer.iconSize)
+                fillMode: Image.PreserveAspectFit
+                visible: false // Hide original, show colored version
+            }
+            
+            ColorOverlay {
+                id: cpuIcon
+                anchors.fill: cpuIconImage
+                source: cpuIconImage
+                color: getCpuIconColor()
+            }
         }
         
         // CPU usage text

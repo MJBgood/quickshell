@@ -14,7 +14,7 @@ Rectangle {
     property string parentComponentId: "bar"
     property var childComponentIds: []
     property string menuPath: "storage"
-    property string contextMenuPath: "../overlays/StorageContextMenu.qml"
+    property string contextMenuPath: "./StorageContextMenu.qml"
     
     // Services
     property var systemMonitorService: null

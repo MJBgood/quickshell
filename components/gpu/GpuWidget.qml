@@ -14,7 +14,7 @@ Rectangle {
     property string parentComponentId: "bar"
     property var childComponentIds: []
     property string menuPath: "gpu"
-    property string contextMenuPath: "../overlays/GpuContextMenu.qml"
+    property string contextMenuPath: "./GpuContextMenu.qml"
     
     // Services
     property var systemMonitorService: null

@@ -69,7 +69,7 @@ Rectangle {
     // Clock context menu loader
     Loader {
         id: clockMenuLoader
-        source: "../overlays/ClockContextMenu.qml"
+        source: "./ClockContextMenu.qml"
         active: false
         
         onLoaded: {

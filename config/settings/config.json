@@ -340,5 +340,8 @@
     "activationZoneWidth": 200,
     "gridColumns": 4,
     "enabled": true
+  },
+  "workspaces": {
+    "showApplicationIcons": true
   }
 }

@@ -360,7 +360,7 @@ Rectangle {
     // Context menu loader following working examples pattern
     Loader {
         id: contextMenuLoader
-        source: "../overlays/SystemTrayContextMenu.qml"
+        source: "./SystemTrayContextMenu.qml"
         active: false
         
         onLoaded: {

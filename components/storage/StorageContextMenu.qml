@@ -102,37 +102,73 @@ PopupWindow {
                 width: Math.max(parent.width - 16, 280)
                 spacing: 12
                 
-                // Header
-                Item {
+                // Navigation Header
+                Row {
                     width: parent.width
                     height: 32
+                    spacing: 8
                     
-                    Text {
-                        id: iconText
-                        text: "💾"
-                        font.pixelSize: 20
-                        anchors.left: parent.left
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    
-                    Column {
-                        anchors.left: iconText.right
-                        anchors.leftMargin: 12
-                        anchors.right: closeButton.left
-                        anchors.rightMargin: 12
-                        anchors.verticalCenter: parent.verticalCenter
+                    // Parent navigation button
+                    Rectangle {
+                        width: 28
+                        height: 28
+                        radius: 6
+                        visible: parentComponentId !== ""
+                        color: parentNavMouse.containsMouse ? 
+                               (configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1") : 
+                               "transparent"
+                        border.width: 1
+                        border.color: configService ? configService.getThemeProperty("colors", "accent") || "#a6e3a1" : "#a6e3a1"
                         
                         Text {
-                            text: "Storage Monitor"
-                            font.pixelSize: 14
-                            font.weight: Font.DemiBold
+                            anchors.centerIn: parent
+                            text: "↑"
                             color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            font.pixelSize: 12
+                            font.weight: Font.Bold
                         }
                         
+                        MouseArea {
+                            id: parentNavMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: navigateToParent()
+                        }
+                    }
+                    
+                    // Header content
+                    Item {
+                        width: parent.width - (parentComponentId !== "" ? 36 : 0) - 32
+                        height: 32
+                        
                         Text {
-                            text: getConfigValue("enabled", true) ? "Enabled" : "Disabled"
-                            font.pixelSize: 10
-                            color: getConfigValue("enabled", true) ? "#a6e3a1" : "#f38ba8"
+                            id: iconText
+                            text: "💾"
+                            font.pixelSize: 20
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        
+                        Column {
+                            anchors.left: iconText.right
+                            anchors.leftMargin: 12
+                            anchors.right: parent.right
+                            anchors.rightMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            
+                            Text {
+                                text: "Storage Monitor"
+                                font.pixelSize: 14
+                                font.weight: Font.DemiBold
+                                color: configService ? configService.getThemeProperty("colors", "text") || "#cdd6f4" : "#cdd6f4"
+                            }
+                            
+                            Text {
+                                text: getConfigValue("enabled", true) ? "Enabled" : "Disabled"
+                                font.pixelSize: 10
+                                color: getConfigValue("enabled", true) ? "#a6e3a1" : "#f38ba8"
+                            }
                         }
                     }
                     
@@ -143,8 +179,6 @@ PopupWindow {
                         height: 24
                         radius: 12
                         color: closeArea.containsMouse ? "#f38ba8" : "transparent"
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
                         
                         Text {
                             anchors.centerIn: parent

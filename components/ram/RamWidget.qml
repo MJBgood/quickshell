@@ -12,7 +12,7 @@ Rectangle {
     property string parentComponentId: "bar"
     property var childComponentIds: []
     property string menuPath: "ram"
-    property string contextMenuPath: "../overlays/RamContextMenu.qml"
+    property string contextMenuPath: "./RamContextMenu.qml"
     
     // Services
     property var systemMonitorService: null

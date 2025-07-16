@@ -173,7 +173,9 @@ Item {
     
     function getContextMenuSource() {
         if (!widgetData || !widgetData.contextMenu) return ""
-        return `../overlays/${widgetData.contextMenu}.qml`
+        // Use the widget's category to find the context menu in the same directory
+        const category = widgetData.category || widgetData.component.toLowerCase()
+        return `../${category}/${widgetData.contextMenu}.qml`
     }
     
     function passServicesToWidget(widget) {

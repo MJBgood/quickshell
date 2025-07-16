@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import Qt5Compat.GraphicalEffects
 import "../shared"
 import "../shared"
 
@@ -66,14 +67,31 @@ Rectangle {
         anchors.centerIn: parent
         spacing: configService ? configService.spacing("xs", entityId) : 4
         
-        // Notification bell icon (simple emoji)
-        Text {
-            id: bellIcon
+        // Notification bell icon (SVG with ColorOverlay)
+        Item {
+            id: bellIconContainer
             visible: showIcon
-            text: "🔔"
-            font.pixelSize: configService ? configService.icon("sm", entityId) : 20
+            width: iconSize
+            height: iconSize
             anchors.verticalCenter: parent.verticalCenter
-            color: getIconColor()
+            
+            property int iconSize: configService ? configService.icon("md", entityId) : 24
+            
+            Image {
+                id: bellIconImage
+                anchors.fill: parent
+                source: "../../assets/icons/bell.svg"
+                sourceSize: Qt.size(bellIconContainer.iconSize, bellIconContainer.iconSize)
+                fillMode: Image.PreserveAspectFit
+                visible: false // Hide original, show colored version
+            }
+            
+            ColorOverlay {
+                id: bellIcon
+                anchors.fill: bellIconImage
+                source: bellIconImage
+                color: getIconColor()
+            }
             
             // Icon animation for new notifications
             SequentialAnimation {
@@ -81,7 +99,7 @@ Rectangle {
                 running: false
                 
                 NumberAnimation {
-                    target: bellIcon
+                    target: bellIconContainer
                     property: "scale"
                     from: 1.0
                     to: 1.3
@@ -90,7 +108,7 @@ Rectangle {
                 }
                 
                 NumberAnimation {
-                    target: bellIcon
+                    target: bellIconContainer
                     property: "scale"
                     from: 1.3
                     to: 1.0
@@ -208,7 +226,7 @@ Rectangle {
     // Context menu loader
     Loader {
         id: contextMenuLoader
-        source: "../overlays/NotificationContextMenu.qml"
+        source: "./NotificationContextMenu.qml"
         active: false
         
         onLoaded: {
@@ -224,7 +242,7 @@ Rectangle {
     // Notification center loader
     Loader {
         id: notificationCenterLoader
-        source: "../overlays/NotificationCenter.qml"
+        source: "./NotificationCenter.qml"
         active: false
         
         onLoaded: {

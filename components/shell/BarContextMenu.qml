@@ -3,7 +3,6 @@ import Quickshell.Hyprland
 import QtQuick
 import QtQuick.Controls
 import "../shared"
-import "../widgets"
 
 PopupWindow {
     id: barMenu
