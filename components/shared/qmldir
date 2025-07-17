@@ -10,6 +10,7 @@ ApplicationIconResolver 1.0 ApplicationIconResolver.qml
 singleton ComponentRegistry ComponentRegistry.qml
 WidgetContainer 1.0 WidgetContainer.qml
 ContextMenuSection 1.0 ContextMenuSection.qml
+ContextMenuHeader 1.0 ContextMenuHeader.qml
 MenuItem 1.0 MenuItem.qml
 MonitorMenuItem 1.0 MonitorMenuItem.qml
 ScalingContextMenu 1.0 ScalingContextMenu.qml

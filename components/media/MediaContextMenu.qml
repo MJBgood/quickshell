@@ -13,26 +13,30 @@ PopupWindow {
     property var parentWindow
     
     visible: false
-    width: configService ? configService.scaled(280) : 280
-    height: Math.min(contentColumn.implicitHeight + (configService ? configService.scaled(20) : 20), 
+    implicitWidth: configService ? configService.scaled(280) : 280
+    implicitHeight: Math.min(contentColumn.implicitHeight + (configService ? configService.scaled(20) : 20), 
                      configService ? configService.scaled(500) : 500)
     
     color: "transparent"
     
     HyprlandFocusGrab {
+        id: focusGrab
         windows: [contextMenu]
         onCleared: hide()
     }
     
-    function show(window, x, y) {
+    function show(window, posX, posY) {
         parentWindow = window
-        contextMenu.x = x
-        contextMenu.y = y
+        // Position the popup
+        x = posX
+        y = posY
         visible = true
+        focusGrab.active = true
     }
     
     function hide() {
         visible = false
+        focusGrab.active = false
     }
     
     Rectangle {
@@ -49,128 +53,135 @@ PopupWindow {
             spacing: configService ? configService.spacing("xs") : 4
             
             // Header
-            ContextMenuSection {
+            ContextMenuHeader {
                 title: "Media Controls"
                 configService: contextMenu.configService
             }
             
             // Player selection
-            ContextMenuSection {
+            ContextMenuHeader {
                 title: "Active Player"
                 configService: contextMenu.configService
                 visible: mediaService && mediaService.availablePlayers.length > 1
+            }
+            
+            Column {
+                width: parent.width
+                spacing: 2
+                visible: mediaService && mediaService.availablePlayers.length > 1
                 
-                Column {
-                    width: parent.width
-                    spacing: 2
+                Repeater {
+                    model: mediaService ? mediaService.availablePlayers.length : 0
                     
-                    Repeater {
-                        model: mediaService ? mediaService.availablePlayers.length : 0
+                    Rectangle {
+                        width: parent.width
+                        height: 24
+                        radius: 4
+                        color: playerMouse.containsMouse ? 
+                            (configService?.getThemeProperty("colors", "surfaceAlt") || "#45475a") : 
+                            "transparent"
                         
-                        Rectangle {
-                            width: parent.width
-                            height: 24
-                            radius: 4
-                            color: playerMouse.containsMouse ? 
-                                (configService?.getThemeProperty("colors", "surfaceAlt") || "#45475a") : 
-                                "transparent"
-                            
-                            property bool isActive: mediaService ? mediaService.activePlayerIndex === index : false
-                            
-                            Text {
-                                anchors.left: parent.left
-                                anchors.leftMargin: 8
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: mediaService ? mediaService.getPlayerName(index) : ""
-                                font.pixelSize: 10
-                                color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
-                            }
-                            
-                            Text {
-                                anchors.right: parent.right
-                                anchors.rightMargin: 8
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: parent.isActive ? "✓" : ""
-                                font.pixelSize: 10
-                                color: "#a6e3a1"
-                            }
-                            
-                            MouseArea {
-                                id: playerMouse
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                
-                                onClicked: {
-                                    if (mediaService) {
-                                        mediaService.setActivePlayer(index)
-                                    }
-                                    hide()
-                                }
-                            }
-                            
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                        property bool isActive: mediaService ? mediaService.activePlayerIndex === index : false
+                        
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: mediaService ? mediaService.getPlayerName(index) : ""
+                            font.pixelSize: 10
+                            color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
                         }
+                        
+                        Text {
+                            anchors.right: parent.right
+                            anchors.rightMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: parent.isActive ? "✓" : ""
+                            font.pixelSize: 10
+                            color: "#a6e3a1"
+                        }
+                        
+                        MouseArea {
+                            id: playerMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            
+                            onClicked: {
+                                if (mediaService) {
+                                    mediaService.setActivePlayer(index)
+                                }
+                                hide()
+                            }
+                        }
+                        
+                        Behavior on color { ColorAnimation { duration: 150 } }
                     }
                 }
             }
             
             // Current track info
-            ContextMenuSection {
+            ContextMenuHeader {
                 title: "Now Playing"
                 configService: contextMenu.configService
                 visible: mediaService && mediaService.hasActivePlayer
+            }
+            
+            Column {
+                width: parent.width
+                spacing: 2
+                visible: mediaService && mediaService.hasActivePlayer
                 
-                Column {
+                Text {
+                    text: mediaService ? mediaService.trackTitle || "Unknown Title" : ""
+                    font.family: "Inter"
+                    font.pixelSize: configService ? configService.typography("sm") : 12
+                    font.weight: Font.Bold
+                    color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
+                    elide: Text.ElideRight
                     width: parent.width
-                    spacing: 2
-                    
-                    Text {
-                        text: mediaService ? mediaService.trackTitle || "Unknown Title" : ""
-                        font.family: "Inter"
-                        font.pixelSize: configService ? configService.typography("sm") : 12
-                        font.weight: Font.Bold
-                        color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
-                        elide: Text.ElideRight
-                        width: parent.width
+                }
+                
+                Text {
+                    text: mediaService ? mediaService.trackArtist || "Unknown Artist" : ""
+                    font.family: "Inter"
+                    font.pixelSize: configService ? configService.typography("xs") : 10
+                    color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
+                
+                Text {
+                    visible: mediaService && mediaService.trackAlbum && mediaService.trackAlbum !== "Unknown Album"
+                    text: mediaService ? mediaService.trackAlbum || "" : ""
+                    font.family: "Inter"
+                    font.pixelSize: configService ? configService.typography("xs") : 10
+                    color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
+                
+                Text {
+                    visible: mediaService && mediaService.positionSupported
+                    text: {
+                        if (!mediaService) return ""
+                        return `${mediaService.formatTime(mediaService.position)} / ${mediaService.formatTime(mediaService.length)}`
                     }
-                    
-                    Text {
-                        text: mediaService ? mediaService.trackArtist || "Unknown Artist" : ""
-                        font.family: "Inter"
-                        font.pixelSize: configService ? configService.typography("xs") : 10
-                        color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
-                        elide: Text.ElideRight
-                        width: parent.width
-                    }
-                    
-                    Text {
-                        visible: mediaService && mediaService.trackAlbum && mediaService.trackAlbum !== "Unknown Album"
-                        text: mediaService ? mediaService.trackAlbum || "" : ""
-                        font.family: "Inter"
-                        font.pixelSize: configService ? configService.typography("xs") : 10
-                        color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
-                        elide: Text.ElideRight
-                        width: parent.width
-                    }
-                    
-                    Text {
-                        visible: mediaService && mediaService.positionSupported
-                        text: {
-                            if (!mediaService) return ""
-                            return `${mediaService.formatTime(mediaService.position)} / ${mediaService.formatTime(mediaService.length)}`
-                        }
-                        font.family: "Inter"
-                        font.pixelSize: configService ? configService.typography("xs") : 10
-                        color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
-                    }
+                    font.family: "Inter"
+                    font.pixelSize: configService ? configService.typography("xs") : 10
+                    color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
                 }
             }
             
             // Widget configuration
-            ContextMenuSection {
+            ContextMenuHeader {
                 title: "Widget Settings"
                 configService: contextMenu.configService
+            }
+            
+            Column {
+                width: parent.width
+                spacing: 2
                 
                 MenuItem {
                     text: "Show Album Art: " + (configService ? (configService.getEntityProperty("media.widget", "showAlbumArt", true) ? "Enabled" : "Disabled") : "Enabled")
@@ -240,9 +251,15 @@ PopupWindow {
             }
             
             // Album art size settings
-            ContextMenuSection {
+            ContextMenuHeader {
                 title: "Album Art Size"
                 configService: contextMenu.configService
+                visible: configService ? configService.getEntityProperty("media.widget", "showAlbumArt", true) : true
+            }
+            
+            Column {
+                width: parent.width
+                spacing: 2
                 visible: configService ? configService.getEntityProperty("media.widget", "showAlbumArt", true) : true
                 
                 MenuItem {
@@ -277,9 +294,14 @@ PopupWindow {
             }
             
             // Track width settings
-            ContextMenuSection {
+            ContextMenuHeader {
                 title: "Max Track Width"
                 configService: contextMenu.configService
+            }
+            
+            Column {
+                width: parent.width
+                spacing: 2
                 
                 MenuItem {
                     text: "Narrow (150px)" + ((configService ? configService.getEntityProperty("media.widget", "maxTrackWidth", 200) : 200) === 150 ? " ✓" : "")
@@ -313,9 +335,14 @@ PopupWindow {
             }
             
             // Refresh players
-            ContextMenuSection {
+            ContextMenuHeader {
                 title: "Actions"
                 configService: contextMenu.configService
+            }
+            
+            Column {
+                width: parent.width
+                spacing: 2
                 
                 MenuItem {
                     text: "Refresh Players"

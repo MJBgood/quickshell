@@ -49,6 +49,13 @@ Column {
         enabled: true
         configService: section.configService
         
+        function updateEnabledText() {
+            if (configService) {
+                const isEnabled = configService.getValue(configPrefix + ".enabled", true)
+                text = "  " + (isEnabled ? "✓" : "✗") + " Enabled"
+            }
+        }
+        
         onClicked: {
             if (configService) {
                 const currentValue = configService.getValue(configPrefix + ".enabled", true)
@@ -57,19 +64,12 @@ Column {
         }
         
         // Update checkmark based on current state
-        Component.onCompleted: updateEnabledText()
+        Component.onCompleted: { Qt.callLater(function() { updateEnabledText() }) }
         
         Connections {
             target: configService
             function onConfigChanged() {
-                updateEnabledText()
-            }
-        }
-        
-        function updateEnabledText() {
-            if (configService) {
-                const isEnabled = configService.getValue(configPrefix + ".enabled", true)
-                text = "  " + (isEnabled ? "✓" : "✗") + " Enabled"
+                Qt.callLater(function() { updateEnabledText() })
             }
         }
     }
@@ -81,6 +81,13 @@ Column {
         enabled: true
         configService: section.configService
         
+        function updateIconText() {
+            if (configService) {
+                const showIcon = configService.getValue(configPrefix + ".showIcon", true)
+                text = "  " + (showIcon ? "✓" : "✗") + " Show Icon"
+            }
+        }
+        
         onClicked: {
             if (configService) {
                 const currentValue = configService.getValue(configPrefix + ".showIcon", true)
@@ -88,19 +95,12 @@ Column {
             }
         }
         
-        Component.onCompleted: updateIconText()
+        Component.onCompleted: { Qt.callLater(function() { updateIconText() }) }
         
         Connections {
             target: configService
             function onConfigChanged() {
-                updateIconText()
-            }
-        }
-        
-        function updateIconText() {
-            if (configService) {
-                const showIcon = configService.getValue(configPrefix + ".showIcon", true)
-                text = "  " + (showIcon ? "✓" : "✗") + " Show Icon"
+                Qt.callLater(function() { updateIconText() })
             }
         }
     }
@@ -112,6 +112,13 @@ Column {
         enabled: true
         configService: section.configService
         
+        function updateLabelText() {
+            if (configService) {
+                const showLabel = configService.getValue(configPrefix + ".showLabel", false)
+                text = "  " + (showLabel ? "✓" : "✗") + " Show Label"
+            }
+        }
+        
         onClicked: {
             if (configService) {
                 const currentValue = configService.getValue(configPrefix + ".showLabel", false)
@@ -119,19 +126,12 @@ Column {
             }
         }
         
-        Component.onCompleted: updateLabelText()
+        Component.onCompleted: { Qt.callLater(function() { updateLabelText() }) }
         
         Connections {
             target: configService
             function onConfigChanged() {
-                updateLabelText()
-            }
-        }
-        
-        function updateLabelText() {
-            if (configService) {
-                const showLabel = configService.getValue(configPrefix + ".showLabel", false)
-                text = "  " + (showLabel ? "✓" : "✗") + " Show Label"
+                Qt.callLater(function() { updateLabelText() })
             }
         }
     }
@@ -143,6 +143,13 @@ Column {
         enabled: true
         configService: section.configService
         
+        function updatePercentageText() {
+            if (configService) {
+                const showPercentage = configService.getValue(configPrefix + ".showPercentage", true)
+                text = "  " + (showPercentage ? "✓" : "✗") + " Show Percentage"
+            }
+        }
+        
         onClicked: {
             if (configService) {
                 const currentValue = configService.getValue(configPrefix + ".showPercentage", true)
@@ -150,19 +157,12 @@ Column {
             }
         }
         
-        Component.onCompleted: updatePercentageText()
+        Component.onCompleted: { Qt.callLater(function() { updatePercentageText() }) }
         
         Connections {
             target: configService
             function onConfigChanged() {
-                updatePercentageText()
-            }
-        }
-        
-        function updatePercentageText() {
-            if (configService) {
-                const showPercentage = configService.getValue(configPrefix + ".showPercentage", true)
-                text = "  " + (showPercentage ? "✓" : "✗") + " Show Percentage"
+                Qt.callLater(function() { updatePercentageText() })
             }
         }
     }
@@ -174,6 +174,13 @@ Column {
         enabled: true
         configService: section.configService
         
+        function updatePrecisionText() {
+            if (configService) {
+                const precision = configService.getValue(configPrefix + ".precision", 1)
+                text = "  Precision: " + precision + " decimal" + (precision === 1 ? "" : "s")
+            }
+        }
+        
         onClicked: {
             if (configService) {
                 const currentPrecision = configService.getValue(configPrefix + ".precision", 1)
@@ -182,19 +189,12 @@ Column {
             }
         }
         
-        Component.onCompleted: updatePrecisionText()
+        Component.onCompleted: { Qt.callLater(function() { updatePrecisionText() }) }
         
         Connections {
             target: configService
             function onConfigChanged() {
-                updatePrecisionText()
-            }
-        }
-        
-        function updatePrecisionText() {
-            if (configService) {
-                const precision = configService.getValue(configPrefix + ".precision", 1)
-                text = "  Precision: " + precision + " decimal" + (precision === 1 ? "" : "s")
+                Qt.callLater(function() { updatePrecisionText() })
             }
         }
     }

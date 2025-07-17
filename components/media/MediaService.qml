@@ -34,7 +34,6 @@ Singleton {
     Connections {
         target: Mpris.players
         function onValuesChanged() { 
-            console.log("[MediaService] MPRIS players changed")
             updatePlayerList() 
         }
         ignoreUnknownSignals: true
@@ -62,26 +61,34 @@ Singleton {
     // Internal functions
     function updatePlayerList() {
         console.log("[MediaService] Updating player list")
-        console.log("[MediaService] Mpris object:", Mpris)
-        console.log("[MediaService] Mpris.players:", Mpris.players)
-        console.log("[MediaService] Mpris.players.length:", Mpris.players ? Mpris.players.length : "undefined")
         
         availablePlayers = []
         
         try {
             if (Mpris.players && Mpris.players.values && Mpris.players.values.length > 0) {
-                console.log("[MediaService] Found", Mpris.players.values.length, "players")
+                // Found players, processing...
                 
                 // Access players through the values array
                 for (let i = 0; i < Mpris.players.values.length; i++) {
                     const player = Mpris.players.values[i]
                     if (player) {
-                        availablePlayers.push({
-                            name: player.identity || player.dbusName || `Player ${i}`,
-                            player: player,
-                            index: i
-                        })
-                        console.log("[MediaService] Added player:", player.identity || player.dbusName)
+                        // Check if player has required properties
+                        try {
+                            const playerName = player.identity || player.dbusName || `Player ${i}`
+                            // Test basic property access to ensure player is valid
+                            const hasBasicProps = typeof player.canPlay !== 'undefined'
+                            
+                            if (hasBasicProps || player.identity) {
+                                availablePlayers.push({
+                                    name: playerName,
+                                    player: player,
+                                    index: i
+                                })
+                                console.log("[MediaService] Added player:", playerName)
+                            }
+                        } catch (playerError) {
+                            // Silently skip invalid players - they may still be initializing
+                        }
                     }
                 }
                 
@@ -127,30 +134,60 @@ Singleton {
             return
         }
         
-        // Update track information with fallbacks
-        trackTitle = currentPlayer.trackTitle || "Unknown Title"
-        trackArtist = currentPlayer.trackArtist || "Unknown Artist"
-        trackAlbum = currentPlayer.trackAlbum || "Unknown Album"
-        albumArtUrl = currentPlayer.trackArtUrl || ""
+        // Update track information with fallbacks and safe property access
+        try {
+            trackTitle = currentPlayer.trackTitle || "Unknown Title"
+            trackArtist = currentPlayer.trackArtist || "Unknown Artist"
+            trackAlbum = currentPlayer.trackAlbum || "Unknown Album"
+            albumArtUrl = currentPlayer.trackArtUrl || ""
+        } catch (error) {
+            trackTitle = "Unknown Title"
+            trackArtist = "Unknown Artist"
+            trackAlbum = "Unknown Album"
+            albumArtUrl = ""
+        }
         
-        // Update playback state
-        isPlaying = currentPlayer.isPlaying || false
-        playbackState = currentPlayer.playbackState || "Stopped"
+        // Update playback state with safe access
+        try {
+            isPlaying = currentPlayer.isPlaying || false
+            playbackState = currentPlayer.playbackState || "Stopped"
+        } catch (error) {
+            isPlaying = false
+            playbackState = "Stopped"
+        }
         
-        // Update capabilities
-        canPlay = currentPlayer.canPlay || false
-        canPause = currentPlayer.canPause || false
-        canGoNext = currentPlayer.canGoNext || false
-        canGoPrevious = currentPlayer.canGoPrevious || false
+        // Update capabilities with safe access
+        try {
+            canPlay = currentPlayer.canPlay || false
+            canPause = currentPlayer.canPause || false
+            canGoNext = currentPlayer.canGoNext || false
+            canGoPrevious = currentPlayer.canGoPrevious || false
+        } catch (error) {
+            canPlay = false
+            canPause = false
+            canGoNext = false
+            canGoPrevious = false
+        }
         
-        // Update position info
-        position = currentPlayer.position || 0.0
-        length = currentPlayer.length || 0.0
-        positionSupported = currentPlayer.positionSupported || false
+        // Update position info with safe access
+        try {
+            position = currentPlayer.position || 0.0
+            length = currentPlayer.length || 0.0
+            positionSupported = currentPlayer.positionSupported || false
+        } catch (error) {
+            position = 0.0
+            length = 0.0
+            positionSupported = false
+        }
         
-        // Update volume info
-        volume = currentPlayer.volume || 1.0
-        volumeSupported = currentPlayer.volumeSupported || false
+        // Update volume info with safe access
+        try {
+            volume = currentPlayer.volume || 1.0
+            volumeSupported = currentPlayer.volumeSupported || false
+        } catch (error) {
+            volume = 1.0
+            volumeSupported = false
+        }
         
         ready = true
     }
