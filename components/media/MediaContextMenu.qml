@@ -14,10 +14,19 @@ PopupWindow {
     
     visible: false
     implicitWidth: configService ? configService.scaled(280) : 280
-    implicitHeight: Math.min(contentColumn.implicitHeight + (configService ? configService.scaled(20) : 20), 
-                     configService ? configService.scaled(500) : 500)
+    implicitHeight: Math.min(400, menuContent.contentHeight + 32)
     
     color: "transparent"
+    
+    // Anchor configuration (matching working examples)
+    anchor {
+        window: null
+        rect { x: 0; y: 0; width: 1; height: 1 }
+        edges: Edges.Top | Edges.Left
+        gravity: Edges.Bottom | Edges.Right
+        adjustment: PopupAdjustment.All
+        margins { left: 8; right: 8; top: 8; bottom: 8 }
+    }
     
     HyprlandFocusGrab {
         id: focusGrab
@@ -25,13 +34,19 @@ PopupWindow {
         onCleared: hide()
     }
     
-    function show(window, posX, posY) {
-        parentWindow = window
-        // Position the popup
-        x = posX
-        y = posY
+    function show(anchorWindow, x, y) {
+        console.log("[MediaContextMenu] show() called with window:", anchorWindow, "pos:", x, y)
+        if (!anchorWindow) {
+            console.log("[MediaContextMenu] Error: anchorWindow is null")
+            return
+        }
+        parentWindow = anchorWindow
+        anchor.window = anchorWindow
+        anchor.rect.x = x
+        anchor.rect.y = y
         visible = true
         focusGrab.active = true
+        console.log("[MediaContextMenu] Context menu should now be visible at", x, y)
     }
     
     function hide() {
@@ -46,16 +61,28 @@ PopupWindow {
         border.width: 1
         radius: configService ? configService.scaled(8) : 8
         
-        Column {
-            id: contentColumn
+        ScrollView {
+            id: menuContent
             anchors.fill: parent
-            anchors.margins: configService ? configService.scaled(10) : 10
-            spacing: configService ? configService.spacing("xs") : 4
+            anchors.margins: configService ? configService.scaled(12) : 12
+            
+            Column {
+                id: contentColumn
+                width: menuContent.availableWidth
+                spacing: configService ? configService.spacing("sm") : 8
             
             // Header
             ContextMenuHeader {
                 title: "Media Controls"
                 configService: contextMenu.configService
+            }
+            
+            // Separator
+            Rectangle {
+                width: contentColumn.width
+                height: 1
+                color: configService?.getThemeProperty("colors", "border") || "#6c7086"
+                opacity: 0.3
             }
             
             // Player selection
@@ -66,7 +93,7 @@ PopupWindow {
             }
             
             Column {
-                width: parent.width
+                width: contentColumn.width
                 spacing: 2
                 visible: mediaService && mediaService.availablePlayers.length > 1
                 
@@ -74,7 +101,7 @@ PopupWindow {
                     model: mediaService ? mediaService.availablePlayers.length : 0
                     
                     Rectangle {
-                        width: parent.width
+                        width: contentColumn.width
                         height: 24
                         radius: 4
                         color: playerMouse.containsMouse ? 
@@ -120,6 +147,15 @@ PopupWindow {
                 }
             }
             
+            // Separator (only show when Now Playing section is visible)
+            Rectangle {
+                width: contentColumn.width
+                height: 1
+                color: configService?.getThemeProperty("colors", "border") || "#6c7086"
+                opacity: 0.3
+                visible: mediaService && mediaService.hasActivePlayer
+            }
+            
             // Current track info
             ContextMenuHeader {
                 title: "Now Playing"
@@ -128,7 +164,7 @@ PopupWindow {
             }
             
             Column {
-                width: parent.width
+                width: contentColumn.width
                 spacing: 2
                 visible: mediaService && mediaService.hasActivePlayer
                 
@@ -139,7 +175,7 @@ PopupWindow {
                     font.weight: Font.Bold
                     color: configService?.getThemeProperty("colors", "text") || "#cdd6f4"
                     elide: Text.ElideRight
-                    width: parent.width
+                    width: contentColumn.width
                 }
                 
                 Text {
@@ -148,7 +184,7 @@ PopupWindow {
                     font.pixelSize: configService ? configService.typography("xs") : 10
                     color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
                     elide: Text.ElideRight
-                    width: parent.width
+                    width: contentColumn.width
                 }
                 
                 Text {
@@ -158,7 +194,7 @@ PopupWindow {
                     font.pixelSize: configService ? configService.typography("xs") : 10
                     color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
                     elide: Text.ElideRight
-                    width: parent.width
+                    width: contentColumn.width
                 }
                 
                 Text {
@@ -173,6 +209,14 @@ PopupWindow {
                 }
             }
             
+            // Separator
+            Rectangle {
+                width: contentColumn.width
+                height: 1
+                color: configService?.getThemeProperty("colors", "border") || "#6c7086"
+                opacity: 0.3
+            }
+            
             // Widget configuration
             ContextMenuHeader {
                 title: "Widget Settings"
@@ -180,74 +224,83 @@ PopupWindow {
             }
             
             Column {
-                width: parent.width
+                width: contentColumn.width
                 spacing: 2
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Show Album Art: " + (configService ? (configService.getEntityProperty("media.widget", "showAlbumArt", true) ? "Enabled" : "Disabled") : "Enabled")
                     configService: contextMenu.configService
                     
                     onClicked: {
                         const current = configService?.getEntityProperty("media.widget", "showAlbumArt", true) || true
                         configService?.setValue("entities.media.widget.showAlbumArt", !current)
-                        hide()
                     }
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Show Track Info: " + (configService ? (configService.getEntityProperty("media.widget", "showTrackInfo", true) ? "Enabled" : "Disabled") : "Enabled")
                     configService: contextMenu.configService
                     
                     onClicked: {
                         const current = configService?.getEntityProperty("media.widget", "showTrackInfo", true) || true
                         configService?.setValue("entities.media.widget.showTrackInfo", !current)
-                        hide()
                     }
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Show Controls: " + (configService ? (configService.getEntityProperty("media.widget", "showControls", true) ? "Enabled" : "Disabled") : "Enabled")
                     configService: contextMenu.configService
                     
                     onClicked: {
                         const current = configService?.getEntityProperty("media.widget", "showControls", true) || true
                         configService?.setValue("entities.media.widget.showControls", !current)
-                        hide()
                     }
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Show Volume Slider: " + (configService ? (configService.getEntityProperty("media.widget", "showVolumeSlider", false) ? "Enabled" : "Disabled") : "Disabled")
                     configService: contextMenu.configService
                     
                     onClicked: {
                         const current = configService?.getEntityProperty("media.widget", "showVolumeSlider", false) || false
                         configService?.setValue("entities.media.widget.showVolumeSlider", !current)
-                        hide()
                     }
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Show Progress Bar: " + (configService ? (configService.getEntityProperty("media.widget", "showProgress", false) ? "Enabled" : "Disabled") : "Disabled")
                     configService: contextMenu.configService
                     
                     onClicked: {
                         const current = configService?.getEntityProperty("media.widget", "showProgress", false) || false
                         configService?.setValue("entities.media.widget.showProgress", !current)
-                        hide()
                     }
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Compact Mode: " + (configService ? (configService.getEntityProperty("media.widget", "compactMode", false) ? "Enabled" : "Disabled") : "Disabled")
                     configService: contextMenu.configService
                     
                     onClicked: {
                         const current = configService?.getEntityProperty("media.widget", "compactMode", false) || false
                         configService?.setValue("entities.media.widget.compactMode", !current)
-                        hide()
                     }
                 }
+            }
+            
+            // Separator
+            Rectangle {
+                width: contentColumn.width
+                height: 1
+                color: configService?.getThemeProperty("colors", "border") || "#6c7086"
+                opacity: 0.3
+                visible: configService ? configService.getEntityProperty("media.widget", "showAlbumArt", true) : true
             }
             
             // Album art size settings
@@ -258,11 +311,12 @@ PopupWindow {
             }
             
             Column {
-                width: parent.width
+                width: contentColumn.width
                 spacing: 2
                 visible: configService ? configService.getEntityProperty("media.widget", "showAlbumArt", true) : true
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Small (32px)" + ((configService ? configService.getEntityProperty("media.widget", "albumArtSize", 48) : 48) === 32 ? " ✓" : "")
                     configService: contextMenu.configService
                     
@@ -273,6 +327,7 @@ PopupWindow {
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Medium (48px)" + ((configService ? configService.getEntityProperty("media.widget", "albumArtSize", 48) : 48) === 48 ? " ✓" : "")
                     configService: contextMenu.configService
                     
@@ -283,6 +338,7 @@ PopupWindow {
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Large (64px)" + ((configService ? configService.getEntityProperty("media.widget", "albumArtSize", 48) : 48) === 64 ? " ✓" : "")
                     configService: contextMenu.configService
                     
@@ -293,6 +349,14 @@ PopupWindow {
                 }
             }
             
+            // Separator
+            Rectangle {
+                width: contentColumn.width
+                height: 1
+                color: configService?.getThemeProperty("colors", "border") || "#6c7086"
+                opacity: 0.3
+            }
+            
             // Track width settings
             ContextMenuHeader {
                 title: "Max Track Width"
@@ -300,10 +364,11 @@ PopupWindow {
             }
             
             Column {
-                width: parent.width
+                width: contentColumn.width
                 spacing: 2
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Narrow (150px)" + ((configService ? configService.getEntityProperty("media.widget", "maxTrackWidth", 200) : 200) === 150 ? " ✓" : "")
                     configService: contextMenu.configService
                     
@@ -314,6 +379,7 @@ PopupWindow {
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Medium (200px)" + ((configService ? configService.getEntityProperty("media.widget", "maxTrackWidth", 200) : 200) === 200 ? " ✓" : "")
                     configService: contextMenu.configService
                     
@@ -324,6 +390,7 @@ PopupWindow {
                 }
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Wide (300px)" + ((configService ? configService.getEntityProperty("media.widget", "maxTrackWidth", 200) : 200) === 300 ? " ✓" : "")
                     configService: contextMenu.configService
                     
@@ -334,6 +401,14 @@ PopupWindow {
                 }
             }
             
+            // Separator
+            Rectangle {
+                width: contentColumn.width
+                height: 1
+                color: configService?.getThemeProperty("colors", "border") || "#6c7086"
+                opacity: 0.3
+            }
+            
             // Refresh players
             ContextMenuHeader {
                 title: "Actions"
@@ -341,10 +416,11 @@ PopupWindow {
             }
             
             Column {
-                width: parent.width
+                width: contentColumn.width
                 spacing: 2
                 
                 MenuItem {
+                    width: contentColumn.width
                     text: "Refresh Players"
                     configService: contextMenu.configService
                     
@@ -356,6 +432,7 @@ PopupWindow {
                     }
                 }
             }
+        }
         }
     }
 }

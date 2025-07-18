@@ -446,22 +446,22 @@ Rectangle {
         color: configService?.getThemeProperty("colors", "textAlt") || "#bac2de"
     }
     
-    // Mouse interactions
+    // Left and middle click interactions
     MouseArea {
         anchors.fill: parent
-        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
         hoverEnabled: true
+        z: 5
         
         onClicked: mouse => {
             if (mouse.button === Qt.LeftButton) {
                 // Left click - toggle play/pause
                 MediaService.togglePlayPause()
-            } else if (mouse.button === Qt.RightButton) {
-                // Right click - open context menu
-                menu()
+                mouse.accepted = true
             } else if (mouse.button === Qt.MiddleButton) {
                 // Middle click - toggle compact/expanded mode
                 configService?.setValue("entities." + entityId + ".compactMode", !compactMode)
+                mouse.accepted = true
             }
         }
         
@@ -477,12 +477,15 @@ Rectangle {
         onExited: parent.parent && (parent.parent.opacity = 1.0)
     }
     
+    
     // GraphicalComponent interface methods
     function menu(startPath) {
         console.log("[MediaWidget] Opening context menu")
         if (anchorWindow) {
             const globalPos = mediaWidget.mapToItem(null, 0, 0)
             contextMenu.show(anchorWindow, globalPos.x, globalPos.y + mediaWidget.height)
+        } else {
+            console.log("[MediaWidget] Error: anchorWindow is null, cannot show context menu")
         }
     }
     

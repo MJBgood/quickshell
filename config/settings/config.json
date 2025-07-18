@@ -317,7 +317,10 @@
     },
     "media": {
       "widget": {
-        "compactMode": false
+        "compactMode": false,
+        "showProgress": true,
+        "maxTrackWidth": 200,
+        "showVolumeSlider": true
       }
     }
   },

@@ -801,6 +801,24 @@ PanelWindow {
                     showProgress: configService ? configService.getValue("media.showProgress", false) : false
                     compactMode: configService ? configService.getValue("media.compactMode", true) : true
                 }
+                
+                // Right-click to show media context menu
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.RightButton
+                    z: 10  // Higher z-order to override bar's MouseArea
+                    
+                    onClicked: function(mouse) {
+                        if (mouse.button === Qt.RightButton) {
+                            // Stop event propagation
+                            mouse.accepted = true
+                            
+                            // Show media context menu
+                            console.log("[MediaContainer] Right-click detected, showing media context menu")
+                            mediaWidget.menu()
+                        }
+                    }
+                }
             }
         }
         
